@@ -1,0 +1,20 @@
+2023-04-21 18:35:18|UserId-|MachineName-LP-5CD11961CT|Debug|Entered into Is User Exists for user :testuser|||
+2023-04-21 18:35:18|UserId-|MachineName-LP-5CD11961CT|Debug|Generating authorize code response for grant type :authorization_code|||
+2023-04-21 18:35:18|UserId-|MachineName-LP-5CD11961CT|Debug|Entered into save authorization code for client : 2zdFdorKjcdntzSJpk1Lhv8/Ebjul4+VyYQ8gMSmN08=|||
+2023-04-21 18:35:18|UserId-|MachineName-LP-5CD11961CT|Debug|End of authorize request endpoint|||
+2023-04-21 18:35:18|UserId-|MachineName-LP-5CD11961CT|Debug|Entere   d into add client : 2zdFdorKjcdntzSJpk1Lhv8/Ebjul4+VyYQ8gMSmN08=|||
+2023-04-21 18:35:18|UserId-|MachineName-LP-5CD11961CT|Debug|Entered into update session cookie : Identity.Application|||
+2023-04-21 18:35:18|UserId-|MachineName-LP-5CD11961CT|Debug|Invoking endpoint: "HCL.CS.Service.Implementation.TokenEndpoint" for "/security/token"|||
+2023-04-21 18:35:18|UserId-|MachineName-LP-5CD11961CT|Debug|Processing token request.|||
+2023-04-21 18:35:18|UserId-|MachineName-LP-5CD11961CT|Debug|Entered into validate client secret.|||
+2023-04-21 18:35:18|UserId-|MachineName-LP-5CD11961CT|Debug|Parsing client secret basic.|||
+2023-04-21 18:35:18|UserId-|MachineName-LP-5CD11961CT|Debug|Parsing client secret jwt.|||
+2023-04-21 18:35:18|UserId-|MachineName-LP-5CD11961CT|Debug|No secret found parsing client secret jwt.|||
+2023-04-21 18:35:18|UserId-|MachineName-LP-5CD11961CT|Debug|Parsing Client Secret Post|||
+2023-04-21 18:35:18|UserId-|MachineName-LP-5CD11961CT|Debug|Entered into validate token request.|||
+2023-04-21 18:35:18|UserId-|MachineName-LP-5CD11961CT|Debug|Entered into authorization code flow.|||
+2023-04-21 18:35:18|UserId-|MachineName-LP-5CD11961CT|Debug|Entered into get authorization code with session id: XoMTJ3LTUB3ADyQtrnoofuGPmSvk2IYL|||
+2023-04-21 18:35:18|UserId-|MachineName-LP-5CD11961CT|Debug|Entered into delete authorization code with session id: XoMTJ3LTUB3ADyQtrnoofuGPmSvk2IYL|||
+2023-04-21 18:35:21|UserId-|MachineName-LP-5CD11961CT|Debug|Generating token.|||
+    
+

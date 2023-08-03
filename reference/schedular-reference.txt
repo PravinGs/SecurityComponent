@@ -1,0 +1,215 @@
+Multi Tasking:
+* Process is only needs to have one thred.
+## COoperative MultiTasking
+
+Before assign the task to the thread i should validate the input and do the pass the key as parameter.
+I might use my linked list here if i wanted to do the changes.
+The data is going to be inside the ll should be defined.
+
+1. Alter the start function to check the pattern,
+   send the execution time to the run function,
+   this could be more compatible.
+2. if return failed it should not run again.
+
+
+#include <iostream>
+#include <vector>
+#include <thread>
+#include <functional>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+
+class ThreadPool
+{
+public:
+    ThreadPool(int numThreads) : stop(false)
+    {
+        for (int i = 0; i < numThreads; ++i)
+        {
+            threads.emplace_back(std::bind(&ThreadPool::threadWorker, this));
+        }
+    }
+
+    ~ThreadPool()
+    {
+        {
+            std::unique_lock<std::mutex> lock(queueMutex);
+            stop = true;
+        }
+
+        condition.notify_all();
+
+        for (std::thread &thread : threads)
+        {
+            thread.join();
+        }
+    }
+
+    template <class Function, class... Args>
+    void enqueue(Function &&function, Args &&... args)
+    {
+        {
+            std::unique_lock<std::mutex> lock(queueMutex);
+            tasks.emplace(std::bind(std::forward<Function>(function), std::forward<Args>(args)...));
+        }
+
+        condition.notify_one();
+    }
+
+private:
+    std::vector<std::thread> threads;
+    std::queue<std::function<void()>> tasks;
+
+    std::mutex queueMutex;
+    std::condition_variable condition;
+
+    bool stop;
+
+    void threadWorker()
+    {
+        while (true)
+        {
+            std::function<void()> task;
+
+            {
+                std::unique_lock<std::mutex> lock(queueMutex);
+
+                condition.wait(lock, [this]() { return stop || !tasks.empty(); });
+
+                if (stop && tasks.empty())
+                {
+                    return;
+                }
+
+                task = std::move(tasks.front());
+                tasks.pop();
+            }
+
+            task();
+        }
+    }
+};
+
+class Schedule
+{
+public:
+    void start()
+    {
+        if (!_isReadyToSchedule)
+            return;
+
+        std::vector<std::string> processes;
+        std::map<std::string, std::string> schedular = _configTable["schedular"];
+        for (const auto &process : schedular)
+        {
+            processes.push_back(process.first);
+        }
+
+        ThreadPool threadPool(processes.size());
+
+        for (int i = 0; i < (int)processes.size(); i++)
+        {
+            try
+            {
+                std::string processName = processes[i];
+                std::string processTimePattern = schedular[processes[i]];
+                std::cout << processName << " : " << processTimePattern << std::endl;
+
+                threadPool.enqueue([this, processName, processTimePattern]() {
+                    run(processName, processTimePattern);
+                });
+            }
+            catch (const std::exception &e)
+            {
+                std::cerr << e.what() << std::endl;
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::seconds(1)); // Wait for tasks to start
+
+        // Wait for all tasks to complete
+        threadPool.~ThreadPool();
+
+        std::cout << "done" << std::endl;
+    }
+
+    void run(std::string processName, std::string timePattern)
+    {
+        std::vector<int> patternTable;
+        if (processTimePattern(patternTable, timePattern) == FAILED)
+            return;
+
+        while (true)
+        {
+            // Get the current time
+            std::chrono::system_clock::time_point currentTime = std::chrono::system_clock::now();
+
+            // Calculate the execution time based on the time pattern
+            std::chrono::system_clock::time_point executionTime = calculateNextExecutionTime(patternTable, currentTime);
+
+            // Calculate the waiting time until the next execution
+            std::chrono::system_clock::duration duration = executionTime - currentTime;
+            int waitingTime = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
+
+            // Wait until the next execution time
+            std::this_thread::sleep_for(std::chrono::seconds(waitingTime));
+
+            // Execute the process
+            if (processName == "monitor")
+            {
+                if (_monitorController.getMonitorLog(_configTable) == SUCCESS)
+                {
+                    std::cout << "Monitor Log collected successfully." << std::endl;
+                }
+                else
+                {
+                    AgentUtils::writeLog("Reading Process details operation stopped");
+                    break; // Exit the loop if the process fails
+                }
+            }
+            else if (processName == "applog")
+            {
+                if (_logController.appLogManager(_configTable) == SUCCESS)
+                {
+                    std::cout << "Applog operation done" << std::endl;
+                }
+                else
+                {
+                    AgentUtils::writeLog("Reading AppLog process stopped");
+                    break; // Exit the loop if the process fails
+                }
+            }
+            else if (processName == "syslog")
+            {
+                if (_logController.getSysLog(_configTable) == SUCCESS)
+                {
+                    std::cout << "Syslog operation done" << std::endl;
+                }
+                else
+                {
+                    AgentUtils::writeLog("Reading SysLog process stopped");
+                    break; // Exit the loop if the process fails
+                }
+            }
+            else if (processName == "firmware")
+            {
+                if (_fController.start(_configTable) == SUCCESS)
+                {
+                    std::cout << "FirmWare operation done" << std::endl;
+                }
+                else
+                {
+                    /*Do something*/
+                    break; // Exit the loop if the process fails
+                }
+            }
+
+            std::cout << processName << " execution done." << std::endl;
+
+            // Reset the patternTable for the next execution
+            if (processTimePattern(patternTable, timePattern) == FAILED)
+                break;
+        }
+    }
+};

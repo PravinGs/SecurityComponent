@@ -1,0 +1,598 @@
+int LogService::zipAndEmptyFile(const string filePath) 
+{
+    std::string zipFilePath = filePath + ".zip";
+
+    // Zip the file
+    std::string zipCommand = "zip " + zipFilePath + " " + filePath;
+    system(zipCommand.c_str());
+
+    // Empty the original file
+    std::ofstream file(filePath, std::ios::out | std::ios::trunc);
+    file.close();
+    AgentUtils::writeLog("File [ " + filePath + " ]" + "zipped to [ " + zipFilePath + " ]", SUCCESS);
+    return SUCCESS;
+}
+
+std::chrono::system_clock::time_point Schedular::createAdjustedTimePoint(int hours, int minutes, int seconds)
+{
+    // Get the current time point
+    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+
+    // Convert the current time point to a time_t value
+    std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+
+    // Convert the time_t value to a tm structure
+    std::tm* now_tm = std::localtime(&now_time);
+
+    //Add the specified hours, minutes, and seconds to the tm structure
+    now_tm->tm_hour = hours;
+    now_tm->tm_min = minutes;
+    now_tm->tm_sec = seconds;
+
+    // Normalize the modified tm structure
+    std::mktime(now_tm);
+
+    // Convert the modified tm structure back to a time_t value
+    std::time_t adjusted_time = std::mktime(now_tm);
+
+    // Convert the adjusted time back to a time_point
+    std::chrono::system_clock::time_point adjusted_time_point = std::chrono::system_clock::from_time_t(adjusted_time);
+
+}
+std::chrono::system_clock::time_point Schedular::convertToTimePoint(const std::string& timeStr)
+{
+    std::istringstream iss(timeStr);
+    char token;
+    int hours, minutes, seconds;
+    iss >> hours >> token >>  minutes >> token >> seconds;
+
+    return createAdjustedTimePoint(hours, minutes,seconds);
+}    
+List Schedular::setEventsNew()    
+{
+    List list;
+    string token;
+    vector<string> times;
+    if (this->table.size() == 0)
+    {
+        return list;
+    }
+    string time = table["schedular"]["monitor"];
+    cout << time << endl;
+    std::stringstream stream(time);
+    
+    while (std::getline(stream, token, ','))
+    {
+        times.push_back(token);
+    }
+
+    for (int i = 0; i < (int)times.size(); i++)
+    {
+        list.add(times[i]);
+    }
+
+    return list;
+}
+
+std::map<string, string> getLogAttributes(const string path);
+std::map<string, string> LogService::getLogAttributes(const string path)
+{
+    std::map<string, string> table;
+    fstream file(path, std::ios::in);
+    string line;
+    while (std::getline(file, line))
+    {
+        std::stringstream stream(line);
+        string token;
+        string name;
+        string value;
+        int index = 0;
+        while (std::getline(stream, token, '='))
+        {
+            if (index == 0)
+            {
+                name = token;
+            }
+            else
+            {
+                value = token;
+            }
+            index++;
+        }
+        table[name] = value;
+    }
+
+    return table;
+}
+
+string _createJSON(const string line, vector<string> names, char delimeter);
+string LogService::_createJSON(const string line, vector<string> names, char delimeter)
+{
+    vector<string> tokens;
+    string token;
+    string serializedJson = "";
+    Json::Value json;
+    Json::StreamWriterBuilder writer;
+    std::stringstream iss(line);
+    while (std::getline(iss, token, delimeter))
+    {
+        tokens.push_back(token);
+    }
+    for (int i = 0; i < (int)names.size(); i++)
+    {
+        json[names[i]] = tokens[i];
+    }
+    serializedJson = Json::writeString(writer, json);
+    return serializedJson;
+}
+
+
+int LogService::addToZip(const std::string zipPath, const std::string filePath)
+{
+    cout << "addToZip : " << filePath <<endl;
+    gzFile zipFile = gzopen(zipPath.c_str(), "ab");
+    if (!zipFile)
+    {
+        AgentUtils::writeLog("Error opening zip file.", FAILED);
+        return FAILED;
+    }
+
+    fstream inputFile(filePath, std::ios::binary);
+    if (!inputFile)
+    {
+        AgentUtils::writeLog("Error opening input file.", FAILED);
+        gzclose(zipFile);
+        return FAILED;
+    }
+    string buffer;
+    while (std::getline(inputFile, buffer))
+    {
+        gzwrite(zipFile, buffer.c_str(), static_cast<unsigned int>(inputFile.gcount()));
+    }
+
+    inputFile.close();
+    gzclose(zipFile);
+
+    std::ofstream file(filePath, std::ios::out | std::ios::trunc);
+    file.close();
+    AgentUtils::writeLog("File [ " + filePath + " ]" + "zipped to [ " + zipPath + " ]", SUCCESS);
+    return SUCCESS;
+}
+
+int LogService::isZipExist(string zipPath)
+{
+    gzFile zipFile = gzopen(zipPath.c_str(), "ab");
+    if (!zipFile)
+    {
+        AgentUtils::writeLog("Zip File not Exist it will create new zip file name: " + zipPath);
+    }
+    
+    gzFile newZipFile = gzopen(zipPath.c_str(), "wb");
+    if (!newZipFile)
+    {
+        AgentUtils::writeLog("Cannot create Zip File: " + zipPath, FAILED);
+        return FAILED;
+    }
+    AgentUtils::writeLog("Zip File created: " + zipPath, SUCCESS);
+    gzclose(newZipFile);
+    return SUCCESS;
+}
+
+int LogService::checkFileSize(const string filePath)
+{
+    string zipPath = filePath + "_" + AgentUtils::getCurrentTime().substr(0, 10) + "-"+ AgentUtils::getCurrentTime().substr(10)+".zip";
+    std::ifstream file(filePath, std::ios::binary | std::ios::ate);
+    if (!file)
+    {
+        std::cerr << "Failed to open file: " << filePath << std::endl;
+        return FAILED;
+    }
+
+    std::streamsize fileSize = file.tellg();
+
+    cout << "Filesize : " << (int)fileSize << endl;
+    file.close();
+
+    if (fileSize < (long int)SIZE_LIMIT)
+    {
+        return SUCCESS;
+    }
+    AgentUtils::writeLog("File [ " + filePath + " ]" + " exceeds the size limit. Zipping and emptying the file...");
+    if (isZipExist(zipPath) == FAILED)
+        return FAILED;
+    cout << "Zip Exist" << endl;
+    return addToZip(zipPath, filePath);
+}
+
+int LogService::processFiles(string directoryPath)
+{
+    int result = SUCCESS;
+    struct stat fileStat;
+    DIR *dir = opendir(directoryPath.c_str());
+    dirent *entry = NULL;
+    if (dir == NULL)
+    {
+        AgentUtils::writeLog("Invalid directory [ " + directoryPath + " ]", FAILED);
+        return FAILED;
+    } 
+
+    while ((entry = readdir(dir)) != NULL)
+    {
+        string filePath = directoryPath + entry->d_name;
+        if (stat(filePath.c_str(), &fileStat) == 0) {
+            if (S_ISREG(fileStat.st_mode)) {
+                std::cout << entry->d_name << std::endl;
+                result = checkFileSize(filePath);
+               
+            } else std::cout << "Skipping non-regular file: " << entry->d_name << std::endl;
+                
+        } else 
+        {
+            std::cout << "Error accessing file: " << entry->d_name << std::endl;
+        }
+    }
+    return result;
+}
+
+int LogService::getSysLog(Json::Value &json, vector<string> names, const string path, const string writePath, const char delimeter)
+{
+    json["Priority"] = 0; // For system log there is no room to add priority.
+    const string sep = "|";
+    vector<string> logs;
+    string line;
+
+    fstream file(path, std::ios::in);
+    if (!file)
+    {
+        AgentUtils::writeLog("Failed to read " + path + " check file path and file permission", FAILED);
+        return FAILED;
+    }
+
+    while (std::getline(file, line))
+    {
+        string log;
+        string token;
+        std::stringstream stream(line);
+        int index = 0;
+        bool isCriticalLog = false;
+        while (std::getline(stream, token, delimeter) && index < 4)
+        {
+            if (index == 0) /*To collect Date and Time from the Record*/
+            {
+                string timestamp = token;
+                string formattedTime;
+                while (index < 2 && std::getline(stream, token, delimeter))
+                {
+                    timestamp += " " + token;
+                    index++;
+                }
+                if (AgentUtils::convertTimeFormat(timestamp, formattedTime) == SUCCESS)
+                {
+                    log += formattedTime;
+                    index = 1;
+                }
+                continue;
+            }
+
+            if (index == 3) /* To collect Message from the */
+            {
+                string message = token;
+                while (std::getline(stream, token, delimeter))
+                {
+                    message += ' ' + token;
+                }
+                isCriticalLog = isPriorityLog(message);
+                log += sep + message;
+                index = 4;
+                continue;
+            }
+            log += sep + token;
+            index++;
+        }
+        if (isCriticalLog)
+        {
+            logs.push_back(log + sep + "Error");
+        }
+    }
+
+    AgentUtils::writeLog("Syslog collected", SUCCESS);
+    if (splitLineToVector(logs[0], sep[0]).size() < names.size())
+    {
+        AgentUtils::writeLog("Invalid Log Attributes configured for syslog", FAILED);
+        return FAILED;
+    }
+    return saveLog(json, writePath, logs, names, sep[0]);
+}
+
+int LogService::getAppLog(Json::Value &json, vector<string> names, const string path, const string writePath, const char delimeter)
+{
+    fstream file(path);
+    vector<string> logs;
+    string line;
+    if (!file)
+    {
+        AgentUtils::writeLog("Reading App Log Invalid configuration Path [ " + path + " ]", FAILED);
+        return FAILED;
+    }
+
+    while (std::getline(file, line))
+    {
+        if (line.length() == 0)
+            continue;
+
+        if (isPriorityLog(line))
+            logs.push_back(line);
+    }
+    file.close();
+    AgentUtils::writeLog("Applog collected from " + path, SUCCESS);
+    if (splitLineToVector(logs[0], delimeter).size() < names.size())
+    {
+        AgentUtils::writeLog("Invalid Log Attributes configured for Applog", FAILED);
+        return FAILED;
+    }
+    return saveLog(json, writePath, logs, names, delimeter);
+}
+   
+bool isPriorityLog(const std::string &line)
+{
+    string lowerLine = line;
+    string lowerSearchTerm = "error";
+    std::transform(lowerLine.begin(), lowerLine.end(), lowerLine.begin(), [](unsigned char c)
+                   { return std::tolower(c); });
+    std::transform(lowerSearchTerm.begin(), lowerSearchTerm.end(), lowerSearchTerm.begin(), [](unsigned char c)
+                   { return std::tolower(c); });
+
+    return lowerLine.find(lowerSearchTerm) != std::string::npos;
+}
+
+    // logLevel["none"] = 0;
+    // logLevel["trace"] = 1;
+    // logLevel["debug"] = 2;
+    // logLevel["warning"] = 3;
+    // logLevel["error"] = 4;
+    // logLevel["critical"] = 5;
+    Monitor::SYS_PROPERTIES MonitorService::getSystemProperties()
+{
+    AgentUtils::writeLog("Request for collecting System Properties");
+    struct Monitor::SYS_PROPERTIES properties;
+    struct sysinfo info;
+    struct statvfs stat;
+    sysinfo(&info);
+    statvfs("/", &stat);
+    properties.ram = (double)info.totalram * info.mem_unit;
+    properties.disk = stat.f_blocks * stat.f_frsize;
+    properties.cpu = (double)sysconf(_SC_NPROCESSORS_ONLN);
+    AgentUtils::writeLog("System Properties collected");
+    return properties;
+}
+
+#include <iostream>
+#include <curl/curl.h>
+#include <string>
+
+// Callback function to write the response data into a string
+size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* response) {
+    size_t totalSize = size * nmemb;
+    response->append(static_cast<char*>(contents), totalSize);
+    return totalSize;
+}
+
+int main() {
+    CURL* curl;
+    CURLcode res;
+    std::string response;
+
+    // Initialize curl
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    curl = curl_easy_init();
+
+    if (curl) {
+        // Set the URL
+        curl_easy_setopt(curl, CURLOPT_URL, "http://13.232.193.41/Log/GetLogs?OrgId=234225");
+
+        // Set the accept header
+        struct curl_slist* headers = nullptr;
+        headers = curl_slist_append(headers, "accept: */*");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        // Set the write callback function
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+        // Perform the request
+        res = curl_easy_perform(curl);
+
+        // Check for errors
+        if (res != CURLE_OK) {
+            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+        }
+        else  {
+            // Print the response
+            std::cout << "Response:\n" << response << std::endl;
+        }
+
+        // Clean up
+        curl_easy_cleanup(curl);
+        curl_global_cleanup();
+    }
+
+    return 0;
+}
+
+        // Queue queue(configTable["rabbitmq"]["ca_pem"], configTable["rabbitmq"]["client_pem"], configTable["rabbitmq"]["client_key"]);
+        // if (queue.send(writePath, configTable[sysLogName]["queue"]) == SUCCESS)
+        // {
+        //     cout << "Queue Published successfully" << endl;
+        //     _configService.cleanFile(writePath);
+        //     return SUCCESS;
+        // }
+
+// void Schedule::run(string processName, string timePattern)
+// {
+//     vector<int> patternTable;
+//     if (processTimePattern(patternTable, timePattern) == FAILED)
+//         return;
+//     int elapsedTime = patternTable[0] + (patternTable[1] * 60) + (patternTable[2] * 3600);
+//     do
+//     {
+//         std::chrono::system_clock::time_point currentTime = std::chrono::system_clock::now();
+//         std::chrono::system_clock::time_point executionTime = currentTime + std::chrono::seconds(elapsedTime);
+//         printTime(executionTime);
+//         std::chrono::system_clock::duration duration = executionTime - currentTime;
+//         int waitingTime = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
+//         cout << processName << " waiting for execution...." << endl;
+//         std::this_thread::sleep_for(std::chrono::seconds(waitingTime));
+//         if (processName == "monitor")
+//         {
+//             if (_monitorController.getMonitorLog(_configTable) == SUCCESS)
+//             {
+//                 cout << "Monitor Log collected successfully." << endl;
+//             }
+//             else
+//             {
+//                 AgentUtils::writeLog("Reading Process details operation stopped");
+//             }
+//         }
+//         else if (processName == "applog")
+//         {
+//             if (_logController.appLogManager(_configTable) == SUCCESS)
+//             {
+//                 cout << "Applog operation done" << endl;
+//             }
+//             else
+//             {
+//                 AgentUtils::writeLog("Reading AppLog process stopped");
+//             }
+//         }
+//         else if (processName == "syslog")
+//         {
+//             if (_logController.getSysLog(_configTable) == SUCCESS)
+//             {
+//                 cout << "Syslog operation done" << endl;
+//             }
+//             else
+//             {
+//                 AgentUtils::writeLog("Reading SysLog process stopped");
+//             }
+//         }
+//         else if (processName == "firmware")
+//         {
+//             if (_fController.start(_configTable) == SUCCESS)
+//             {
+//                 cout << "FirmWare operation done" << endl;
+//             }
+//             else
+//             { /*Do somthing*/
+//             }
+//         }
+//         cout << processName << " execution done." << endl;
+
+//     } while (elapsedTime > 0);
+// }
+
+// void Schedule::start()
+// {
+//     if (!_isReadyToSchedule)
+//         return;
+//     vector<string> processes;
+//     map<string, string> schedular = _configTable["schedular"];
+//     for (const auto &process : schedular)
+//     {
+//         processes.push_back(process.first);
+//     }
+//     std::vector<std::thread> threads(processes.size());
+
+//     for (int i = 0; i < (int)processes.size(); i++)
+//     {
+//         try
+//         {
+//             string processName = processes[i];
+//             string processTimePattern = schedular[processes[i]];
+//             cout << processName << " : " << processTimePattern << endl;
+//             threads[i] = std::thread([&, processName, processTimePattern]()
+//                                      { run(processName, processTimePattern); });
+//         }
+//         catch (const std::exception &e)
+//         {
+//             std::cerr << e.what() << '\n';
+//         }
+//     }
+
+//     for (auto &thread : threads)
+//     {
+//         if (thread.joinable())
+//             thread.join();
+//     }
+
+//     cout << "done" << endl;
+// }
+
+
+class ThreadPool
+{
+private:
+    std::vector<std::thread> threads;
+    std::queue<std::function<void()>> tasks;
+    std::mutex queueMutex;
+    std::condition_variable condition;
+    bool stop;
+    void threadWorker()
+    {
+        while (true)
+        {
+            std::function<void()> task;
+
+            {
+                std::unique_lock<std::mutex> lock(queueMutex);
+
+                condition.wait(lock, [this]()
+                               { return stop || !tasks.empty(); });
+
+                if (stop && tasks.empty())
+                {
+                    return;
+                }
+
+                task = std::move(tasks.front());
+                tasks.pop();
+            }
+
+            task();
+        }
+    }
+
+public:
+    ThreadPool(int numThreads) : stop(false)
+    {
+        for (int i = 0; i < numThreads; ++i)
+        {
+            threads.emplace_back(std::bind(&ThreadPool::threadWorker, this));
+        }
+    }
+
+    ~ThreadPool()
+    {
+        {
+            std::unique_lock<std::mutex> lock(queueMutex);
+            stop = true;
+        }
+
+        condition.notify_all();
+
+        for (auto &thread : threads) {
+            if (thread.joinable())
+                thread.join();
+        }
+    }
+
+    template <class Function, class... Args>
+    void enqueue(Function &&function, Args &&...args)
+    {
+        {
+            std::unique_lock<std::mutex> lock(queueMutex);
+            tasks.emplace(std::bind(std::forward<Function>(function), std::forward<Args>(args)...));
+        }
+
+        condition.notify_one();
+    }
+};

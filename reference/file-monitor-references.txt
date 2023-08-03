@@ -1,0 +1,39 @@
+Windows, you can use the ReadDirectoryChangesW function from the Win32 API or the FileSystemWatcher class in .NET.
+Linux, you can utilize inotify, which is a Linux kernel subsystem. The inotify_init, inotify_add_watch, and read system calls are commonly used.
+MacOS, you can use the FSEvents framework or the kqueue mechanism.
+
+/*
+inotify_init: This system call initializes an inotify instance and returns a file descriptor associated with that instance. You can use this file descriptor to interact with the inotify subsystem.
+Example:
+int fd = inotify_init();
+
+inotify_add_watch: This function adds a watch for a specific file or directory within the inotify instance. It takes the file descriptor obtained from inotify_init, the path to the file or directory, and a set of event masks indicating the types of events to monitor.
+
+Example:
+int wd = inotify_add_watch(fd, "/path/to/file", IN_MODIFY | IN_CREATE);
+In this example, we add a watch to monitor the file at /path/to/file for modification (IN_MODIFY) and creation (IN_CREATE) events.
+
+read: This system call reads file system events from the inotify file descriptor. It blocks until there is at least one event available to read.
+
+Example:
+char buffer[EVENT_BUF_LEN];
+ssize_t len = read(fd, buffer, EVENT_BUF_LEN);
+The buffer stores the incoming events, and EVENT_BUF_LEN represents the size of the buffer.
+
+*/
+ LOG - MECHANISM 
+1.Create a config file  
+sudo vim /etc/rsyslog.d/tls-server.conf
+2.Create a log file to store logs.
+sudo touch /var/log/tls-server.log
+3.change its group name to the syslog
+sudo chgrp syslog /var/log/tls-server.log 
+4.add write permission to the syslog group
+sudo chmod g+w /var/log/tls-server.log 
+5.add user to the syslog group
+sudo usermod -a -G syslog ubuntu
+6.Change read only mode to other users. 
+sudo chmod o-r /var/log/tls-server.log 
+7.update the rsyslog/syslog service
+sudo systemctl restart rsyslog.service 
+sudo systemctl restart syslog.service 
