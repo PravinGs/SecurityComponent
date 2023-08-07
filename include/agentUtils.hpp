@@ -46,16 +46,24 @@ using std::map;
 using std::string;
 using std::vector;
 
+#define OS_SIZE_1024 1024
+#define PATH_MAX 4096
+#define MAX_PID 32768
+#define PROC_ 0
+#define PID  1
+#define TASK 2
+
 #define FAILED -1
 #define SUCCESS 1
 #define WARNING 0
 
+/* Log Levels */
 #define NONE 0
 #define TRACE 1
 #define DEBUG 2
 #define WARN 3
 #define ERROR 4
-#define CRITICAL
+#define CRITICAL 5
 
 #define INTERACTION 2
 #define STANDARD 3
@@ -67,7 +75,7 @@ using std::vector;
 #define BASE_LOG_ARCHIVE "archives/"
 #define BASE_CONFIG_TMP "tmp/"
 #define BASE_CONFIG_DIR "/etc/scl/config/"
-#define BASE_CONFIG_DIR "/etc/scl/config/agent/agent.config"
+// #define BASE_CONFIG_DIR "/etc/scl/config/agent/agent.config"
 
 const vector<string> MONTHS = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 const int BUFFER_SIZE = 1024;

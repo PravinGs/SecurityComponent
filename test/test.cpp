@@ -1,20 +1,20 @@
 #include "agentUtils.hpp"
+#include "rootkit/interface_check.hpp"
+#include "rootkit/ports_check.hpp"
+#include "rootkit/dev_check.hpp"
+#include "rootkit/process_check.hpp"
 
-#include "controller/logController.hpp"
-#include "service/configservice.hpp"
-#include "service/udp.hpp"
 
 int main() {
     openlog("agent", LOG_INFO | LOG_CONS, LOG_USER);
-    IniConfig config;
-    OS::CurrentDay = 3;
-    OS::CurrentMonth = 8;
-    OS::CurrentYear = 2023;
-    // OS::CurrentFile = "/etc/scl/log/archives/2023/Aug/1-syslog";
-    map<string, map<string, string>> table;
-    config.readConfigFile("/home/krishna/security/Agent/config/schedule.config", table);
-    LogController controller;
-    controller.sysLogManager(table);
+    
+    // InterfaceCheck process;
+    // PortCheck port;
+    // port.check();
+    // DevCheck dev;
+    ProcessCheck process;
+    int result = process.check();
+    cout << "Response is " << result << endl;
     closelog();
     return 0; 
 }

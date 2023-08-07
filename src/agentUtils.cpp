@@ -137,6 +137,9 @@ void AgentUtils::writeLog(string log, int logLevel)
         file << time << " : WARNING : " << log << endl;
         // syslog(LOG_USER, "WARNING: %s", log.c_str());
         break;
+    case CRITICAL:
+        file << time << " : CRITICAL : " << log << endl;
+        break;
     default:
         break;
     }
