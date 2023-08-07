@@ -3,7 +3,7 @@
 #include "rootkit/ports_check.hpp"
 #include "rootkit/dev_check.hpp"
 #include "rootkit/process_check.hpp"
-
+#include "rootkit/sysfile_check.hpp"
 
 int main() {
     openlog("agent", LOG_INFO | LOG_CONS, LOG_USER);
@@ -12,9 +12,11 @@ int main() {
     // PortCheck port;
     // port.check();
     // DevCheck dev;
-    ProcessCheck process;
-    int result = process.check();
-    cout << "Response is " << result << endl;
+    // ProcessCheck process;
+    // int result = process.check();
+    // cout << "Response is " << result << endl;
+    SysCheck sys;
+    sys.check("/home/krishna/Build-Libs/ossec-hids/src/rootcheck/db/rootkit_files.txt");
     closelog();
     return 0; 
 }

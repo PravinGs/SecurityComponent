@@ -49,6 +49,7 @@ using std::vector;
 #define OS_SIZE_1024 1024
 #define PATH_MAX 4096
 #define MAX_PID 32768
+#define MAX_RK_SYS 512
 #define PROC_ 0
 #define PID  1
 #define TASK 2
