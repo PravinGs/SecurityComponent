@@ -154,7 +154,7 @@ class PortCheck
 
         }
 
-        void check()
+        int check()
         {
             int i = 0;
 
@@ -184,7 +184,7 @@ class PortCheck
                     cout << "port : " << port << " status : " << total_ports_tcp[port]  << endl;
                 }
             }
-            return;
+            return SUCCESS;
         }
 };
 

@@ -1,9 +1,12 @@
 #include "agentUtils.hpp"
-#include "rootkit/interface_check.hpp"
-#include "rootkit/ports_check.hpp"
-#include "rootkit/dev_check.hpp"
-#include "rootkit/process_check.hpp"
-#include "rootkit/sysfile_check.hpp"
+// #include "rootkit/interface_check.hpp"
+// #include "rootkit/ports_check.hpp"
+// #include "rootkit/dev_check.hpp"
+// #include "rootkit/process_check.hpp"
+// #include "rootkit/sysfile_check.hpp"
+// #include "rootkit/trojen_check.hpp"
+
+#include "rootkit/root_check.hpp"
 
 int main() {
     openlog("agent", LOG_INFO | LOG_CONS, LOG_USER);
@@ -15,8 +18,12 @@ int main() {
     // ProcessCheck process;
     // int result = process.check();
     // cout << "Response is " << result << endl;
-    SysCheck sys;
-    sys.check("/home/krishna/Build-Libs/ossec-hids/src/rootcheck/db/rootkit_files.txt");
+    // SysCheck sys;
+    // TrojenCheck t;
+    // t.check("/home/krishna/Build-Libs/ossec-hids/src/rootcheck/db/rootkit_trojans.txt");
+    // sys.check("/home/krishna/Build-Libs/ossec-hids/src/rootcheck/db/rootkit_files.txt");
+    RootCheck root;
+    root.check();
     closelog();
     return 0; 
 }

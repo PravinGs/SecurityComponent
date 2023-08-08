@@ -98,8 +98,9 @@ public:
         return (0);
     }
 
-    void check(const char *basedir)
+    int check()
     {
+        const char *basedir = "/";
         char file_path[OS_SIZE_1024 + 1];
 
         devTotal = 0;
@@ -114,7 +115,7 @@ public:
             string opMessage = "No problem detected on the /dev directory. Analyzed " + std::to_string(devTotal) + " files";
             AgentUtils::writeLog(opMessage, SUCCESS);
         }
-        return;
+        return SUCCESS;
     }
 
 
