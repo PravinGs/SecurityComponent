@@ -1,32 +1,79 @@
-#include "agentUtils.hpp"
-// #include "rootkit/interface_check.hpp"
-// #include "rootkit/ports_check.hpp"
-// #include "rootkit/dev_check.hpp"
-// #include "rootkit/process_check.hpp"
-// #include "rootkit/sysfile_check.hpp"
-// #include "rootkit/trojen_check.hpp"
+#include <regex>
+#include <iostream>
+#include "service/configservice.hpp"
 
-#include "rootkit/root_check.hpp"
+using namespace std;
 
-int main() {
-    openlog("agent", LOG_INFO | LOG_CONS, LOG_USER);
-    
-    // InterfaceCheck process;
-    // PortCheck port;
-    // port.check();
-    // DevCheck dev;
-    // ProcessCheck process;
-    // int result = process.check();
-    // cout << "Response is " << result << endl;
-    // SysCheck sys;
-    // TrojenCheck t;
-    // t.check("/home/krishna/Build-Libs/ossec-hids/src/rootcheck/db/rootkit_trojans.txt");
-    // sys.check("/home/krishna/Build-Libs/ossec-hids/src/rootcheck/db/rootkit_files.txt");
-    RootCheck root;
-    root.check();
-    closelog();
-    return 0; 
+int main()
+{
+    IniConfig config;
+    map<string, map<int, AConfig>> table;
+    config.readRuleConfig("/home/krishna/security/Agent/config/rules.config", table);
+    for (const auto& pair: table)
+    {
+        cout << pair.first << ":" << endl;
+        for (const auto &content: pair.second)
+        {
+            AConfig config = content.second;
+            cout << "RuleId      : " << content.first << endl;
+            cout << "Level       : " << config.level << endl;
+            cout << "Description : " << config.description << endl;
+        }
+    }
+    return 0;
 }
+
+// int main()
+// {
+//     // IniConfig conf;
+//     // string line = "nkfjfdhe";
+//     // if (conf.validateText(line))
+//     // {
+//     //     cout << "Success" << endl;
+//     // }
+//     // cout << line << endl;
+//     // string log     = "error: connect to example.com port 80 failed: Connection refused";
+//     // regex error(R"(error: connect to [^\s]+ port \d+ failed: Connection refused)");
+//     // smatch matches;
+//     // if (regex_search(log, matches, error))
+//     // {
+//     //     cout << "Found : " << matches.str() << endl; 
+//     // }else{
+//     //     cout << "Not Found" << endl;
+//     // }   
+//     return 0;
+// }
+
+
+// #include "agentUtils.hpp"
+// // #include "rootkit/interface_check.hpp"
+// // #include "rootkit/ports_check.hpp"
+// // #include "rootkit/dev_check.hpp"
+// // #include "rootkit/process_check.hpp"
+// // #include "rootkit/sysfile_check.hpp"
+// // #include "rootkit/trojen_check.hpp"
+
+// #include "rootkit/root_check.hpp"
+
+// int main() {
+//     openlog("agent", LOG_INFO | LOG_CONS, LOG_USER);
+    
+//     // InterfaceCheck process;
+//     // PortCheck port;
+//     // port.check();
+//     // DevCheck dev;
+//     // ProcessCheck process;
+//     // int result = process.check();
+//     // cout << "Response is " << result << endl;
+//     // SysCheck sys;
+//     // TrojenCheck t;
+//     // t.check("/home/krishna/Build-Libs/ossec-hids/src/rootcheck/db/rootkit_trojans.txt");
+//     // sys.check("/home/krishna/Build-Libs/ossec-hids/src/rootcheck/db/rootkit_files.txt");
+//     RootCheck root;
+//     root.check();
+//     closelog();
+//     return 0; 
+// }
 
 // #include <iostream>
 // #include <cstring>
