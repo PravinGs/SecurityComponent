@@ -1,7 +1,7 @@
 CXX = g++
 CFLAGS = -Wall -Werror -std=c++1z -g
 INCLUDES = -Iinclude
-LFLAGS = -lamqpcpp -lpthread -ldl -lev -ljsoncpp -lz -lcurl -lssl -lcrypto -lboost_system -lpcre2-8
+LFLAGS = -lamqpcpp -lpthread -ldl -lev -ljsoncpp -lz -lcurl -lssl -lcrypto -lboost_system  -lgtest -lgtest_main
 
 # Source files and directories
 SRC_DIR = src
@@ -32,11 +32,11 @@ test: $(TEST_TARGET)
 
 $(TEST_TARGET): $(TEST_OBJS) $(OBJS)
 	@mkdir -p $(BIN_DIR)
-	$(CXX) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LFLAGS)
+	$(CXX) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LFLAGS) 
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CFLAGS) $(INCLUDES) -c $< -o $@ $(LFLAGS)
+	$(CXX) $(CFLAGS) $(INCLUDES) -c $< -o $@ $(LFLAGS) 
 
 $(OBJ_DIR)/%.o: $(TEST_DIR)/%.cpp
 	@mkdir -p $(dir $@)

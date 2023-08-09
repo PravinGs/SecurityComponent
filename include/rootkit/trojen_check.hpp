@@ -37,6 +37,7 @@ private:
     }
 
 public:
+
     int check(const string filePath)
     {
         fstream fp(filePath, std::ios::in);
