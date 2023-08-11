@@ -83,6 +83,50 @@ const int BUFFER_SIZE = 1024;
 const int UDP_PORT = 8080;
 
 typedef struct SYS_PROPERTIES SYS_PROPERTIES;
+typedef struct AConfig AConfig;
+typedef struct LOG_EVENT LOG_EVENT;
+
+struct AConfig
+{
+    int id;
+    int child_id; /*<if_sid>*/
+    int max_log_size; /*1024*/
+    int level; /*1 - 16*/
+    int alert; /*1 or 0*/
+    int frequency; /**/
+    int p_frequency; /*Not in the rules.xml*/
+    int timeframe;
+    string name; /*Name is a decoder name*/
+    string regex; /*pcre2*/
+    string description;
+    string info;
+    string group;
+    string src_ip;
+    string dst_ip;
+    int src_port;
+    int dst_port;
+    string options;
+
+    void addFrequency()
+    {
+        p_frequency++;
+    }
+    int checkFrequencyAlert()
+    {
+        return (frequency <= p_frequency) ? 1 : 0 ;
+    }
+};
+
+
+struct LOG_EVENT
+{
+    size_t size;
+    string log;
+    string format; /*syslog, auth, dpkg, netstat, port*/
+    string timestamp;
+    string program;
+    string user;
+};
 
 namespace Monitor
 {
