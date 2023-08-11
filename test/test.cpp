@@ -1,25 +1,30 @@
 #include <regex>
 #include <iostream>
 #include "service/configservice.hpp"
+#include "service/loganalysis.hpp"
 
 using namespace std;
 
 int main()
 {
-    IniConfig config;
-    map<string, map<int, AConfig>> table;
-    config.readRuleConfig("/home/krishna/security/Agent/config/rules.config", table);
-    for (const auto& pair: table)
-    {
-        cout << pair.first << ":" << endl;
-        for (const auto &content: pair.second)
-        {
-            AConfig config = content.second;
-            cout << "RuleId      : " << content.first << endl;
-            cout << "Level       : " << config.level << endl;
-            cout << "Description : " << config.description << endl;
-        }
-    }
+    // IniConfig config;
+    // map<string, map<int, AConfig>> table;
+    // config.readRuleConfig("/home/krishna/security/Agent/config/rules.config", table);
+    // for (const auto& pair: table)
+    // {
+    //     cout << pair.first << ":" << endl;
+    //     for (const auto &content: pair.second)
+    //     {
+    //         AConfig config = content.second;
+    //         cout << "RuleId      : " << content.first << endl;
+    //         cout << "Name        : " << config.name << endl;
+    //         cout << "Level       : " << config.level << endl;
+    //         cout << "Alert       : " << config.alert << endl;
+    //         cout << "Description : " << config.description << endl;
+    //     }
+    // }
+    LogAnalysis analysis;
+    analysis.start("/etc/scl/log/archives/2023/Aug/3-auth");
     return 0;
 }
 
