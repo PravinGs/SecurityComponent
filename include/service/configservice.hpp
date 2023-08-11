@@ -19,40 +19,8 @@
 #define R_DST_PORT "dst_port"
 #define R_OPTIONS "options"
 
-
 #include "agentUtils.hpp"
 
-
-struct AConfig
-{
-    int id;
-    int child_id; /*<if_sid>*/
-    int max_log_size; /*1024*/
-    int level; /*1 - 16*/
-    int alert; /*1 or 0*/
-    int frequency; /**/
-    int p_frequency; /*Not in the rules.xml*/
-    int timeframe;
-    string name; /*Name is a decoder name*/
-    string regex; /*pcre2*/
-    string description;
-    string info;
-    string group;
-    string src_ip;
-    string dst_ip;
-    int src_port;
-    int dst_port;
-    string options;
-
-    void addFrequency()
-    {
-        p_frequency++;
-    }
-    int checkFrequencyAlert()
-    {
-        return (frequency <= p_frequency) ? 1 : 0 ;
-    }
-};
 
 class IniConfig
 {
@@ -310,6 +278,7 @@ public:
 
     int readRuleConfig(const string path, map<string, map<int, AConfig>> &table)
     {
+        AConfig config;
         int result = SUCCESS;
         fstream file(path, std::ios::in | std::ios::binary);
         string line, currentSection;
@@ -354,8 +323,6 @@ public:
                     int digit;
                     AConfig config;
                     digit = isDigit(key);
-                    cout << "key     : " << key << endl;
-                    cout << "rule id : " << digit << endl;
                     if (digit < 0)
                     {
                         AgentUtils::writeLog("Invalid rule id set expecting integer", FAILED);
@@ -374,6 +341,13 @@ public:
                         result = FAILED;
                         break;
                     }
+                    if (currentSection.empty())
+                    {
+                        AgentUtils::writeLog("No Log name specified", FAILED);
+                        result = FAILED;
+                        break;
+                    }
+                    config.name = currentSection;
                     table[currentSection][config.id] = config;
                 }
             }
