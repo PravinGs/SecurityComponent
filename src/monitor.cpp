@@ -42,7 +42,7 @@ void MonitorService::_getProcessIds()
 
     if (dir == NULL)
     {
-        cout << "Error opening directory." << endl;
+        AgentUtils::writeLog(INVALID_PATH + PROC, FAILED);
         return;
     }
     while ((entry = readdir(dir)) != NULL)
@@ -97,7 +97,7 @@ int MonitorService::_saveLog(const string path, vector<Monitor::Data> logs, vect
     Json::StreamWriterBuilder writerBuilder;
     if (!file)
     {
-        AgentUtils::writeLog("No file exist to write App Log [ " + path + " ]", FAILED);
+        AgentUtils::writeLog(FWRITE_FAILED + path, FAILED);
         return FAILED;
     }
     if ((int)columns.size() != 5)
@@ -126,13 +126,13 @@ int MonitorService::_saveLog(const string path, vector<Monitor::Data> logs, vect
     writer->write(jsonData, &file);
 
     file.close();
-    AgentUtils::writeLog("Log written to " + path, SUCCESS);
+    AgentUtils::writeLog(FWRITE_SUCCESS + path, SUCCESS);
     return SUCCESS;
 }
 
 int MonitorService::getData(const string writePath, vector<string> columns)
 {
-    AgentUtils::writeLog("Request for collecting Monitor Logs");
+    AgentUtils::writeLog("Request for collecting Monitor Logs", DEBUG);
     vector<Monitor::Data> parent;
     _getProcessIds();
     for (int i = 0; i < (int)this->_processIds.size(); i++)
@@ -146,7 +146,7 @@ int MonitorService::getData(const string writePath, vector<string> columns)
         Monitor::Data child(std::to_string(processId), processName, std::to_string(cpuTime), std::to_string(memUsage), std::to_string(diskUsage));
         parent.push_back(child);
     }
-    AgentUtils::writeLog("Monitor Log collected");
+    AgentUtils::writeLog("Monitor Log collected", INFO);
     return _saveLog(writePath, parent, columns);
 }
 
@@ -163,7 +163,7 @@ double MonitorService::_getMemoryUsage(const unsigned int processId)
     std::ifstream file(path);
     if (!file)
     {
-        AgentUtils::writeLog("Failed to open /proc/[PID]/statm file.", FAILED);
+        AgentUtils::writeLog(FILE_ERROR + path, FAILED);
         return memoryPercentage;
     }
     std::getline(file, line);
@@ -191,7 +191,7 @@ Monitor::CpuTable MonitorService::_readProcessingTimeById(const unsigned int pro
     if (!(file.is_open()))
     {
         Monitor::CpuTable emptyTable;
-        AgentUtils::writeLog("Failed to open " + path + " check it's path and permission.", FAILED);
+        AgentUtils::writeLog(FILE_ERROR + path, FAILED);
         return emptyTable;
     }
     std::getline(file, line);
@@ -246,7 +246,7 @@ double MonitorService::_getDiskUsage(const unsigned int processId)
 
 Monitor::SYS_PROPERTIES MonitorService::getSystemProperties()
 {
-    AgentUtils::writeLog("Request for collecting Availed System Properties");
+    AgentUtils::writeLog("Request for collecting availed system properties started...", INFO);
     struct Monitor::SYS_PROPERTIES properties;
     struct statvfs buffer;
     if (statvfs("/", &buffer) == 0)
@@ -293,7 +293,7 @@ Monitor::SYS_PROPERTIES MonitorService::getSystemProperties()
 
 Monitor::SYS_PROPERTIES MonitorService::getAvailedSystemProperties()
 {
-    AgentUtils::writeLog("Request for collecting Availed System Properties");
+    AgentUtils::writeLog("Request for collecting availed system properties started..", INFO);
     struct Monitor::SYS_PROPERTIES properties;
     struct statvfs buffer;
     if (statvfs("/", &buffer) == 0)

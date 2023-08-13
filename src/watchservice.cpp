@@ -13,7 +13,7 @@ bool isDirectoryExist(const string directory)
 {
     if (!(std::filesystem::exists(directory) && std::filesystem::is_directory(directory)))
     {
-        AgentUtils::writeLog("No such directory : " + directory, FAILED);
+        AgentUtils::writeLog(INVALID_PATH + directory, FAILED);
         return false;
     }
     return true;

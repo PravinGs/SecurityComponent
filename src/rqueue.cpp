@@ -16,7 +16,7 @@ int Queue::_parseJSON(string jsonFile, string &json)
     std::ifstream file(jsonFile);
     if (!file.is_open())
     {
-        AgentUtils::writeLog("Failed to open the JSON file : " + jsonFile, FAILED);
+        AgentUtils::writeLog(FILE_ERROR + jsonFile, FAILED);
         return FAILED;
     }
 

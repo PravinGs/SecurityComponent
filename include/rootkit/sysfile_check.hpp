@@ -1,5 +1,7 @@
 #ifndef SYSFILES_CHECK
 #define SYSFILES_CHECK
+#pragma once
+
 
 #include "agentUtils.hpp"
 
@@ -60,7 +62,7 @@ class SysCheck
                     rk_sys_name[rk_sys_count] = name;
                     if (rk_sys_name[rk_sys_count].empty() || rk_sys_file[rk_sys_count].empty()) 
                     {
-                        AgentUtils::writeLog("Could not acquire memory");
+                        AgentUtils::writeLog("Could not acquire memory", WARNING);
                         rk_sys_file[rk_sys_count].clear();
                         rk_sys_name[rk_sys_count].clear();
                     }

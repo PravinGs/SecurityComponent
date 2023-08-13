@@ -46,7 +46,7 @@ public:
     int parseToAConfig(string rule, AConfig &config)
     {
         int returnVal = SUCCESS;
-        if (rule.empty()) { AgentUtils::writeLog("Empty Rule received (AConfig)", WARNING); return FAILED; }
+        if (rule.empty()) { AgentUtils::writeLog("Empty Rule received (AConfig)", WARNING); return WARNING; }
         const char splitter = ':';
         const char delimeter = ',';
         string attribute;
@@ -117,7 +117,7 @@ public:
                 int digit = isDigit(value);
                 if (digit < 0)
                 {
-                    AgentUtils::writeLog("Invalid frequency value set expecting integer", FAILED);
+                    AgentUtils::writeLog("Invalid frequency value specified, expecting integer", FAILED);
                     returnVal = FAILED;
                     break;
                 }
@@ -128,7 +128,7 @@ public:
                 int digit = isDigit(value);
                 if (digit < 0)
                 {
-                    AgentUtils::writeLog("Invalid TimeFrame value set expecting integer", FAILED);
+                    AgentUtils::writeLog("Invalid TimeFrame value specified, expecting integer", FAILED);
                     returnVal = FAILED;
                     break;
                 }
@@ -138,7 +138,7 @@ public:
             {
                 if (value.empty())
                 {
-                    AgentUtils::writeLog("No Regex Pattern specified", FAILED);
+                    AgentUtils::writeLog("Regex pattern not specified", FAILED);
                     returnVal = FAILED;
                     break;
                 }
@@ -148,7 +148,7 @@ public:
             {
                 if (value.empty())
                 {
-                    AgentUtils::writeLog("No src_ip Pattern specified", FAILED);
+                    AgentUtils::writeLog("src_ip pattern not specified", FAILED);
                     returnVal = FAILED;
                     break;
                 }
@@ -159,7 +159,7 @@ public:
                 int digit = isDigit(value);
                 if (digit < 0)
                 {
-                    AgentUtils::writeLog("Invalid src_port value set expecting integer", FAILED);
+                    AgentUtils::writeLog("Invalid src_port value specified, expecting integer", FAILED);
                     returnVal = FAILED;
                     break;
                 }
@@ -169,7 +169,7 @@ public:
             {
                 if (value.empty())
                 {
-                    AgentUtils::writeLog("No dst_ip Pattern specified", FAILED);
+                    AgentUtils::writeLog("dst_ip pattern not specified", FAILED);
                     returnVal = FAILED;
                     break;
                 }
@@ -180,7 +180,7 @@ public:
                 int digit = isDigit(value);
                 if (digit < 0)
                 {
-                    AgentUtils::writeLog("Invalid dst_port value set expecting integer", FAILED);
+                    AgentUtils::writeLog("Invalid dst_port value specofied, expecting integer", FAILED);
                     returnVal = FAILED;
                     break;
                 }
@@ -218,7 +218,7 @@ public:
             }
             else
             {
-                AgentUtils::writeLog("Unknown Rule attribute found : ( " + value + " )", FAILED);
+                AgentUtils::writeLog("Unknown rule attribute found : <" + value + ">", FAILED);
                 returnVal = FAILED;
                 break;
             }
@@ -231,7 +231,7 @@ public:
         std::ofstream file(filePath, std::ios::trunc);
         if (file.is_open())
         {
-            AgentUtils::writeLog("Cleaning the json " + filePath, SUCCESS);
+            AgentUtils::writeLog(CLEAN_FILE + " <" + filePath + ">", SUCCESS);
             file.close();
             return SUCCESS;
         }
@@ -286,7 +286,7 @@ public:
 
         if (!file)
         {
-            AgentUtils::writeLog("Failed to open " + path + " check file path and file permission", FAILED);
+            AgentUtils::writeLog(FILE_ERROR + path, FAILED);
             return FAILED;
         }
 
@@ -304,7 +304,8 @@ public:
             }
             else if (line[0] == '[' && line[line.size() - 1] != ']')
             {
-                AgentUtils::writeLog("Invalid Config file : " + path + " [ line number " + std::to_string(index) + " ]", FAILED);
+                AgentUtils::writeLog(INVALID_FILE + path, FAILED);
+                AgentUtils::writeLog("Invalid format at line " + std::to_string(index) + " : Missing closing square bracket", INFO);
                 result = FAILED;
                 break;
             }
@@ -316,7 +317,8 @@ public:
                     string key = trim(line.substr(0, delimiter));
                     if (!validateText(key))
                     {
-                        AgentUtils::writeLog("Invalid Config file : line number " + std::to_string(index), FAILED);
+                        AgentUtils::writeLog(INVALID_FILE + path, FAILED);
+                        AgentUtils::writeLog("Invalid format at line " + std::to_string(index) + " : Found ';' in key", DEBUG);
                         result = FAILED;
                         break;
                     }
@@ -325,7 +327,7 @@ public:
                     digit = isDigit(key);
                     if (digit < 0)
                     {
-                        AgentUtils::writeLog("Invalid rule id set expecting integer", FAILED);
+                        AgentUtils::writeLog("Invalid rule id specified" + key + " : expecting number", FAILED);
                         result = FAILED;
                         break;
                     }
@@ -336,7 +338,7 @@ public:
                     
                     if (parseToAConfig(value, config) == FAILED)
                     {
-                        AgentUtils::writeLog("Failed to parse log ( " + value + " )", FAILED);
+                        AgentUtils::writeLog(INVALID_FILE + path, FAILED);
                         AgentUtils::writeLog("Invalid Config file : line number " + std::to_string(index), FAILED);
                         result = FAILED;
                         break;
@@ -365,7 +367,7 @@ public:
 
         if (!file)
         {
-            AgentUtils::writeLog("Failed to open " + path + " check file path and file permission", FAILED);
+            AgentUtils::writeLog(INVALID_FILE + path, FAILED);
             return FAILED;
         }
 
@@ -383,7 +385,8 @@ public:
             }
             else if (line[0] == '[' && line[line.size() - 1] != ']')
             {
-                AgentUtils::writeLog("Invalid Config file : " + path + " [ line number " + std::to_string(index) + " ]", FAILED);
+                AgentUtils::writeLog(INVALID_FILE + path, FAILED);
+                AgentUtils::writeLog("Invalid Config file : line number " + std::to_string(index), FAILED);
                 result = FAILED;
                 break;
             }

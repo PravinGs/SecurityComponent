@@ -33,9 +33,10 @@
 #include <csignal>
 #include <filesystem>
 #include <curl/curl.h>
-#include <croncpp.h>
 #include <boost/asio.hpp>
 #include <zlib.h>
+#include <regex>
+#include "service/croncpp.h"
 
 using std::cerr;
 using std::cout;
@@ -46,6 +47,29 @@ using std::map;
 using std::string;
 using std::vector;
 
+#define DEBUG         0
+#define INFO          1
+#define WARNING       2
+#define ERROR         3
+#define CRITICAL      4
+#define FATAL         5
+#define ALARM         6
+
+#define SUCCESS       8
+#define FAILED        ERROR
+
+const string FILE_ERROR = "File not found or permission denied: ";
+const string CLEAN_FILE = "File emptied: ";
+const string INVALID_FILE = "Invalid files: ";
+const string FCREATION_FAILED = "File creation failed: Unable to create file ";
+const string FREAD_FAILED = "Failed to read from file: Unable to read data from ";
+const string FWRITE_FAILED = "Failed to write to file: Unable to write data to ";
+const string FWRITE_SUCCESS = "Successfully wrote to file: Wrote data to ";
+const string FDELETE_FAILED = "Failed to delete a file: Unable to delete  ";
+const string FDELETE_SUCCESS = "Successfully deleted file: Deleted ";
+const string INVALID_PATH = "Path not found: ";
+const string NPATH = "Successfully created: ";
+
 #define OS_SIZE_1024 1024
 #define PATH_MAX 4096
 #define MAX_PID 32768
@@ -54,29 +78,12 @@ using std::vector;
 #define PID  1
 #define TASK 2
 
-#define FAILED -1
-#define SUCCESS 1
-#define WARNING 0
-
-/* Log Levels */
-#define NONE 0
-#define TRACE 1
-#define DEBUG 2
-#define WARN 3
-#define ERROR 4
-#define CRITICAL 5
-
-#define INTERACTION 2
-#define STANDARD 3
-#define ALARM 4
-
 #define POST_SUCCESS 200L
 #define SERVER_ERROR 10
 #define BASE_LOG_DIR "/etc/scl/log/"
 #define BASE_LOG_ARCHIVE "archives/"
 #define BASE_CONFIG_TMP "tmp/"
 #define BASE_CONFIG_DIR "/etc/scl/config/"
-// #define BASE_CONFIG_DIR "/etc/scl/config/agent/agent.config"
 
 const vector<string> MONTHS = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 const int BUFFER_SIZE = 1024;

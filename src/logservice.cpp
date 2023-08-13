@@ -18,7 +18,7 @@ std::time_t LogService::_convertToTime(const string &datetime)
     return std::mktime(&tm);
 }
 
-int LogService::_saveLog(Json::Value &json, string path, const vector<string> logs, const vector<string> columns, char delimeter)
+int LogService::_saveAsJSON(Json::Value &json, string path, const vector<string> logs, const vector<string> columns, char delimeter)
 {
     if (verifyJsonPath(path) == FAILED)
     {
@@ -28,7 +28,7 @@ int LogService::_saveLog(Json::Value &json, string path, const vector<string> lo
     Json::StreamWriterBuilder writerBuilder;
     if (!file)
     {
-        AgentUtils::writeLog("Failed to write " + path + " check file path and file permission", FAILED);
+        AgentUtils::writeLog(FWRITE_FAILED + path, FAILED);
         return FAILED;
     }
 
@@ -156,7 +156,7 @@ int LogService::_readSysLog(Json::Value &json, string path, vector<string> &logs
     fstream file(path, std::ios::in);
     if (!file)
     {
-        AgentUtils::writeLog("Failed to read " + path + " check file path and file permission", FAILED);
+        AgentUtils::writeLog(FILE_ERROR + path, FAILED);
         return FAILED;
     }
 
@@ -232,6 +232,8 @@ int LogService::_readSysLog(Json::Value &json, string path, vector<string> &logs
 
 int LogService::getSysLog(string appName, Json::Value &json, vector<string> names, const string path, string &previousTime, vector<string> levels, const char remote)
 {
+    string logDir = BASE_LOG_DIR;
+    logDir += BASE_LOG_ARCHIVE;
     const char delimeter = ' ';
     vector<string> logs;
     string nextReadingTime = previousTime;
@@ -240,6 +242,7 @@ int LogService::getSysLog(string appName, Json::Value &json, vector<string> name
 
     if (strcmp(appName.c_str(), "syslog") == 0 || strcmp(appName.c_str(), "auth") == 0)
     {
+        
         if (remote == 'y' || remote == 'Y')
         {
             UdpQueue queue;
@@ -252,12 +255,12 @@ int LogService::getSysLog(string appName, Json::Value &json, vector<string> name
         }
         if (logs.size() == 0 || result == FAILED)
         {
-            AgentUtils::writeLog("Read 0 logs for or failed in operation" + appName);
+            AgentUtils::writeLog("Read 0 logs for" + appName);
         }
         else
         {
             previousTime = nextReadingTime;
-            AgentUtils::writeLog(appName + " logs collected", SUCCESS);
+            AgentUtils::writeLog(appName + " logs collected", INFO);
             if (_configService.toVector(logs[0], '|').size() < names.size())
             {
                 AgentUtils::writeLog("Invalid Log Attributes configured for " + appName, FAILED);
@@ -265,16 +268,18 @@ int LogService::getSysLog(string appName, Json::Value &json, vector<string> name
             }
             else
             {
-                result = _saveLog(json, nextReadingTime + "-" + appName, logs, names, '|');
+                result = _saveAsJSON(json, nextReadingTime + "-" + appName, logs, names, '|');
             }
 
+            AgentUtils::writeLog("Storing " + appName + " logs started", INFO);
             if ((result = saveToLocal(logs, appName)) == SUCCESS)
             {
-                AgentUtils::writeLog("Log archive stored in /etc/scl/log/ directory", SUCCESS);
+                
+                AgentUtils::writeLog(FWRITE_SUCCESS + logDir, INFO);
             }
             else
             {
-                AgentUtils::writeLog("Failed to store the archive locally", FAILED);
+                AgentUtils::writeLog(FWRITE_FAILED + logDir, FAILED);
             }
         }
     }
@@ -288,13 +293,14 @@ int LogService::getSysLog(string appName, Json::Value &json, vector<string> name
         }
         else
         {
+            AgentUtils::writeLog("Storing " + appName + " logs started", INFO);
             if ((result = saveToLocal(logs, appName)) == SUCCESS)
             {
-                AgentUtils::writeLog("Log archive stored in /etc/scl/log/ directory", SUCCESS);
+                AgentUtils::writeLog(FWRITE_SUCCESS + logDir, INFO);
             }
             else
             {
-                AgentUtils::writeLog("Failed to store the archive locally", FAILED);
+               AgentUtils::writeLog(FWRITE_FAILED + logDir, FAILED);
             }
         }
     }
@@ -322,7 +328,7 @@ int LogService::getAppLog(Json::Value &json, vector<string> names, const string 
         {
             return FAILED;
         }
-        AgentUtils::writeLog("Applog collected from " + path, SUCCESS);
+        AgentUtils::writeLog("Applog collected from " + path, INFO);
         index--;
     }
 
@@ -332,7 +338,7 @@ int LogService::getAppLog(Json::Value &json, vector<string> names, const string 
         return FAILED;
     }
     previousTime = nextReadingTime;
-    return _saveLog(json, writePath, logs, names, delimeter);
+    return _saveAsJSON(json, writePath, logs, names, delimeter);
 }
 
 int LogService::_readAppLog(Json::Value &json, string path, vector<string> &logs, const char delimeter, const string previousTime, bool &flag, vector<string> levels, string &nextReadingTime)
@@ -343,7 +349,7 @@ int LogService::_readAppLog(Json::Value &json, string path, vector<string> &logs
     bool isCriticalLog = false;
     if (!file)
     {
-        AgentUtils::writeLog("Reading App Log Invalid configuration Path [ " + path + " ]", FAILED);
+        AgentUtils::writeLog(FILE_ERROR + path, FAILED);
         return FAILED;
     }
 
@@ -444,7 +450,7 @@ int LogService::verifyJsonPath(string &timestamp)
     std::ofstream file(filePath);
     if (!file)
     {
-        cerr << "Check File Permission" << endl;
+        AgentUtils::writeLog(FILE_ERROR + filePath, FAILED);
         return FAILED;
     }
     file.close();
@@ -460,7 +466,7 @@ int LogService::readDpkgLog(const string path, vector<string> &logs, string &pre
     fstream file(path, std::ios::in);
     if (!file)
     {
-        AgentUtils::writeLog("Failed to read " + path + " check file path and file permission", FAILED);
+        AgentUtils::writeLog(FILE_ERROR + path, FAILED);
         return FAILED;
     }
 

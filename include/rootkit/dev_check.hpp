@@ -1,7 +1,6 @@
 #ifndef DEV_FOLDER_CHECK
 #define DEV_FOLDER_CHECK
-
-
+#pragma once
 /*
     #ifdef SOLARIS
         ".devfsadm_dev.lock",
@@ -39,11 +38,10 @@ private:
 public:
     int read_dev_file(const string file_name)
     {
-        cout << "Reading " << file_name << endl;
         std::filesystem::path file_path(file_name);
         if (!std::filesystem::exists(file_path)) 
         {
-            AgentUtils::writeLog(file_name + ": Not exist", FAILED);
+            AgentUtils::writeLog(INVALID_PATH + file_name, FAILED);
             return FAILED;
         }
         if (std::filesystem::is_directory(file_path)) 
@@ -62,12 +60,11 @@ public:
 
     int read_dev_dir(const string dir_name)
     {
-        cout << "Reading " << dir_name << endl;
         
         if (dir_name.empty() || dir_name.length() > PATH_MAX) 
         {
             string error = dir_name;
-            AgentUtils::writeLog(error + ": Invalid director given.", FAILED);
+            AgentUtils::writeLog(INVALID_PATH + error, FAILED);
             return -1;
         }
 
@@ -105,7 +102,7 @@ public:
 
         devTotal = 0;
         devErrors = 0;
-        AgentUtils::writeLog("Starting on check_rc_dev");
+        AgentUtils::writeLog("Starting on check_rc_dev", INFO);
 
         snprintf(file_path, OS_SIZE_1024, "%s/dev", basedir);
 

@@ -1,6 +1,8 @@
 #ifndef INTERFACE_ROOT_CHECK
 #define INTERFACE_ROOT_CHECK
 
+#pragma once
+
 #include "agentUtils.hpp"
 
 #define PROMISCOUS "ifconfig %s | grep PROMISC > /dev/null 2>&1"
@@ -37,7 +39,7 @@ public:
     
     int check()
     {
-        AgentUtils::writeLog("Checking Network Interfaces starting");
+        AgentUtils::writeLog("Checking Network Interfaces starting", INFO);
         fd = socket(AF_INET, SOCK_DGRAM, 0);
 
         if (fd < 0)
@@ -64,7 +66,6 @@ public:
         {
             strncpy(_ifr.ifr_name, _ir->ifr_name, sizeof(_ifr.ifr_name));
             
-            cout << "_ifr.ifr_name : " << _ifr.ifr_name << endl;
             // Get information from each interface
             if (ioctl(fd, SIOCGIFFLAGS, (char *)&_ifr) == -1) {
                 continue;
@@ -93,7 +94,7 @@ public:
         close(fd);
 
         if (errors == 0) {
-            std::cout << "No problem detected on ifconfig/ifs. Analyzed " << total << " interfaces." << std::endl;
+            AgentUtils::writeLog("No problem detected on ifconfig/ifs. Analyzed " + total + " interfaces", INFO);
         }
 
         return SUCCESS;

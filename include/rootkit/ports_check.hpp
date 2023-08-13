@@ -1,7 +1,9 @@
 #ifndef PORT_CHCEK
 #define PORT_CHECK
+#pragma once
 
 #include "agentUtils.hpp"
+
 #define NETSTAT "netstat -an | grep \"^%s\" | " \
                 "grep \"[^0-9]%d \" > /dev/null 2>&1"
 

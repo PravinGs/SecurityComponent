@@ -1,5 +1,6 @@
 #ifndef ROOT_CHECK
 #define ROOT_CHECK
+#pragma once
 
 #include "rootkit/dev_check.hpp"
 #include "rootkit/interface_check.hpp"
@@ -20,7 +21,7 @@ class RootCheck
         ProcessCheck processCheck;
         PortCheck portCheck;
         DevCheck devCheck;
-        InterfaceCheck interfaceCheck;
+        interfaceCheck interfaceCheck;
         string trojanSourceFile;
         string sysSourceFile;
 
@@ -39,53 +40,57 @@ class RootCheck
 
         int check()
         {
-            AgentUtils::writeLog("Starting Trojan Root Check.");
+            AgentUtils::writeLog("Starting trojan root check.", INFO);
             if (trojanCheck.check(trojanSourceFile))
             {
-                AgentUtils::writeLog("Trojan Root Check completed successfully.", SUCCESS);
+                AgentUtils::writeLog("Trojan root check completed successfully.", SUCCESS);
             }
             else
             {
-                AgentUtils::writeLog("Trojan Root Check failed", FAILED);
+                AgentUtils::writeLog("Trojan root check failed", FAILED);
             }
-            AgentUtils::writeLog("Starting SysFiles Root Check.");
+            AgentUtils::writeLog("Completed trojan root check.", INFO);
+            AgentUtils::writeLog("Starting sysfiles root check.");
             if (sysCheck.check(sysSourceFile))
             {
-                AgentUtils::writeLog("SysFiles Root Check completed successfully.", SUCCESS);
+                AgentUtils::writeLog("SysFiles root check completed successfully.", SUCCESS);
             }
             else
             {
-                AgentUtils::writeLog("SysFiles Root Check failed", FAILED);
+                AgentUtils::writeLog("Sysfiles root check failed", FAILED);
             }
-            AgentUtils::writeLog("Starting Network Interface Root Check.");
+            AgentUtils::writeLog("Completed sysfiles root check.");
+            AgentUtils::writeLog("Starting network interface root check.", INFO);
             if (interfaceCheck.check())
             {
-                AgentUtils::writeLog("Network Interface  Root Check completed successfully.", SUCCESS);
+                AgentUtils::writeLog("network interface  root check completed successfully.", SUCCESS);
             }
             else
             {
-                AgentUtils::writeLog("Network Interface Root Check failed", FAILED);
+                AgentUtils::writeLog("network interface root check failed", FAILED);
             }
-            AgentUtils::writeLog("Starting dev Root Check.");
+            AgentUtils::writeLog("Completed network interface root Check.", INFO);
+            AgentUtils::writeLog("Starting dev root check.", INFO);
             if (devCheck.check())
             {
-                AgentUtils::writeLog("dev Root Check completed successfully.", SUCCESS);
+                AgentUtils::writeLog("dev root check completed successfully.", SUCCESS);
             }
             else
             {
-                AgentUtils::writeLog("dev Root Check failed", FAILED);
+                AgentUtils::writeLog("dev root check failed", FAILED);
             }
-            AgentUtils::writeLog("Starting Process Root Check");
+            AgentUtils::writeLog("Completed dev root check.", INFO);
+            AgentUtils::writeLog("Starting process root check", INFO);
             AgentUtils::writeLog("This process might take more time");
             if (processCheck.check())
             {
-                AgentUtils::writeLog("Process Root Check completed successfully.", SUCCESS);
+                AgentUtils::writeLog("Process root check completed successfully.", SUCCESS);
             }
             else
             {
-                 AgentUtils::writeLog("Process Root Check failed", FAILED);
+                 AgentUtils::writeLog("Process root check failed", FAILED);
             }
-
+            AgentUtils::writeLog("Completed process root check", INFO);
             return SUCCESS;
         }
 

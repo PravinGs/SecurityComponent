@@ -1,6 +1,8 @@
 #ifndef PROCESSES_CHECK
 #define PROCESSES_CHECK
 
+#pragma once
+
 #include "agentUtils.hpp"
 
 class ProcessCheck
@@ -82,7 +84,6 @@ class ProcessCheck
 
         int read_proc_file(string file_name, string pid, int position)
         {
-            cout << "starting read_proc_file" << endl;
             struct stat statbuf;
             if (lstat(file_name.c_str(), &statbuf) < 0) {
                 return (-1);
@@ -92,18 +93,16 @@ class ProcessCheck
             if (S_ISDIR(statbuf.st_mode)) {
                 return (read_proc_dir(file_name, pid, position));
             }
-            cout << "ending read_proc_file" << endl;
             return (0);
         }
 
         int read_proc_dir(string dir_name, string pid, int position)
         {
-            cout << "starting read_proc_dir" << endl;
             int result = SUCCESS;
             if (dir_name.empty() || dir_name.length() > PATH_MAX) 
             {
                 string error = dir_name;
-                AgentUtils::writeLog(error + ": Invalid director given.", FAILED);
+                AgentUtils::writeLog(INVALID_PATH + error, FAILED);
                 return -1;
             }
             for (const auto& entry : std::filesystem::directory_iterator(dir_name)) 
@@ -136,13 +135,11 @@ class ProcessCheck
                     break;
                 }
             }
-            cout << "ending read_proc_dir" << endl;
             return result;
         }
 
         int check_rc_readproc(int pid)
         {
-            cout << "starting check_rc_readproc" << endl;
             char char_pid[32];
 
             proc_pid_found = 0;
@@ -155,13 +152,11 @@ class ProcessCheck
 
             snprintf(char_pid, 31, "%d", pid);
             read_proc_dir("/proc", char_pid, PROC_);
-            cout << "ending check_rc_readproc" << endl;
             return (proc_pid_found);
         }
 
         int loopAllPids(string ps)
         {
-            cout << "Starting Loop All Process Id's." << endl;
             int _kill0 = 0; 
             int _kill1 = 0;
             int _gsid0 = 0;
@@ -326,7 +321,6 @@ class ProcessCheck
                     }
                 }
             }
-            cout << "Ending Loop All Process Id's." << endl;
 
             return SUCCESS;
 
@@ -351,14 +345,13 @@ class ProcessCheck
 
             if ((result = loopAllPids(location)))
             {
-                AgentUtils::writeLog("Successfully process check completed.");
+                AgentUtils::writeLog("Successfully process check completed.", INFO);
             }
             if (error == 0) 
             {
                 string op_msg = "No hidden process by Kernel-level rootkits." + location + " is not trojaned. Analyzed " + std::to_string(total) + " processes.";
                 AgentUtils::writeLog(op_msg, SUCCESS);
             }
-            cout << "Ending check function." << endl;
             return result;
         }
 };

@@ -52,7 +52,7 @@ public:
         int result = OS::readRegularFiles(jsonFiles);
         if (result == FAILED)
         {
-            AgentUtils::writeLog("Failed to read json files for " + logName, FAILED);
+            AgentUtils::writeLog(FILE_ERROR + logName, FAILED);
             return FAILED;
         }
 
@@ -193,7 +193,6 @@ public:
             AgentUtils::writeLog("Invalid file " + path, FAILED);
             return "";
         }
-        cout << "AppName : " << name << "\tFile Name : " << nonEmtPath << endl;
         string filePath = BASE_CONFIG_DIR;
         filePath += BASE_CONFIG_TMP + name;
         fstream file(name, std::ios::in);

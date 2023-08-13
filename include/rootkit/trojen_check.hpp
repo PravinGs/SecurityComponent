@@ -1,8 +1,9 @@
 #ifndef TROJEN_CHECK_CPP
 #define TROJEN_CHECK_CPP
+#pragma once
+
 
 #include "agentUtils.hpp"
-#include <regex>
 
 class TrojenCheck
 {
@@ -18,7 +19,7 @@ private:
 
         if (!fp.is_open())
         {
-            AgentUtils::writeLog("Failed to open, check permission ( " + file + " )", FAILED);
+            AgentUtils::writeLog(FILE_ERROR + file, FAILED);
             return false;
         }
         char buffer[OS_SIZE_1024];
@@ -29,7 +30,7 @@ private:
         }
         if (fp.bad())
         {
-            AgentUtils::writeLog("Error reading from file: " + file, FAILED);
+            AgentUtils::writeLog(FREAD_FAILED + file, FAILED);
             return false;
         }
         std::regex regex(pattern);
@@ -44,7 +45,7 @@ public:
         string line;
         if (!fp)
         {
-            AgentUtils::writeLog("Invalid file path ( " + filePath + " )", FAILED);
+            AgentUtils::writeLog(FILE_ERROR + filePath, FAILED);
             return FAILED;
         }
         detected = 0;

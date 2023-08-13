@@ -40,7 +40,7 @@ private:
     map<string, int> _logCategory{{"sys", 2}, {"network", 3}, {"ufw", 4}};
 
 private:
-    int _saveLog(Json::Value &json, const string path, const vector<string> logs, const vector<string> columns, char delimeter);
+    int _saveAsJSON(Json::Value &json, const string path, const vector<string> logs, const vector<string> columns, char delimeter);
     int _transportLog(const string jsonFile, const string appName);
     std::time_t _convertToTime(const std::string &datetime);
     int _readSysLog(Json::Value &json, string path, vector<string> &logs, const char delimeter, string &previousTime, bool &flag, vector<string> levels, string &nextReadingTime);

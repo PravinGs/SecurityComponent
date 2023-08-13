@@ -1,32 +1,25 @@
-#include <regex>
-#include <iostream>
 #include "service/configservice.hpp"
 #include "service/loganalysis.hpp"
 
-using namespace std;
-
 int main()
 {
-    // IniConfig config;
-    // map<string, map<int, AConfig>> table;
-    // config.readRuleConfig("/home/krishna/security/Agent/config/rules.config", table);
-    // for (const auto& pair: table)
-    // {
-    //     cout << pair.first << ":" << endl;
-    //     for (const auto &content: pair.second)
-    //     {
-    //         AConfig config = content.second;
-    //         cout << "RuleId      : " << content.first << endl;
-    //         cout << "Name        : " << config.name << endl;
-    //         cout << "Level       : " << config.level << endl;
-    //         cout << "Alert       : " << config.alert << endl;
-    //         cout << "Description : " << config.description << endl;
-    //     }
-    // }
-    LogAnalysis analysis;
-    analysis.start("/etc/scl/log/archives/2023/Aug/3-auth");
+    string rulePath = "/home/pravin/Desktop/SecurityComponent/config/rules.config";
+    LogAnalysis analysis(rulePath, "syslog");
+    analysis.start("/etc/scl/log/archives/2023/Aug/6-syslog");
     return 0;
 }
+
+/*
+void printLogInfo(LOG_EVENT logInfo)
+    {
+        cout << "size : " << logInfo.size << endl;
+        cout << "log : " << logInfo.log << endl;
+        cout << "format : " << logInfo.format << endl;
+        cout << "timestamp : " << logInfo.timestamp << endl;
+        cout << "program : " << logInfo.program << endl;
+        cout << "user : " << logInfo.user << endl;   
+    }
+*/
 
 // int main()
 // {
@@ -40,12 +33,12 @@ int main()
 //     // string log     = "error: connect to example.com port 80 failed: Connection refused";
 //     // regex error(R"(error: connect to [^\s]+ port \d+ failed: Connection refused)");
 //     // smatch matches;
-//     // if (regex_search(log, matches, error))
-//     // {
-//     //     cout << "Found : " << matches.str() << endl; 
-//     // }else{
-//     //     cout << "Not Found" << endl;
-//     // }   
+    // if (regex_search(log, matches, error))
+    // {
+    //     cout << "Found : " << matches.str() << endl; 
+    // }else{
+    //     cout << "Not Found" << endl;
+    // }   
 //     return 0;
 // }
 

@@ -33,7 +33,7 @@ void AgentUtils::updateLogWrittenTime(const string appName, const string time)
     std::ofstream file(filePath);
     if (!file.is_open())
     {
-        writeLog("Failed to open " + filePath + " check filepath and permission", FAILED);
+        writeLog(INVALID_FILE + filePath, FAILED);
         return;
     }
     file << time;
@@ -126,20 +126,26 @@ void AgentUtils::writeLog(string log, int logLevel)
     switch (logLevel)
     {
     case SUCCESS:
-        file << time << " : SUCCESS : " << log << endl;
+        file << time << " : [SUCCESS] " << log << endl;
+        // syslog(LOG_INFO, "SUCCESS : %s",log.c_str());
+        break;
+    case INFO:
+        file << time << " : [INFO] " << log << endl;
         // syslog(LOG_INFO, "SUCCESS : %s",log.c_str());
         break;
     case FAILED:
-        file << time << " : FAILED : " << log << endl;
+        file << time << " : [ERROR] " << log << endl;
         // syslog(LOG_INFO, "FAILED : %s", log.c_str());
         break;
     case WARNING:
-        file << time << " : WARNING : " << log << endl;
+        file << time << " : [WARNING] " << log << endl;
         // syslog(LOG_USER, "WARNING: %s", log.c_str());
         break;
     case CRITICAL:
-        file << time << " : CRITICAL : " << log << endl;
+        file << time << " : [CRITICAL] " << log << endl;
         break;
+    case DEBUG:
+        file << time << " : [DEBUG] " << log << endl;
     default:
         break;
     }
@@ -154,14 +160,12 @@ int OS::compressFile(const string logFile)
     if (currentFile.size() == 0)
     {
         AgentUtils::writeLog("No global log file updated in the code for OS", FAILED);
-        cerr << "Empty Global file, 265" << endl;
         return FAILED;
     }
     fstream file(currentFile, std::ios::in | std::ios::binary);
     if (!file)
     {
         AgentUtils::writeLog("No file exist for backup ( " + currentFile + " )", FAILED);
-        cerr << "No file to compress, 271" << endl;
         return FAILED;
     }
     gzFile zLog;
@@ -169,7 +173,7 @@ int OS::compressFile(const string logFile)
     zLog = gzopen(zipFile.c_str(), "w");
     if (!zLog)
     {
-        AgentUtils::writeLog("Failed to create zip file ( " + zipFile + " )", FAILED);
+        AgentUtils::writeLog(FCREATION_FAILED + zipFile, FAILED);
         file.close();
         return FAILED;
     }
@@ -180,7 +184,7 @@ int OS::compressFile(const string logFile)
             continue;
         if (gzwrite(zLog, line.c_str(), static_cast<unsigned int>(line.size())) != (int)line.size())
         {
-            AgentUtils::writeLog("Failed to write compressed file ( " + zipFile + " )", FAILED);
+            AgentUtils::writeLog(FWRITE_FAILED + zipFile, FAILED);
             result = FAILED;
             break;
         }
@@ -193,7 +197,7 @@ int OS::compressFile(const string logFile)
     }
     else
     {
-        AgentUtils::writeLog("Faile to delete old archived log file ( " + currentFile + " )", FAILED);
+        AgentUtils::writeLog(FDELETE_FAILED + currentFile, FAILED);
     }
     return result;
 }
@@ -209,19 +213,17 @@ string OS::isEmpty(string filename)
 
         if (fileSize == 0)
         {
-            std::cout << "The file is empty." << std::endl;
             nonEmptyPath = filename + ".1";
         }
         else
         {
-            std::cout << "The file is not empty. Size: " << fileSize << " bytes." << std::endl;
             nonEmptyPath = filename;
         }
         file.close();
     }
     else
     {
-        std::cout << "The file does not exist." << std::endl;
+       nonEmptyPath = "";
     }
     return nonEmptyPath;
 }
@@ -261,25 +263,29 @@ int OS::createLogFile(int cDay, int cMonth, int cYear, string &filePath, const s
     string currentDir = BASE_LOG_DIR;
     if (isDirExist(currentDir) == FAILED)
     {
-        AgentUtils::writeLog(currentDir + " Not exist, creating new directory", WARNING);
+        AgentUtils::writeLog(INVALID_PATH + currentDir, WARNING);
+        AgentUtils::writeLog(NPATH + currentDir, INFO);
         createDir(currentDir);
     }
     currentDir += BASE_LOG_ARCHIVE;
     if (isDirExist(currentDir) == FAILED)
     {
-        AgentUtils::writeLog(currentDir + " Not exist, creating new directory", WARNING);
+        AgentUtils::writeLog(INVALID_PATH + currentDir, WARNING);
+        AgentUtils::writeLog(NPATH + currentDir, INFO);
         createDir(currentDir);
     }
     currentDir += "/" + std::to_string(cYear);
     if (isDirExist(currentDir) == FAILED)
     {
-        AgentUtils::writeLog(currentDir + " Not exist, creating new directory", WARNING);
+        AgentUtils::writeLog(INVALID_PATH + currentDir, WARNING);
+        AgentUtils::writeLog(NPATH + currentDir, INFO);
         createDir(currentDir);
     }
     currentDir += "/" + MONTHS[cMonth - 1];
     if (isDirExist(currentDir) == FAILED)
     {
-        AgentUtils::writeLog(currentDir + " Not exist, creating new directory", WARNING);
+        AgentUtils::writeLog(INVALID_PATH + currentDir, WARNING);
+        AgentUtils::writeLog(NPATH + currentDir, INFO);
         createDir(currentDir);
     }
     currentDir += "/" + std::to_string(cDay) + "-" + appName;
@@ -299,8 +305,7 @@ int OS::createLogFile(int cDay, int cMonth, int cYear, string &filePath, const s
     }
     else
     {
-        AgentUtils::writeLog("Failed to create ( " + filePath + " ) check permission", FAILED);
-        cerr << "Failed to create file check permission" << endl;
+        AgentUtils::writeLog(FCREATION_FAILED + filePath, FAILED);
     }
     return FAILED;
 }
@@ -318,7 +323,6 @@ int OS::deleteFile(const string fileName)
         }
         catch (const std::exception &e)
         {
-            // std::cerr << e.what() << '\n';
             string error(e.what());
             AgentUtils::writeLog(error, FAILED);
         }
@@ -339,7 +343,8 @@ int OS::createDir(const string dirName)
         }
         catch (const std::exception &e)
         {
-            std::cerr << e.what() << '\n';
+            string error(e.what());
+            AgentUtils::writeLog(error, FAILED);
         }
     }
     return FAILED;
@@ -358,8 +363,7 @@ int OS::readRegularFiles(vector<string> &files)
     directory += "josn/";
     if (!std::filesystem::exists(directory))
     {
-        // cerr << "Invalid directory to read regular files" << endl;
-        AgentUtils::writeLog("Invalid directory to read regular files ( " + directory + " )", FAILED);
+        AgentUtils::writeLog(INVALID_PATH + directory, FAILED);
         return FAILED;
     }
     for (const auto &entry : std::filesystem::directory_iterator(directory))
@@ -374,8 +378,7 @@ int OS::readRegularFiles(vector<string> &files)
 
     if (files.size() == 0)
     {
-        // cerr << "No regular file exists in " << directory << endl;
-        AgentUtils::writeLog("No regular file exists in (" + directory + " )", WARNING);
+        AgentUtils::writeLog(INVALID_PATH + directory, FAILED);
         return FAILED;
     }
 

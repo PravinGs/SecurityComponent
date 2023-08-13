@@ -37,90 +37,89 @@ Schedule::Schedule(const string file)
     }
 }
 
-// void Schedule::run(std::string processName, std::string timePattern, int index, std::vector<bool> &processStatus)
-// {
-//     try
-//     {
-//         auto cron = cron::make_cron(timePattern);
-//         while (processStatus[index])
-//         {
-//             std::chrono::system_clock::time_point currentTime = std::chrono::system_clock::now();
-//             std::time_t time = std::chrono::system_clock::to_time_t(currentTime);
-//             std::time_t next = cron::cron_next(cron, time);
-//             // std::tm* timeinfo = std::localtime(&next);
-//             std::chrono::system_clock::time_point targetPoint = std::chrono::system_clock::from_time_t(next);
-//             std::chrono::duration<double> duration = targetPoint - currentTime;
-//             std::this_thread::sleep_for(duration);
-//             if (processStatus[index])
-//             {
-//                 if (processName == "monitor")
-//                 {
-//                     if (_monitorController.getMonitorLog(_configTable) == SUCCESS)
-//                     {
-//                         std::cout << "Monitor Log collected successfully." << std::endl;
-//                     }
-//                     else
-//                     {
-//                         AgentUtils::writeLog("Reading Process details operation stopped");
-//                         processStatus[index] = false; // Mark the process as failed
-//                         break; // Exit the loop immediately
-//                     }
-//                 }
-//                 else if (processName == "applog")
-//                 {
-//                     if (_logController.appLogManager(_configTable) == SUCCESS)
-//                     {
-//                         std::cout << "Applog operation done" << std::endl;
-//                     }
-//                     else
-//                     {
-//                         AgentUtils::writeLog("Reading AppLog process stopped");
-//                         processStatus[index] = false; // Mark the process as failed
-//                         break; // Exit the loop immediately
-//                     }
-//                 }
-//                 else if (processName == "syslog")
-//                 {
-//                     if (_logController.getSysLog(_configTable) == SUCCESS)
-//                     {
-//                         std::cout << "Syslog operation done" << std::endl;
-//                     }
-//                     else
-//                     {
-//                         AgentUtils::writeLog("Reading SysLog process stopped");
-//                         processStatus[index] = false; // Mark the process as failed
-//                         break; // Exit the loop immediately
-//                     }
-//                 }
-//                 else if (processName == "firmware")
-//                 {
-//                     if (_fController.start(_configTable) == SUCCESS)
-//                     {
-//                         std::cout << "FirmWare operation done" << std::endl;
-//                     }
-//                     else
-//                     {
-//                         /*Do something*/
-//                         processStatus[index] = false; // Mark the process as failed
-//                         break; // Exit the loop immediately
-//                     }
-//                 }
-//             }
+void Schedule::run(std::string processName, std::string timePattern, int index, std::vector<bool> &processStatus)
+{
+    try
+    {
+        auto cron = cron::make_cron(timePattern);
+        while (processStatus[index])
+        {
+            std::chrono::system_clock::time_point currentTime = std::chrono::system_clock::now();
+            std::time_t time = std::chrono::system_clock::to_time_t(currentTime);
+            std::time_t next = cron::cron_next(cron, time);
+            std::chrono::system_clock::time_point targetPoint = std::chrono::system_clock::from_time_t(next);
+            std::chrono::duration<double> duration = targetPoint - currentTime;
+            std::this_thread::sleep_for(duration);
+            if (processStatus[index])
+            {
+                if (strcmp(processName.c_str(), "monitor") == 0)
+                {
+                    if (_monitorController.getMonitorLog(_configTable) == SUCCESS)
+                    {
+                        std::cout << "Monitor Log collected successfully." << std::endl;
+                    }
+                    else
+                    {
+                        AgentUtils::writeLog("Reading Process details operation stopped");
+                        processStatus[index] = false; // Mark the process as failed
+                        break; // Exit the loop immediately
+                    }
+                }
+                else if (strcmp(processName.c_str(), "applog") == 0)
+                {
+                    if (_logController.appLogManager(_configTable) == SUCCESS)
+                    {
+                        std::cout << "Applog operation done" << std::endl;
+                    }
+                    else
+                    {
+                        AgentUtils::writeLog("Reading AppLog process stopped");
+                        processStatus[index] = false; // Mark the process as failed
+                        break; // Exit the loop immediately
+                    }
+                }
+                else if (strcmp(processName.c_str(),"syslog") == 0)
+                {
+                    if (_logController.getSysLog(_configTable) == SUCCESS)
+                    {
+                        std::cout << "Syslog operation done" << std::endl;
+                    }
+                    else
+                    {
+                        AgentUtils::writeLog("Reading SysLog process stopped");
+                        processStatus[index] = false; // Mark the process as failed
+                        break; // Exit the loop immediately
+                    }
+                }
+                else if (strcmp(processName.c_str(), "firmware") == 0)
+                {
+                    if (_fController.start(_configTable) == SUCCESS)
+                    {
+                        std::cout << "FirmWare operation done" << std::endl;
+                    }
+                    else
+                    {
+                        /*Do something*/
+                        processStatus[index] = false; // Mark the process as failed
+                        break; // Exit the loop immediately
+                    }
+                }
+            }
 
-//             std::cout << processName << " execution done." << std::endl;
+            std::cout << processName << " execution done." << std::endl;
 
-//         } // end of while loop
-//         // Additional check after the loop to write the log message if the process failed
-//         if (!processStatus[index])
-//         {
-//             AgentUtils::writeLog(processName + " execution stopped from being runnig", FAILED);
-//         }
-//     }
-//     catch(const std::exception& e)
-//     {
-//         std::cerr << e.what() << '\n';
-//     }
-// }
+        } // end of while loop
+        // Additional check after the loop to write the log message if the process failed
+        if (!processStatus[index])
+        {
+            AgentUtils::writeLog(processName + " execution stopped from being runnig", FAILED);
+        }
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+}
 
 void Schedule::printTime(std::chrono::system_clock::time_point &t)
 {
@@ -131,6 +130,7 @@ void Schedule::printTime(std::chrono::system_clock::time_point &t)
     std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", now_tm);
     cout << buffer << endl;
 }
+
 
 int Schedule::processTimePattern(vector<int> &patternTable, const string &pattern)
 {
@@ -230,122 +230,7 @@ void Schedule::start()
     std::cout << "done" << std::endl;
 }
 
-void task(const std::string &processName, std::vector<bool> &processStatus, int index, LogController &_logController, MonitorController &_monitorController, FirmWareController &_fController, IniConfig &_configService, map<string, map<string, string>> &_configTable)
-{
-    if (processStatus[index])
-    {
-        if (processName == "monitor")
-        {
-            if (_monitorController.getMonitorLog(_configTable) == SUCCESS)
-            {
-                std::cout << "Monitor Log collected successfully." << std::endl;
-            }
-            else
-            {
-                AgentUtils::writeLog("Reading Process details operation stopped");
-                processStatus[index] = false; // Mark the process as fail
-            }
-        }
-        else if (processName == "applog")
-        {
-            if (_logController.appLogManager(_configTable) == SUCCESS)
-            {
-                std::cout << "Applog operation done" << std::endl;
-            }
-            else
-            {
-                AgentUtils::writeLog("Reading AppLog process stopped");
-                processStatus[index] = false; // Mark the process as failed
-            }
-        }
-        else if (processName == "syslog")
-        {
-            if (_logController.sysLogManager(_configTable) == SUCCESS)
-            {
-                std::cout << "Syslog operation done" << std::endl;
-            }
-            else
-            {
-                AgentUtils::writeLog("Reading SysLog process stopped");
-                processStatus[index] = false; // Mark the process as failed
-            }
-        }
-        else if (processName == "firmware")
-        {
-            if (_fController.start(_configTable) == SUCCESS)
-            {
-                std::cout << "FirmWare operation done" << std::endl;
-            }
-            else
-            {
-                /*Do something*/
-                processStatus[index] = false; // Mark the process as failed
-            }
-        }
-    }
 
-    std::cout << processName << " execution done." << std::endl;
-}
-
-void scheduleTask(const std::string &processName, int index, std::vector<bool> &processStatus, boost::asio::io_context &ioContext, const std::string &timePattern, Schedule &schedule)
-{
-    try
-    {
-        auto cron = cron::make_cron(timePattern);
-
-        while (processStatus[index])
-        {
-            task(processName, processStatus, index, schedule._logController, schedule._monitorController, schedule._fController, schedule._configService, schedule._configTable);
-
-            boost::asio::steady_timer timer(ioContext);
-            std::chrono::system_clock::time_point currentTime = std::chrono::system_clock::now();
-            std::time_t time = std::chrono::system_clock::to_time_t(currentTime);
-            std::time_t next = cron::cron_next(cron, time);
-            std::chrono::system_clock::time_point targetPoint = std::chrono::system_clock::from_time_t(next);
-            const std::chrono::duration<double> delay = targetPoint - currentTime;
-            // Convert std::chrono duration to boost::asio duration
-            // Convert std::chrono duration to boost::asio duration
-            auto boostDuration = boost::asio::steady_timer::duration(
-                std::chrono::duration_cast<std::chrono::steady_clock::duration>(delay));
-
-            // Set the delay until the next execution time
-            timer.expires_after(boostDuration);
-
-            // timer.expires_after(delay);
-
-            // Schedule the next task execution
-            timer.async_wait([processName, index, &processStatus, &ioContext, timePattern, &schedule](const boost::system::error_code &error)
-                             {
-                if (!error) {
-                    scheduleTask(processName, index, processStatus, ioContext, timePattern, schedule);
-                } });
-
-            AgentUtils::writeLog(processName + " execution stopped from being running", FAILED);
-        }
-    }
-    catch (const std::exception &e)
-    {
-        std::cerr << e.what() << '\n';
-    }
-}
-
-void Schedule::run(std::string processName, std::string timePattern, int index, std::vector<bool> &processStatus)
-{
-    try
-    {
-        boost::asio::io_context ioContext;
-
-        // Schedule the initial task execution based on the time pattern
-        scheduleTask(processName, index, processStatus, ioContext, timePattern, *this);
-
-        // Run the Boost.Asio event loop
-        ioContext.run();
-    }
-    catch (const std::exception &e)
-    {
-        std::cerr << e.what() << '\n';
-    }
-}
 
 Schedule::~Schedule() {}
 
