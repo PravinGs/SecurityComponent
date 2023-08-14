@@ -105,7 +105,7 @@ int AgentUtils::convertTimeFormat(const std::string &inputTime, std::string &for
     tm.tm_year += 1900;              // Add 1900 to get the correct year value
 
     formatTime = std::to_string(tm.tm_year) + "-" + month + "-" + day + " " + time;
-    return 0;
+    return SUCCESS;
 }
 
 void AgentUtils::writeLog(string log)

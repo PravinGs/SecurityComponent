@@ -9,20 +9,21 @@
 class LogAnalysis
 {
 private:
-    string _format = "syslog";
     string _rulesFile;
     IniConfig _configService;
 public:
 
     LogAnalysis();
     
-    LogAnalysis(const string configFile, const string format);
+    LogAnalysis(const string configFile);
     
     void setConfigFile(const string configFile);
 
     int isValidSysLog(size_t size);
 
-    LOG_EVENT parseToLogInfo(string log);
+    LOG_EVENT parseToLogInfo(string log, const string format);
+
+    string formatSysLog(string log, const string format);
 
     int regexMatch(const string log, const string pattern);
     
@@ -30,7 +31,7 @@ public:
 
     int getRegularFiles(const string directory, vector<string> &files);
 
-    int analyseFile(const string file);
+    int analyseFile(const string file, const string format);
 
     int start(const string path);
 

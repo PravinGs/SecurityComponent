@@ -1,4 +1,4 @@
-#ifndef AGENT_UTILS_HPP // This header file have all the library includes.
+#ifndef AGENT_UTILS_HPP 
 #define AGENT_UTILS_HPP
 
 #pragma once

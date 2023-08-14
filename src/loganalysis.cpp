@@ -1,6 +1,6 @@
 #include "service/loganalysis.hpp"
 
-LogAnalysis::LogAnalysis(const string configFile, const string format) : _format(format), _rulesFile(configFile) {}
+LogAnalysis::LogAnalysis(const string configFile) : _rulesFile(configFile) {}
 
 LogAnalysis::LogAnalysis(){}
 
@@ -14,23 +14,34 @@ int LogAnalysis::isValidSysLog(size_t size)
     return (size <= OS_SIZE_1024) ? SUCCESS : FAILED;
 }
 
-LOG_EVENT LogAnalysis::parseToLogInfo(string log)
+LOG_EVENT LogAnalysis::parseToLogInfo(string log, const string format)
 {
     /* Log format should be checked before parsing */
     LOG_EVENT logInfo;
     string timestamp, user, program, message;
-    std::stringstream ss(log);
+    std::stringstream ss;
+    if (std::count(log.begin(), log.end(), '|') >= 3)
+    {
+        ss << log;
+    }
+    else
+    {
+        string fLog = formatSysLog(log, format);
+        if (fLog.empty()) { return logInfo; }
+        ss << fLog;
+    }
     std::getline(ss, timestamp, '|');
     std::getline(ss, user, '|');
     std::getline(ss, program, '|');
     std::getline(ss, message, '|');
     /* Set the values to the structure */
+    logInfo.format = format;
     logInfo.size = log.size();
-    logInfo.format = _format; 
     logInfo.timestamp = timestamp;
     logInfo.user = user;
     logInfo.program = program;
     logInfo.log = message;
+
     return logInfo;
 }
 
@@ -91,7 +102,7 @@ int LogAnalysis::getRegularFiles(const string directory, vector<string> &files)
     return result;
 }
 
-int LogAnalysis::analyseFile(const string file)
+int LogAnalysis::analyseFile(const string file, string format)
 {
     int result;
     string line;
@@ -111,7 +122,7 @@ int LogAnalysis::analyseFile(const string file)
     while(std::getline(fp, line))
     {
         if (line.empty()) continue;
-        LOG_EVENT logInfo = parseToLogInfo(line);
+        LOG_EVENT logInfo = parseToLogInfo(line, format);
         result = match(logInfo, rules);
     }
     
@@ -121,6 +132,15 @@ int LogAnalysis::analyseFile(const string file)
 
 int LogAnalysis::start(const string path)
 {
+    string format;
+    if (path.find("dpkg") != string::npos)
+    {
+        format = "dpkg";
+    }
+    else if (path.find("auth") != string::npos)
+    {
+        format = "syslog";
+    }
     int result = SUCCESS;
     int isFile = 0;
     vector<string> files;
@@ -131,7 +151,7 @@ int LogAnalysis::start(const string path)
 
     if (isFile)
     {
-        result = analyseFile(path);
+        result = analyseFile(path, format);
     }
     else
     {
@@ -151,8 +171,52 @@ int LogAnalysis::start(const string path)
         }
         for (string file : files)
         {
-            result = analyseFile(file);
+            result = analyseFile(file, format);
         }
     }
     return result;
+}
+
+string LogAnalysis::formatSysLog(string log, const string format)
+{
+    string fLog, token, formattedTime;
+    int index = 0;
+    string currentTime = log.substr(0, 15);     
+    std::stringstream stream; 
+    if (format == "dpkg")            
+    {
+        string temp;
+        fLog += log.substr(0,19);
+        temp = log.substr(20);
+        fLog += "|" + temp.substr(0, temp.find(' '));
+        temp = temp.substr(temp.find(' ') + 1);
+        fLog += "|" + temp;
+        cout << fLog << endl;
+        return fLog;
+    }
+    else
+    {
+        AgentUtils::convertTimeFormat(currentTime, formattedTime);
+        stream << log.substr(16);
+    }
+    fLog += formattedTime;
+    while (std::getline(stream, token, ' ') && index < 3)
+    {
+        if (index == 2)
+        {
+            string message = token;
+            while (std::getline(stream, token, ' '))
+            {
+                message += ' ' + token;
+            }
+            fLog += '|' + message;
+            index = 4;
+            continue;
+        }
+        fLog += '|' + token;
+        index++;
+    }
+    cout << fLog  << endl;
+
+    return fLog;
 }

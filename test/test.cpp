@@ -1,11 +1,26 @@
 #include "service/configservice.hpp"
 #include "service/loganalysis.hpp"
+#include "controller/logController.hpp"
 
 int main()
 {
-    string rulePath = "/home/pravin/Desktop/SecurityComponent/config/rules.config";
-    LogAnalysis analysis(rulePath, "syslog");
-    analysis.start("/etc/scl/log/archives/2023/Aug/6-syslog");
+    string rulePath = "/home/krishna/security/Agent/config/rules.config";
+    LogAnalysis analysis(rulePath);
+    map<string, map<string, string>> table;
+
+    IniConfig config;
+    config.readConfigFile("/home/krishna/security/Agent/config/schedule.config", table);
+    LogController controller;
+    OS::CurrentDay = 13;
+    OS::CurrentMonth = 8;
+    OS::CurrentYear = 2023;
+    controller.sysLogManager(table);
+    // string sys = analysis.formatSysLog("Aug 14 12:56:53 ubuntu-20 kernel: [ 6890.826682] audit: type=1400 audit(1691998013.892:1923): avc:  denied  { use } for  pid=11792 ");
+    // cout << sys << endl;
+    // string dpkg = analysis.formatSysLog("2023-07-26 11:48:19 status installed install-info:amd64 6.7.0.dfsg.2-5");
+    // cout << dpkg << endl;
+    // analysis.start("/home/krishna/security/Agent/config/syslog.test");
+    
     return 0;
 }
 

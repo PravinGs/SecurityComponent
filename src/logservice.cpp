@@ -472,36 +472,18 @@ int LogService::readDpkgLog(const string path, vector<string> &logs, string &pre
 
     while (std::getline(file, line))
     {
-        string log, token;
-        int index = 0;
+        string log, temp;
         string currentTime = line.substr(0, 19);
         std::time_t cTime = _convertToTime(currentTime); /* Convert string time to time_t format for comparision between time_t objects */
         if (cTime < lastWrittenTime)
         {
             continue;
         }
-
-        std::stringstream ss(line);
-        while (std::getline(ss, token, ' '))
-        {
-            if (index == 0)
-            {
-                index++;
-                string timeStamp = token;
-                std::getline(ss, token, ' ');
-                log += timeStamp + " " + token + "|";
-            }
-            else if (index == 2)
-            {
-                log += token + "|";
-            }
-            else
-            {
-                log += token + " ";
-            }
-            index++;
-        }
-
+        log += currentTime;
+        temp = line.substr(20);
+        log += "|" + temp.substr(0, temp.find(' '));
+        temp = temp.substr(temp.find(' ') + 1);
+        log += "|" + temp;
         logs.push_back(log);
 
         std::time_t tempTime = _convertToTime(nextReadingTime);
