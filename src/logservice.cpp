@@ -24,7 +24,7 @@ int LogService::_saveAsJSON(Json::Value &json, string path, const vector<string>
         return FAILED;
     }
 
-    json["LogObjects"] = Jon::Value(Json::arrayValue);
+    json["LogObjects"] = Json::Value(Json::arrayValue);
     for (auto log : logs)
     {
         vector<string> splitedLogs = _configService.toVector(log, delimeter);

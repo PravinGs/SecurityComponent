@@ -34,7 +34,6 @@ class LogService : public ILog
 {
 private:
     IniConfig _configService;
-    const char *STANDARD_TIME_FORMAT = "%Y-%m-%d %H:%M:%S";
     map<string, int> _logLevel{{"none", 0}, {"trace", 1}, {"debug", 2}, {"warning", 3}, {"error", 4}, {"critical", 5}};
     map<string, int> _priorityLevel{{"none", 0}, {"trace", 1}, {"interaction", 2}, {"standard", 3}, {"alarm", 4}};
     map<string, int> _logCategory{{"sys", 2}, {"network", 3}, {"ufw", 4}};

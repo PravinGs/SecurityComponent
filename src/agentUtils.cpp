@@ -387,6 +387,7 @@ int OS::readRegularFiles(vector<string> &files)
 
 std::time_t AgentUtils::convertStrToTime(const string &datetime)
 {
+    const char *STANDARD_TIME_FORMAT = "%Y-%m-%d %H:%M:%S";
     std::tm tm = {};
     std::istringstream ss(datetime);
     ss >> std::get_time(&tm, STANDARD_TIME_FORMAT);

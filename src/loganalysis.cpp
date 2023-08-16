@@ -54,20 +54,19 @@ int LogAnalysis::regexMatch(const string log, const string pattern)
 
 bool LogAnalysis::isRuleFound(const int ruleId)
 {
-    auto result = std::find(_idRules.start(), ruleId);
+    auto result = std::find(_idRules.begin(), _idRules.end(), ruleId);
     return (result == _idRules.end()) ? true : false;
 }
 
 void LogAnalysis::addMatchedRule(const int ruleId)
 {
-    this->_idRules(ruleId);
+    if (!isRuleFound(ruleId)) { addMatchedRule(ruleId); }
     return;
 }
 
 int LogAnalysis::match(LOG_EVENT &logInfo,map<string, map<int, AConfig>> rules)
 {
     int result = FAILED;
-    bool isRuleMatched = false;
     for (const auto &rule: rules)
     {
         for (const auto &r: rule.second)
@@ -76,14 +75,14 @@ int LogAnalysis::match(LOG_EVENT &logInfo,map<string, map<int, AConfig>> rules)
             P_RULE pRule;
             pRule.id = 0;
 
-            for (int i: this->_processedRules) /* Removing all the processed rules. */
+            for (int i : this->_processedRules) /* Removing all the processed rules. */
             {
-                this->_processingRules.erase(i);
+                this->_processingRules.erase(this->_processingRules.begin() + this->_processedRules[i]);
             }
 
             if (this->_processingRules.size() > 0) /* Checking if rules are about to expire or not. */
             {
-                for (int i = 0; i < this->_processingRules.size(); i++)
+                for (int i = 0; i < (int)this->_processingRules.size(); i++)
                 {
                     P_RULE pRule = this->_processingRules[i];
                     if ((pRule.end < AgentUtils::convertStrToTime(logInfo.timestamp) && pRule.frequency > 0)
@@ -95,7 +94,7 @@ int LogAnalysis::match(LOG_EVENT &logInfo,map<string, map<int, AConfig>> rules)
                                 || (pRule.end >= AgentUtils::convertStrToTime(logInfo.timestamp) && pRule.frequency <= 0))
                     {
                         /*The rule ID'd and have to alerted*/
-                        if (!isRuleFound(pRule.id)) { addMatchedRule(pRule.id); }
+                        addMatchedRule(pRule.id);
                         this->_processedRules.push_back(i);
                     }
                 }
@@ -107,18 +106,25 @@ int LogAnalysis::match(LOG_EVENT &logInfo,map<string, map<int, AConfig>> rules)
                 {
                     logInfo.log += "|" + std::to_string(ruleInfo.level);
                     cout << logInfo.log << endl;
-                    if (!isRuleFound(ruleInfo.id)) { addMatchedRule(ruleInfo.id); }
+                    addMatchedRule(ruleInfo.id);
                 }
             }
 
             if (ruleInfo.max_log_size > 0) /* Validating the syslog size */
             {
-                if ((result == isValidSysLog(logInfo.size)) == FAILED)
+                if ((result = isValidSysLog(logInfo.size)) == FAILED)
                 {
-                    if (!isRuleFound(ruleInfo.id)) { addMatchedRule(ruleInfo.id); }
+                    addMatchedRule(ruleInfo.id);
                 }
             }
             
+            if (ruleInfo.child_id > 0)
+            {
+                if (isRuleFound(ruleInfo.child_id))
+                {
+                    addMatchedRule(ruleInfo.id);
+                }
+            }
             /*
             <rule id="5702" level="5">
                 <if_sid>5700</if_sid>
@@ -138,7 +144,8 @@ int LogAnalysis::match(LOG_EVENT &logInfo,map<string, map<int, AConfig>> rules)
                 pRule.start = AgentUtils::convertStrToTime(logInfo.timestamp);
                 pRule.end   =  pRule.start + ruleInfo.timeframe;
                 pRule.frequency = ruleInfo.frequency;
-                if (ruleInfo.child_id > 0)
+                if (ruleInfo.child_id > 0)AgentUtils::convertStrToTime(logInfo.timestamp);
+                pRule.end   =  pRule.start + ruleInfo.timeframe;
                 {
                     pRule.child_id = ruleInfo.child_id;
                     pRule.src_ip   = logInfo.src_ip;
@@ -147,11 +154,12 @@ int LogAnalysis::match(LOG_EVENT &logInfo,map<string, map<int, AConfig>> rules)
                         pRule.frequency--;
                     }
                 }
-                if (!ruleInfo.src_ip.empty())
+                /*if (!ruleInfo.src_ip.empty())
                 {
-                    pRule.src_ip = ruleInfo.src_ip; /*Some gray part out here.*/
+                    pRule.src_ip = ruleInfo.src_ip; //Some gray part out here.
                     if (strcmp(logInfo.c_str(), ))
                 }
+                */
                 // Get the source ip from that log. and store it temproarily.
                 // Update the time span to this class members.
                 // chek for the time and i            

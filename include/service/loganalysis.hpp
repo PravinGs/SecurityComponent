@@ -6,7 +6,7 @@
 #include "agentUtils.hpp"
 #include "service/configservice.hpp"
 
-typedef P_RULE P_RULE;
+typedef struct P_RULE P_RULE;
 
 struct P_RULE
 {
@@ -17,7 +17,6 @@ struct P_RULE
     int frequency;
     string src_ip;
 };
-
 
 class LogAnalysis
 {

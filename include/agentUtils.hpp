@@ -85,6 +85,7 @@ const string NPATH = "Successfully created: ";
 #define BASE_CONFIG_TMP "tmp/"
 #define BASE_CONFIG_DIR "/etc/scl/config/"
 
+
 const vector<string> MONTHS = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 const int BUFFER_SIZE = 1024;
 const int UDP_PORT = 8080;
@@ -108,7 +109,7 @@ struct AConfig
     string description;
     string info;
     string group;
-    bool src_ip; /*type will be boolean rather string, cause it doesn't actually have any ip address.*/
+    string src_ip; /*type will be boolean rather string, cause it doesn't actually have any ip address.*/
     string dst_ip;
     int src_port;
     int dst_port;
