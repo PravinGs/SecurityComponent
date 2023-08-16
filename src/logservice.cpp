@@ -10,14 +10,6 @@ string toLowerCase(string &str)
     return lowerCaseString;
 }
 
-std::time_t LogService::_convertToTime(const string &datetime)
-{
-    std::tm tm = {};
-    std::istringstream ss(datetime);
-    ss >> std::get_time(&tm, STANDARD_TIME_FORMAT);
-    return std::mktime(&tm);
-}
-
 int LogService::_saveAsJSON(Json::Value &json, string path, const vector<string> logs, const vector<string> columns, char delimeter)
 {
     if (verifyJsonPath(path) == FAILED)
@@ -32,7 +24,7 @@ int LogService::_saveAsJSON(Json::Value &json, string path, const vector<string>
         return FAILED;
     }
 
-    json["LogObjects"] = Json::Value(Json::arrayValue);
+    json["LogObjects"] = Jon::Value(Json::arrayValue);
     for (auto log : logs)
     {
         vector<string> splitedLogs = _configService.toVector(log, delimeter);
@@ -151,7 +143,7 @@ int LogService::_readSysLog(Json::Value &json, string path, vector<string> &logs
 {
     const string sep = "|";
     string formattedTime, line;
-    std::time_t lastWrittenTime = _convertToTime(previousTime);
+    std::time_t lastWrittenTime = AgentUtils::convertStrToTime(previousTime);
 
     fstream file(path, std::ios::in);
     if (!file)
@@ -164,7 +156,7 @@ int LogService::_readSysLog(Json::Value &json, string path, vector<string> &logs
     {
         string currentTime = line.substr(0, 15);                   /* Extract the date time format fromt the line */
         AgentUtils::convertTimeFormat(currentTime, formattedTime); /* This func convert to standard time format */
-        std::time_t cTime = _convertToTime(formattedTime);         /* Convert string time to time_t format for comparision between time_t objects */
+        std::time_t cTime = AgentUtils::convertStrToTime(formattedTime);         /* Convert string time to time_t format for comparision between time_t objects */
         if (cTime < lastWrittenTime)
         {
             continue;
@@ -210,7 +202,7 @@ int LogService::_readSysLog(Json::Value &json, string path, vector<string> &logs
         { /**/
         }
         logs.push_back(log);
-        std::time_t tempTime = _convertToTime(nextReadingTime);
+        std::time_t tempTime = AgentUtils::convertStrToTime(nextReadingTime);
         if (cTime > tempTime)
         {
             nextReadingTime = formattedTime;
@@ -345,7 +337,7 @@ int LogService::_readAppLog(Json::Value &json, string path, vector<string> &logs
 {
     fstream file(path);
     string line;
-    std::time_t lastWrittenTime = _convertToTime(previousTime);
+    std::time_t lastWrittenTime = AgentUtils::convertStrToTime(previousTime);
     bool isCriticalLog = false;
     if (!file)
     {
@@ -361,7 +353,7 @@ int LogService::_readAppLog(Json::Value &json, string path, vector<string> &logs
         }
 
         string currentTime = line.substr(0, 19);         /* Extract the date time format fromt the line */
-        std::time_t cTime = _convertToTime(currentTime); /* Convert string time to time_t format for comparision between time_t objects */
+        std::time_t cTime = AgentUtils::convertStrToTime(currentTime); /* Convert string time to time_t format for comparision between time_t objects */
         if (cTime < lastWrittenTime)
         {
             continue;
@@ -372,7 +364,7 @@ int LogService::_readAppLog(Json::Value &json, string path, vector<string> &logs
         {
             logs.push_back(line);
         }
-        std::time_t tempTime = _convertToTime(nextReadingTime);
+        std::time_t tempTime = AgentUtils::convertStrToTime(nextReadingTime);
         if (cTime > tempTime)
         {
             nextReadingTime = currentTime;
@@ -461,7 +453,7 @@ int LogService::verifyJsonPath(string &timestamp)
 int LogService::readDpkgLog(const string path, vector<string> &logs, string &previousTime, string &nextReadingTime, bool &flag)
 {
     string formattedTime, line;
-    std::time_t lastWrittenTime = _convertToTime(previousTime);
+    std::time_t lastWrittenTime = AgentUtils::convertStrToTime(previousTime);
 
     fstream file(path, std::ios::in);
     if (!file)
@@ -474,7 +466,7 @@ int LogService::readDpkgLog(const string path, vector<string> &logs, string &pre
     {
         string log, temp;
         string currentTime = line.substr(0, 19);
-        std::time_t cTime = _convertToTime(currentTime); /* Convert string time to time_t format for comparision between time_t objects */
+        std::time_t cTime = AgentUtils::convertStrToTime(currentTime); /* Convert string time to time_t format for comparision between time_t objects */
         if (cTime < lastWrittenTime)
         {
             continue;
@@ -486,7 +478,7 @@ int LogService::readDpkgLog(const string path, vector<string> &logs, string &pre
         log += "|" + temp;
         logs.push_back(log);
 
-        std::time_t tempTime = _convertToTime(nextReadingTime);
+        std::time_t tempTime = AgentUtils::convertStrToTime(nextReadingTime);
         if (cTime > tempTime)
         {
             nextReadingTime = currentTime;

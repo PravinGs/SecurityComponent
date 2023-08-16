@@ -6,11 +6,32 @@
 #include "agentUtils.hpp"
 #include "service/configservice.hpp"
 
+typedef P_RULE P_RULE;
+
+struct P_RULE
+{
+    int id;
+    int child_id;
+    std::time_t start;
+    std::time_t end;
+    int frequency;
+    string src_ip;
+};
+
+
 class LogAnalysis
 {
 private:
     string _rulesFile;
     IniConfig _configService;
+    vector<P_RULE> _processingRules;
+    vector<int> _processedRules;
+    vector<int> _idRules;
+
+private:
+    bool isRuleFound(const int ruleId);
+    void addMatchedRule(const int ruleId);
+
 public:
 
     LogAnalysis();

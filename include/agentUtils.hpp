@@ -108,7 +108,7 @@ struct AConfig
     string description;
     string info;
     string group;
-    string src_ip;
+    bool src_ip; /*type will be boolean rather string, cause it doesn't actually have any ip address.*/
     string dst_ip;
     int src_port;
     int dst_port;
@@ -133,6 +133,8 @@ struct LOG_EVENT
     string timestamp;
     string program;
     string user;
+    string src_ip;
+    string dest_ip;
 };
 
 namespace Monitor
@@ -262,6 +264,8 @@ public:
     static void writeLog(string log);
 
     static void writeLog(string log, int logLevel);
+
+    static std::time_t convertStrToTime(const string &datetime);
 };
 
 #endif

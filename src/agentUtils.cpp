@@ -384,3 +384,11 @@ int OS::readRegularFiles(vector<string> &files)
 
     return SUCCESS;
 }
+
+std::time_t AgentUtils::convertStrToTime(const string &datetime)
+{
+    std::tm tm = {};
+    std::istringstream ss(datetime);
+    ss >> std::get_time(&tm, STANDARD_TIME_FORMAT);
+    return std::mktime(&tm);
+}
