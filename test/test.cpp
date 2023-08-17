@@ -1,12 +1,16 @@
-#include "service/configservice.hpp"
-#include "service/loganalysis.hpp"
-#include "controller/logController.hpp"
+// #include "service/configservice.hpp"
+// #include "service/loganalysis.hpp"
+// #include "controller/logController.hpp"
+
+#include "service/reportgeneration.hpp"
 
 int main()
 {
-    string rulePath = "/home/krishna/security/Agent/config/rules.config";
-    LogAnalysis analysis(rulePath);
-    analysis.start("/home/krishna/security/Agent/config/syslog.test");
+    Report report;
+    report.generateFromFile("/home/krishna/security/3-auth");
+    // string rulePath = "/home/krishna/security/Agent/config/rules.config";
+    // LogAnalysis analysis(rulePath);
+    // analysis.start("/home/krishna/security/Agent/config/syslog.test");
     
     //map<string, map<string, string>> table;
 

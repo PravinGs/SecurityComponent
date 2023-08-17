@@ -1,6 +1,7 @@
 #ifndef CONFIGSERVICE_HPP
 #define CONFIGSERVICE_HPP
 #pragma once
+
 #define R_ID "id"
 #define R_CHILD_ID "child_id"
 #define R_LEVEL "level"
@@ -21,13 +22,18 @@
 
 #include "agentUtils.hpp"
 
-
 class IniConfig
 {
 private:
 
 public:
     IniConfig() = default;
+
+    Aconfig getAConfigById(const int ruleId)
+    {
+        AConfig config;
+        return config;
+    }
 
     int isDigit(string number)
     {
@@ -67,7 +73,7 @@ public:
                     returnVal = FAILED;
                     break;
                 }
-                config.child_id = digit;
+                config.if_sid = digit;
             }
             if (strcmp(key.c_str(), R_MAX_SIZE) == 0)
             {
@@ -89,7 +95,7 @@ public:
                     returnVal = FAILED;
                     break;
                 }
-                config.alert = digit;
+                config.noalert = digit;
             }
             else if (strcmp(key.c_str(), R_LEVEL) == 0)
             {
@@ -110,7 +116,7 @@ public:
                     returnVal = FAILED;
                     break;
                 }
-                config.name = value;
+                config.decoded_as = value;
             }
             else if (strcmp(key.c_str(), R_FREQUENCY) == 0)
             {
@@ -152,7 +158,7 @@ public:
                     returnVal = FAILED;
                     break;
                 }
-                config.src_ip = value;
+                // config.src_ip = value;
             }
             else if (strcmp(key.c_str(), R_SRC_PORT) == 0)
             {
@@ -163,7 +169,7 @@ public:
                     returnVal = FAILED;
                     break;
                 }
-                config.src_port = digit;
+                // config.src_port = digit;
             }
             else if (strcmp(key.c_str(), R_DST_IP) == 0)
             {
@@ -173,7 +179,7 @@ public:
                     returnVal = FAILED;
                     break;
                 }
-                config.dst_ip = value;
+                // config.dst_ip = value;
             }
             else if (strcmp(key.c_str(), R_DST_PORT) == 0)
             {
@@ -184,7 +190,7 @@ public:
                     returnVal = FAILED;
                     break;
                 }
-                config.dst_port = digit;
+                // config.dst_port = digit;
             }
             else if (strcmp(key.c_str(), R_OPTIONS) == 0)
             {
@@ -278,7 +284,7 @@ public:
 
     int readRuleConfig(const string path, map<string, map<int, AConfig>> &table)
     {
-        AConfig config;
+        // AConfig config;
         int result = SUCCESS;
         fstream file(path, std::ios::in | std::ios::binary);
         string line, currentSection;
@@ -311,6 +317,8 @@ public:
             }
             else
             {
+                int digit;
+                AConfig config;
                 size_t delimiter = line.find('=');
                 if (delimiter != string::npos)
                 {
@@ -322,8 +330,9 @@ public:
                         result = FAILED;
                         break;
                     }
-                    int digit;
-                    AConfig config;
+                   
+                    config.id = 0;
+                    config.if_sid = 0;
                     digit = isDigit(key);
                     if (digit < 0)
                     {
@@ -349,7 +358,7 @@ public:
                         result = FAILED;
                         break;
                     }
-                    config.name = currentSection;
+                    config.decoded_as = currentSection;
                     table[currentSection][config.id] = config;
                 }
             }

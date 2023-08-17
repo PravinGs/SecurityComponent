@@ -3,7 +3,6 @@
 
 #define STANDARD_TIMESTAMP_SIZE 19
 
-#include "agentUtils.hpp"
 #include "service/configservice.hpp"
 
 typedef struct P_RULE P_RULE;
@@ -11,10 +10,13 @@ typedef struct P_RULE P_RULE;
 struct P_RULE
 {
     int id;
-    int child_id;
+    int if_sid;
+    int same_source_ip;
+    int time;
     std::time_t start;
     std::time_t end;
     int frequency;
+    int d_frequency;
     string src_ip;
 };
 

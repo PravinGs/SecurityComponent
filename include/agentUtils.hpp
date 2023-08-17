@@ -97,34 +97,45 @@ typedef struct LOG_EVENT LOG_EVENT;
 struct AConfig
 {
     int id;
-    int child_id; /*<if_sid>*/
-    int max_log_size; /*1024*/
-    int level; /*1 - 16*/
-    int alert; /*1 or 0*/
-    int frequency; /**/
-    int p_frequency; /*Not in the rules.xml*/
+    int level;
+    int if_sid;
+    int if_matched_id;
+    int same_source_ip;
+    int frequency;
     int timeframe;
-    string name; /*Name is a decoder name*/
-    string regex; /*pcre2*/
-    string description;
-    string info;
+    int same_id;
+    int noalert;
+    int different_url;
+    int max_log_size;
+    
     string group;
-    string src_ip; /*type will be boolean rather string, cause it doesn't actually have any ip address.*/
-    string dst_ip;
-    int src_port;
-    int dst_port;
+    string decoded_as;
+    string description;
+    string pcre2;
+    string info;
+    string type;
+    string status_pcre2;
+    string extra_data_pcre2;
     string options;
-
-    void addFrequency()
-    {
-        p_frequency++;
-    }
-    int checkFrequencyAlert()
-    {
-        return (frequency <= p_frequency) ? 1 : 0 ;
-    }
+    string user_pcre2;
+    string if_group;
+    string if_matched_group;
+    string id_pcre2;
+    string action;
+    string categories;
+    string check_if_ignored;
+    string ignore;
+    string regex;
+    string script;
+    string program_name_pcre2;
+    string weekday;
+    string time;
+    string url_pcre2;
+    string if_fts;
+    string hostname_pcre2;
+    string match;
+    string compiled_rule;
 };
-
 
 struct LOG_EVENT
 {
@@ -136,6 +147,9 @@ struct LOG_EVENT
     string user;
     string src_ip;
     string dest_ip;
+    string proto;
+    int is_matched;
+    int rule_id;
 };
 
 namespace Monitor
