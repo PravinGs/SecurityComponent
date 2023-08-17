@@ -51,8 +51,6 @@ public:
     
     int match(LOG_EVENT &logInfo,map<string, map<int, AConfig>> rules);
 
-    int getRegularFiles(const string directory, vector<string> &files);
-
     int analyseFile(const string file, const string format);
 
     int start(const string path);

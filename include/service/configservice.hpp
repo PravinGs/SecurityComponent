@@ -25,11 +25,12 @@
 class IniConfig
 {
 private:
+    pugi::xml_document doc;
 
 public:
     IniConfig() = default;
 
-    Aconfig getAConfigById(const int ruleId)
+    AConfig getAConfigById(const int ruleId)
     {
         AConfig config;
         return config;
@@ -41,7 +42,8 @@ public:
         try
         {
             digit = stoi(number);
-        }catch(exception &e)
+        }
+        catch (exception &e)
         {
             digit = -1;
             cerr << e.what() << endl;
@@ -49,187 +51,172 @@ public:
         return digit;
     }
 
-    int parseToAConfig(string rule, AConfig &config)
+    int parseToAConfig(string fileName, map<string, map<int, AConfig>> &table)
     {
-        int returnVal = SUCCESS;
-        if (rule.empty()) { AgentUtils::writeLog("Empty Rule received (AConfig)", WARNING); return WARNING; }
-        const char splitter = ':';
-        const char delimeter = ',';
-        string attribute;
-        std::stringstream ss(rule);
-        while (std::getline(ss, attribute, delimeter))
+
+        pugi::xml_parse_result result = doc.load_file(fileName.c_str());
+
+        if (!result)
         {
-            size_t m = attribute.find(splitter);
-            if (m == string::npos) {AgentUtils::writeLog("Invalid Rule Format"); break;}
-            string key = trim(attribute.substr(0, m));
-            string value = trim(attribute.substr(m+1));
-            
-            if (strcmp(key.c_str(), R_CHILD_ID) == 0)
+            AgentUtils::writeLog(FILE_ERROR + fileName, FAILED);
+            return FAILED;
+        }
+
+        pugi::xml_node root = doc.child("group");
+
+        for (pugi::xml_node groupNode = root; groupNode; groupNode = groupNode.next_sibling("group"))
+        {
+            AConfig rule;
+
+            std::string currentSection = root.attribute("name").value();
+
+            if (!currentSection.empty())
             {
-                int digit = isDigit(value);
-                if (digit < 0)
-                {
-                    AgentUtils::writeLog("Invalid child rule id set expecting integer", FAILED);
-                    returnVal = FAILED;
-                    break;
-                }
-                config.if_sid = digit;
+                rule.group = currentSection;
             }
-            if (strcmp(key.c_str(), R_MAX_SIZE) == 0)
+
+            for (pugi::xml_node ruleNode = groupNode.child("rule"); ruleNode; ruleNode = ruleNode.next_sibling("rule"))
             {
-                int digit = isDigit(value);
-                if (digit < 0)
+                int digit;
+                string str;
+                digit = isDigit(ruleNode.attribute("id").value());
+                if (digit != -1)
                 {
-                    AgentUtils::writeLog("Invalid log size set expecting integer", FAILED);
-                    returnVal = FAILED;
-                    break;
+                    rule.id = digit;
                 }
-                config.max_log_size = digit;
-            }       
-            else if (strcmp(key.c_str(), R_ALERT) == 0)
-            {
-                int digit = isDigit(value);
-                if (digit < 0)
+
+                digit = isDigit(ruleNode.attribute("level").value());
+                if (digit != -1)
                 {
-                    AgentUtils::writeLog("Invalid alert value set expecting integer", FAILED);
-                    returnVal = FAILED;
-                    break;
+                    rule.level = digit;
                 }
-                config.noalert = digit;
-            }
-            else if (strcmp(key.c_str(), R_LEVEL) == 0)
-            {
-                int digit = isDigit(value);
-                if (digit < 0)
+
+                digit = isDigit(ruleNode.attribute("frequency").value());
+                if (digit != -1)
                 {
-                    AgentUtils::writeLog("Invalid level value set expecting integer", FAILED);
-                    returnVal = FAILED;
-                    break;
+                    rule.frequency = digit;
                 }
-                config.level = digit;
-            }
-            else if (strcmp(key.c_str(), R_NAME) == 0)
-            {
-                if (value.empty())
+
+                digit = isDigit(ruleNode.attribute("timeframe").value());
+                if (digit != -1)
                 {
-                    AgentUtils::writeLog("No Log name specified", FAILED);
-                    returnVal = FAILED;
-                    break;
+                    rule.timeframe = digit;
                 }
-                config.decoded_as = value;
-            }
-            else if (strcmp(key.c_str(), R_FREQUENCY) == 0)
-            {
-                int digit = isDigit(value);
-                if (digit < 0)
+
+                digit = isDigit(ruleNode.attribute("ignore").value());
+                if (digit != -1)
                 {
-                    AgentUtils::writeLog("Invalid frequency value specified, expecting integer", FAILED);
-                    returnVal = FAILED;
-                    break;
+                    rule.ignore = digit;
                 }
-                config.frequency = digit;
-            }
-            else if (strcmp(key.c_str(), R_TIMEFRAME) == 0)
-            {
-                int digit = isDigit(value);
-                if (digit < 0)
+
+                digit = isDigit(ruleNode.child_value("if_sid"));
+
+                if (digit != -1)
                 {
-                    AgentUtils::writeLog("Invalid TimeFrame value specified, expecting integer", FAILED);
-                    returnVal = FAILED;
-                    break;
+                    rule.if_sid = digit;
                 }
-                config.timeframe = digit;
-            }
-            else if (strcmp(key.c_str(), R_REGEX) == 0)
-            {
-                if (value.empty())
+
+                str = ruleNode.child_value("status_pcre2");
+                if (!str.empty())
                 {
-                    AgentUtils::writeLog("Regex pattern not specified", FAILED);
-                    returnVal = FAILED;
-                    break;
+                    rule.status_pcre2 = str;
                 }
-                config.regex = value;
-            }
-            else if (strcmp(key.c_str(), R_SRC_IP) == 0)
-            {
-                if (value.empty())
+
+                str = ruleNode.child_value("id_pcre2");
+                if (!str.empty())
                 {
-                    AgentUtils::writeLog("src_ip pattern not specified", FAILED);
-                    returnVal = FAILED;
-                    break;
+                    rule.id_pcre2 = str;
                 }
-                // config.src_ip = value;
-            }
-            else if (strcmp(key.c_str(), R_SRC_PORT) == 0)
-            {
-                int digit = isDigit(value);
-                if (digit < 0)
+
+                str = ruleNode.child_value("extra_data_pcre2");
+                if (!str.empty())
                 {
-                    AgentUtils::writeLog("Invalid src_port value specified, expecting integer", FAILED);
-                    returnVal = FAILED;
-                    break;
+                    rule.extra_data_pcre2 = str;
                 }
-                // config.src_port = digit;
-            }
-            else if (strcmp(key.c_str(), R_DST_IP) == 0)
-            {
-                if (value.empty())
+
+                str = ruleNode.child_value("pcre2");
+                if (!str.empty())
                 {
-                    AgentUtils::writeLog("dst_ip pattern not specified", FAILED);
-                    returnVal = FAILED;
-                    break;
+                    rule.pcre2 = str;
                 }
-                // config.dst_ip = value;
-            }
-            else if (strcmp(key.c_str(), R_DST_PORT) == 0)
-            {
-                int digit = isDigit(value);
-                if (digit < 0)
+
+                str = ruleNode.child_value("program_name_pcre2");
+                if (!str.empty())
                 {
-                    AgentUtils::writeLog("Invalid dst_port value specofied, expecting integer", FAILED);
-                    returnVal = FAILED;
-                    break;
+                    rule.program_name_pcre2 = str;
                 }
-                // config.dst_port = digit;
-            }
-            else if (strcmp(key.c_str(), R_OPTIONS) == 0)
-            {
-                if (value.empty())
+
+                str = ruleNode.child_value("scrip"); /*Not sure */
+                if (!str.empty())
                 {
-                    AgentUtils::writeLog("No options specified", FAILED);
-                    returnVal = FAILED;
-                    break;
+                    rule.script = str;
                 }
-                config.options = value;
-            }
-            else if (strcmp(key.c_str(), R_DESCRIPTION) == 0)
-            {
-                if (value.empty())
+
+                str = ruleNode.child_value("group");
+                if (!str.empty())
                 {
-                    AgentUtils::writeLog("No description specified", FAILED);
-                    returnVal = FAILED;
-                    break;
+                    rule.group = str;
                 }
-                config.description = value;
-            }
-            else if (strcmp(key.c_str(), R_GROUP) == 0)
-            {
-                if (value.empty())
+
+                str = ruleNode.child_value("description");
+                if (!str.empty())
                 {
-                    AgentUtils::writeLog("No group specified", FAILED);
-                    returnVal = FAILED;
-                    break;
+                    rule.description = str;
                 }
-                config.group = value;
-            }
-            else
-            {
-                AgentUtils::writeLog("Unknown rule attribute found : <" + value + ">", FAILED);
-                returnVal = FAILED;
-                break;
+
+                str = ruleNode.child_value("decoded_as");
+                if (!str.empty())
+                {
+                    rule.decoded_as = str;
+                }
+
+                str = ruleNode.child_value("category"); /*check*/
+                if (!str.empty())
+                {
+                    rule.categories = str;
+                }
+
+                str = ruleNode.child_value("action");
+                if (!str.empty())
+                {
+                    rule.action = str;
+                }
+
+                str = ruleNode.child_value("options");
+                if (!str.empty())
+                {
+                    rule.options = str;
+                }
+
+                digit = isDigit(ruleNode.child_value("if_matched_sid"));
+                if (digit != -1)
+                {
+                    rule.if_matched_id = digit;
+                }
+
+                str = ruleNode.child_value("url_pcre2");
+                if (!str.empty())
+                {
+                    rule.url_pcre2 = str;
+                }
+
+                str = ruleNode.child_value("compiled_rule");
+                if (!str.empty())
+                {
+                    rule.compiled_rule = str;
+                }
+
+                str = ruleNode.child_value("hostname_pcre2");
+                if (!str.empty())
+                {
+
+                    rule.hostname_pcre2 = str;
+                }
+                table[currentSection][rule.id] = rule;
             }
         }
-        return returnVal;
+
+        return result;
     }
 
     int cleanFile(const string filePath)
@@ -284,86 +271,41 @@ public:
 
     int readRuleConfig(const string path, map<string, map<int, AConfig>> &table)
     {
-        // AConfig config;
         int result = SUCCESS;
-        fstream file(path, std::ios::in | std::ios::binary);
-        string line, currentSection;
-        int index = 1;
-
-        if (!file)
+        int isFile = 0;
+        if (OS::isDirExist(path) && std::filesystem::is_regular_file(path))
         {
-            AgentUtils::writeLog(FILE_ERROR + path, FAILED);
-            return FAILED;
+            isFile = 1;
         }
 
-        while (std::getline(file, line))
+        if (isFile)
         {
-            line = trim(line);
-
-            if (line.empty() || line[0] == ';')
-            {
-                continue;
-            }
-            else if (line[0] == '[' && line[line.size() - 1] == ']')
-            {
-                currentSection = trim(line.substr(1, line.size() - 2));
-            }
-            else if (line[0] == '[' && line[line.size() - 1] != ']')
-            {
-                AgentUtils::writeLog(INVALID_FILE + path, FAILED);
-                AgentUtils::writeLog("Invalid format at line " + std::to_string(index) + " : Missing closing square bracket", INFO);
-                result = FAILED;
-                break;
-            }
-            else
-            {
-                int digit;
-                AConfig config;
-                size_t delimiter = line.find('=');
-                if (delimiter != string::npos)
-                {
-                    string key = trim(line.substr(0, delimiter));
-                    if (!validateText(key))
-                    {
-                        AgentUtils::writeLog(INVALID_FILE + path, FAILED);
-                        AgentUtils::writeLog("Invalid format at line " + std::to_string(index) + " : Found ';' in key", DEBUG);
-                        result = FAILED;
-                        break;
-                    }
-                   
-                    config.id = 0;
-                    config.if_sid = 0;
-                    digit = isDigit(key);
-                    if (digit < 0)
-                    {
-                        AgentUtils::writeLog("Invalid rule id specified" + key + " : expecting number", FAILED);
-                        result = FAILED;
-                        break;
-                    }
-                    config.id = digit;
-                    
-                    string value = trim(line.substr(delimiter + 1));
-                    validateText(value);
-                    
-                    if (parseToAConfig(value, config) == FAILED)
-                    {
-                        AgentUtils::writeLog(INVALID_FILE + path, FAILED);
-                        AgentUtils::writeLog("Invalid Config file : line number " + std::to_string(index), FAILED);
-                        result = FAILED;
-                        break;
-                    }
-                    if (currentSection.empty())
-                    {
-                        AgentUtils::writeLog("No Log name specified", FAILED);
-                        result = FAILED;
-                        break;
-                    }
-                    config.decoded_as = currentSection;
-                    table[currentSection][config.id] = config;
-                }
-            }
-            index++;
+            result = parseToAConfig(path, table);
         }
+        else
+        {
+            string currentFile = path;
+            vector<string> files;
+            if (currentFile[currentFile.size() - 1] != '/')
+            {
+                currentFile += "/";
+            }
+            result = OS::getRegularFiles(currentFile, files);
+
+            if (result == FAILED)
+                return FAILED;
+
+            if (files.size() == 0)
+            {
+                AgentUtils::writeLog(INVALID_PATH + path, FAILED);
+                return FAILED;
+            }
+            for (string file : files)
+            {
+                result = parseToAConfig(file, table);
+            }
+        }
+
         return result;
     }
 

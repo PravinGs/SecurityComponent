@@ -36,6 +36,7 @@
 #include <boost/asio.hpp>
 #include <zlib.h>
 #include <regex>
+#include <pugixml.hpp>
 #include "service/croncpp.h"
 
 using std::cerr;
@@ -260,6 +261,8 @@ public:
     static int compressFile(const string logFile);
 
     static string getCurretDayFileByName(string appName);
+
+    static int getRegularFiles(const string directory, vector<string> &files);
 };
 
 class AgentUtils
