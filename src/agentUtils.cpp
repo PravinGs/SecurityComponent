@@ -385,6 +385,36 @@ int OS::readRegularFiles(vector<string> &files)
     return SUCCESS;
 }
 
+int OS::getRegularFiles(const string directory, vector<string> &files)
+{
+    int result = SUCCESS;
+    try
+    {
+        string parent = directory;
+        for (const auto &entry : std::filesystem::directory_iterator(directory))
+        {
+            if (std::filesystem::is_regular_file(entry.path()))
+            {   
+                string child = entry.path();
+                files.push_back(parent + child);
+            }
+            else if (std::filesystem::is_directory(entry.path()))
+            {
+                string child = entry.path();
+                result = getRegularFiles(parent + child, files);
+            }
+        }
+    }
+    catch (exception &e)
+    {
+        result = FAILED;
+        string except = e.what();
+        AgentUtils::writeLog(except, FAILED);
+    }
+    return result;
+}
+
+
 std::time_t AgentUtils::convertStrToTime(const string &datetime)
 {
     const char *STANDARD_TIME_FORMAT = "%Y-%m-%d %H:%M:%S";
