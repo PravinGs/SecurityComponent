@@ -224,35 +224,6 @@ int LogAnalysis::match(LOG_EVENT &logInfo,map<string, map<int, AConfig>> rules)
     return result;
 }
 
-int LogAnalysis::getRegularFiles(const string directory, vector<string> &files)
-{
-    int result = SUCCESS;
-    try
-    {
-        string parent = directory;
-        for (const auto &entry : std::filesystem::directory_iterator(directory))
-        {
-            if (std::filesystem::is_regular_file(entry.path()))
-            {   
-                string child = entry.path();
-                files.push_back(parent + child);
-            }
-            else if (std::filesystem::is_directory(entry.path()))
-            {
-                string child = entry.path();
-                result = getRegularFiles(parent + child, files);
-            }
-        }
-    }
-    catch (exception &e)
-    {
-        result = FAILED;
-        string except = e.what();
-        AgentUtils::writeLog(except, FAILED);
-    }
-    return result;
-}
-
 int LogAnalysis::analyseFile(const string file, string format)
 {
     int result;
@@ -316,13 +287,13 @@ int LogAnalysis::start(const string path)
         {
             currentFile += "/";
         }
-        result = getRegularFiles(currentFile, files);
+        result = OS::getRegularFiles(currentFile, files);
 
         if (result == FAILED) return FAILED;
         
         if (files.size() == 0)
         {
-            AgentUtils::writeLog("Check directory ( " + path + " ). It contains no files.", FAILED);
+            AgentUtils::writeLog(INVALID_PATH + path, FAILED);
             return FAILED;
         }
         for (string file : files)
