@@ -396,7 +396,7 @@ int OS::getRegularFiles(const string directory, vector<string> &files)
             if (std::filesystem::is_regular_file(entry.path()))
             {   
                 string child = entry.path();
-                files.push_back(parent + child);
+                files.push_back(child);
             }
             else if (std::filesystem::is_directory(entry.path()))
             {

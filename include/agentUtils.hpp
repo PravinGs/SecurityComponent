@@ -1,6 +1,6 @@
 #ifndef AGENT_UTILS_HPP 
 #define AGENT_UTILS_HPP
-
+#define PCRE2_CODE_UNIT_WIDTH 8
 #pragma once
 
 #include <iostream>
@@ -37,7 +37,10 @@
 #include <zlib.h>
 #include <regex>
 #include <pugixml.hpp>
+#include <pcre2.h>
 #include "service/croncpp.h"
+
+
 
 using std::cerr;
 using std::cout;

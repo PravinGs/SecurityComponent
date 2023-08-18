@@ -2,12 +2,43 @@
 // #include "service/loganalysis.hpp"
 // #include "controller/logController.hpp"
 
-#include "service/reportgeneration.hpp"
+// #include "service/reportgeneration.hpp"
+#include "service/configservice.hpp"
+#include "service/loganalysis.hpp"
 
 int main()
 {
-    Report report;
-    report.generateFromFile("/home/krishna/security/3-auth");
+    LogAnalysis analysis("/home/krishna/security/rules/syslog_rules.xml");
+    if (analysis.start("/etc/scl/log/archives/2023/Aug/3-syslog") == SUCCESS)
+    {
+        cout << "SUCCESS" << endl;
+    }
+
+    // IniConfig config;
+    // string path = "/home/krishna/security/rules/syslog_rules.xml";
+    // map<string, map<int, AConfig>> table;
+
+    // if (config.readRuleConfig(path, table) == SUCCESS)
+    // {
+    //     cout << "Executed successfully" << endl;
+    // }
+    // else
+    // {
+    //     cout << "Failed" << endl;
+    // }
+
+    // for (const auto& group: table)
+    // {
+    //     cout << "Group : " << group.first << endl;
+    //     for (const auto& rule: group.second)
+    //     {
+    //         AConfig config = rule.second;
+    //         cout << "Rule Id: " << config.id << endl;
+    //         cout << "Rule Description: " << config.description << endl;
+    //     }
+    // }
+    // Report report;
+    // report.generateFromFile("/home/krishna/security/3-auth");
     // string rulePath = "/home/krishna/security/Agent/config/rules.config";
     // LogAnalysis analysis(rulePath);
     // analysis.start("/home/krishna/security/Agent/config/syslog.test");

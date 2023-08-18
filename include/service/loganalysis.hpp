@@ -31,7 +31,7 @@ private:
 
 private:
     bool isRuleFound(const int ruleId);
-    void addMatchedRule(const int ruleId);
+    void addMatchedRule(const int ruleId, const string log);
 
 public:
 
@@ -47,7 +47,9 @@ public:
 
     string formatSysLog(string log, const string format);
 
-    int regexMatch(const string log, const string pattern);
+    bool regexMatch(const string log, const string pattern);
+
+    bool pcreMatch(const string input, const string pattern);
     
     int match(LOG_EVENT &logInfo,map<string, map<int, AConfig>> rules);
 

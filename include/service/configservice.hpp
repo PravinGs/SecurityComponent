@@ -38,6 +38,7 @@ public:
 
     int isDigit(string number)
     {
+        if (number.empty()) return -1;
         int digit;
         try
         {
@@ -53,11 +54,12 @@ public:
 
     int parseToAConfig(string fileName, map<string, map<int, AConfig>> &table)
     {
-
         pugi::xml_parse_result result = doc.load_file(fileName.c_str());
 
         if (!result)
         {
+            string error = result.description();
+            cout << "Error: " << error << endl;
             AgentUtils::writeLog(FILE_ERROR + fileName, FAILED);
             return FAILED;
         }
@@ -67,6 +69,15 @@ public:
         for (pugi::xml_node groupNode = root; groupNode; groupNode = groupNode.next_sibling("group"))
         {
             AConfig rule;
+            rule.id = 0;
+            rule.timeframe = 0;
+            rule.if_sid = 0;
+            rule.if_matched_id = 0;
+            rule.same_source_ip = 0;
+            rule.frequency = 0;
+            rule.noalert = 0;
+            rule.different_url = 0;
+            rule.max_log_size = 0;
 
             std::string currentSection = root.attribute("name").value();
 
@@ -74,7 +85,6 @@ public:
             {
                 rule.group = currentSection;
             }
-
             for (pugi::xml_node ruleNode = groupNode.child("rule"); ruleNode; ruleNode = ruleNode.next_sibling("rule"))
             {
                 int digit;
@@ -215,8 +225,8 @@ public:
                 table[currentSection][rule.id] = rule;
             }
         }
-
-        return result;
+        AgentUtils::writeLog("XML parsing success for " + fileName, DEBUG);
+        return SUCCESS;
     }
 
     int cleanFile(const string filePath)
@@ -271,6 +281,7 @@ public:
 
     int readRuleConfig(const string path, map<string, map<int, AConfig>> &table)
     {
+        AgentUtils::writeLog("Reading " + path, DEBUG);
         int result = SUCCESS;
         int isFile = 0;
         if (OS::isDirExist(path) && std::filesystem::is_regular_file(path))
@@ -286,9 +297,9 @@ public:
         {
             string currentFile = path;
             vector<string> files;
-            if (currentFile[currentFile.size() - 1] != '/')
+            if (currentFile[currentFile.size() - 1] == '/')
             {
-                currentFile += "/";
+                currentFile = currentFile.substr(0, currentFile.find_last_of('/'));
             }
             result = OS::getRegularFiles(currentFile, files);
 

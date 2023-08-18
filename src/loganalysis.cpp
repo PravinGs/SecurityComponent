@@ -73,22 +73,78 @@ LOG_EVENT LogAnalysis::parseToLogInfo(string log, const string format)
     return logInfo;
 }
 
-int LogAnalysis::regexMatch(const string log, const string pattern)
+bool LogAnalysis::regexMatch(const string log, const string pattern)
 {
     std::regex r(pattern);
     std::smatch matches;
-    return (regex_search(log, matches, r)) ? SUCCESS : FAILED;
+    if (regex_search(log, matches, r))
+    {
+        cout << "Found : " << matches.str() <<endl;
+        return true;
+    }
+    return false;
+    // return (regex_search(log, matches, r)) ? SUCCESS : FAILED;
 }
+
+bool LogAnalysis::pcreMatch(const string input, const string pattern)
+{
+    int errorcode;
+    PCRE2_SIZE erroroffset;
+
+    // Compile the pattern
+    pcre2_code *re = pcre2_compile(
+        reinterpret_cast<PCRE2_SPTR>(pattern.c_str()),  // Pattern string
+        PCRE2_ZERO_TERMINATED,                         // Length of pattern
+        0,                                             // Compile options
+        &errorcode,                                    // Error code
+        &erroroffset,                                  // Error offset
+        nullptr);                                      // Compile context
+
+    if (re == nullptr) {
+        PCRE2_UCHAR buffer[256];
+        pcre2_get_error_message(errorcode, buffer, sizeof(buffer));
+        std::cerr << "PCRE2 compilation failed at offset " << erroroffset << ": " << buffer << std::endl;
+        return false;
+    }
+
+    // Match the input against the pattern
+    pcre2_match_data *match_data = pcre2_match_data_create_from_pattern(re, nullptr);
+    int rc = pcre2_match(
+        re,                                       // Compiled pattern
+        reinterpret_cast<PCRE2_SPTR>(input.c_str()), // Input string
+        PCRE2_ZERO_TERMINATED,                     // Length of input
+        0,                                         // Start offset
+        0,                                         // Match options
+        match_data,                                // Match data
+        nullptr);                                  // Match context
+
+    // Clean up
+    pcre2_code_free(re);
+    pcre2_match_data_free(match_data);
+
+    // Return true if the pattern matches the input, false otherwise
+    return rc >= 0;
+}
+
 
 bool LogAnalysis::isRuleFound(const int ruleId)
 {
-    auto result = std::find(_idRules.begin(), _idRules.end(), ruleId);
-    return (result == _idRules.end()) ? true : false;
+    // auto result = std::find(_idRules.begin(), _idRules.end(), ruleId);
+    // return (result == _idRules.end()) ? true : false;
+    for (int rule: _idRules)
+    {
+        if (rule == ruleId) return true;
+    }
+    return false;
 }
 
-void LogAnalysis::addMatchedRule(const int ruleId)
+void LogAnalysis::addMatchedRule(const int ruleId, const string log)
 {
-    if (!isRuleFound(ruleId)) { addMatchedRule(ruleId); }
+    if (!isRuleFound(ruleId)) 
+    {
+        this->_idRules.push_back(ruleId);
+        AgentUtils::writeLog("Rule Id: " + std::to_string(ruleId) + " -> " + log, DEBUG);
+    }
     return;
 }
 
@@ -133,9 +189,10 @@ int LogAnalysis::match(LOG_EVENT &logInfo,map<string, map<int, AConfig>> rules)
                                 || pRule.frequency <= pRule.d_frequency)
                     {
                         /*The rule ID'd and have to alerted*/
+                        cout << "Rule Id(145): " << ruleInfo.id << "\t" << logInfo.log << endl;
                         logInfo.is_matched = 1;
                         logInfo.rule_id = pRule.id;
-                        addMatchedRule(pRule.id);
+                        addMatchedRule(pRule.id, logInfo.log);
                         this->_processedRules.push_back(i);
                     }
                 }
@@ -147,9 +204,21 @@ int LogAnalysis::match(LOG_EVENT &logInfo,map<string, map<int, AConfig>> rules)
                 {
                     // logInfo.log += "|" + std::to_string(ruleInfo.level);
                     // logInfo.log += "|" + std::to_string(ruleInfo.id);
+                    cout << "Rule Id(160): " << ruleInfo.id << "\t" << logInfo.log << endl;
                     logInfo.is_matched = 1;
                     logInfo.rule_id = ruleInfo.id;
-                    addMatchedRule(ruleInfo.id);
+                    addMatchedRule(ruleInfo.id, logInfo.log);
+                }
+            }
+            
+            if (!ruleInfo.pcre2.empty())
+            {
+                if ((result = pcreMatch(logInfo.log, ruleInfo.pcre2)) == SUCCESS)
+                {
+                    cout << "Rule Id(171): " << ruleInfo.id << "\t" << logInfo.log << endl;
+                    logInfo.is_matched = 1;
+                    logInfo.rule_id = ruleInfo.id;
+                    addMatchedRule(ruleInfo.id, logInfo.log); 
                 }
             }
 
@@ -157,19 +226,21 @@ int LogAnalysis::match(LOG_EVENT &logInfo,map<string, map<int, AConfig>> rules)
             {
                 if ((result = isValidSysLog(logInfo.size)) == FAILED)
                 {
+                    cout << "Rule Id(182): " << ruleInfo.id << "\t" << logInfo.log << endl;
                     logInfo.is_matched = 1;
                     logInfo.rule_id = ruleInfo.id;
-                    addMatchedRule(ruleInfo.id);
+                    addMatchedRule(ruleInfo.id, logInfo.log);
                 }
             }
             
-            if (ruleInfo.if_sid > 0)
+            if (ruleInfo.if_matched_id > 0)
             {
-                if (isRuleFound(ruleInfo.if_sid))
+                if (isRuleFound(ruleInfo.if_matched_id))
                 {
+                    cout << "Rule Id(193): " << ruleInfo.id << "\t" << logInfo.log << endl;
                     logInfo.is_matched = 1;
                     logInfo.rule_id = ruleInfo.id; // Adding alerted log to the alert file.
-                    addMatchedRule(ruleInfo.id);
+                    addMatchedRule(ruleInfo.id, logInfo.log);
                 }
             }
             
@@ -193,7 +264,7 @@ int LogAnalysis::match(LOG_EVENT &logInfo,map<string, map<int, AConfig>> rules)
                 pRule.src_ip   = logInfo.src_ip;
                 if (isRuleFound(pRule.if_sid))
                 {
-                    pRule.frequency--;
+                    pRule.d_frequency++;
                 }
             }   
 
@@ -246,13 +317,14 @@ int LogAnalysis::analyseFile(const string file, string format)
     {
         if (line.empty()) continue;
         LOG_EVENT logInfo = parseToLogInfo(line, format);
+        // cout << "Log matching : " << logInfo.is_matched << endl;
         result = match(logInfo, rules);
         if (logInfo.is_matched == 1)
         {
             alertLogs.push_back(logInfo);
         }
     }
-    
+    AgentUtils::writeLog("Total matched logs : " + std::to_string(alertLogs.size()), DEBUG);
     fp.close();
     return result;
 }
@@ -283,9 +355,9 @@ int LogAnalysis::start(const string path)
     else
     {
         string currentFile = path;
-        if (currentFile[currentFile.size() - 1] != '/')
+        if (currentFile[currentFile.size() - 1] == '/')
         {
-            currentFile += "/";
+            currentFile = currentFile.substr(0, currentFile.find_last_of('/'));
         }
         result = OS::getRegularFiles(currentFile, files);
 
@@ -318,7 +390,7 @@ string LogAnalysis::formatSysLog(string log, const string format)
         fLog += "|" + temp.substr(0, temp.find(' '));
         temp = temp.substr(temp.find(' ') + 1);
         fLog += "|" + temp;
-        cout << fLog << endl;
+        //cout << fLog << endl;
         return fLog;
     }
     else
@@ -343,7 +415,7 @@ string LogAnalysis::formatSysLog(string log, const string format)
         fLog += '|' + token;
         index++;
     }
-    cout << fLog  << endl;
+    // cout << fLog  << endl;
 
     return fLog;
 }

@@ -1,7 +1,7 @@
 CXX = g++
 CFLAGS = -Wall -Werror -std=c++1z -g
 INCLUDES = -Iinclude
-LFLAGS = -lamqpcpp -lpthread -ldl -lev -ljsoncpp -lz -lcurl -lssl -lcrypto -lboost_system  -lgtest -lgtest_main -lpugixml
+LFLAGS = -lamqpcpp -lpthread -ldl -lev -ljsoncpp -lz -lcurl -lssl -lcrypto -lboost_system  -lgtest -lgtest_main -lpugixml -lpcre2-8
 
 # Source files and directories
 SRC_DIR = src
