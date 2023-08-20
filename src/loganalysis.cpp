@@ -73,20 +73,20 @@ LOG_EVENT LogAnalysis::parseToLogInfo(string log, const string format)
     return logInfo;
 }
 
-bool LogAnalysis::regexMatch(const string log, const string pattern)
+int LogAnalysis::regexMatch(const string log, const string pattern)
 {
     std::regex r(pattern);
     std::smatch matches;
     if (regex_search(log, matches, r))
     {
         cout << "Found : " << matches.str() <<endl;
-        return true;
+        return SUCCESS;
     }
-    return false;
+    return FAILED;
     // return (regex_search(log, matches, r)) ? SUCCESS : FAILED;
 }
 
-bool LogAnalysis::pcreMatch(const string input, const string pattern)
+int LogAnalysis::pcreMatch(const string input, const string pattern)
 {
     int errorcode;
     PCRE2_SIZE erroroffset;
@@ -104,7 +104,7 @@ bool LogAnalysis::pcreMatch(const string input, const string pattern)
         PCRE2_UCHAR buffer[256];
         pcre2_get_error_message(errorcode, buffer, sizeof(buffer));
         std::cerr << "PCRE2 compilation failed at offset " << erroroffset << ": " << buffer << std::endl;
-        return false;
+        return FAILED;
     }
 
     // Match the input against the pattern
@@ -123,24 +123,24 @@ bool LogAnalysis::pcreMatch(const string input, const string pattern)
     pcre2_match_data_free(match_data);
 
     // Return true if the pattern matches the input, false otherwise
-    return rc >= 0;
+    return (rc >= 0) ? SUCCESS : FAILED;
 }
 
 
-bool LogAnalysis::isRuleFound(const int ruleId)
+int LogAnalysis::isRuleFound(const int ruleId)
 {
     // auto result = std::find(_idRules.begin(), _idRules.end(), ruleId);
     // return (result == _idRules.end()) ? true : false;
     for (int rule: _idRules)
     {
-        if (rule == ruleId) return true;
+        if (rule == ruleId) return SUCCESS;
     }
-    return false;
+    return FAILED;
 }
 
 void LogAnalysis::addMatchedRule(const int ruleId, const string log)
 {
-    if (!isRuleFound(ruleId)) 
+    if (isRuleFound(ruleId) == FAILED) 
     {
         this->_idRules.push_back(ruleId);
         AgentUtils::writeLog("Rule Id: " + std::to_string(ruleId) + " -> " + log, DEBUG);
@@ -317,7 +317,6 @@ int LogAnalysis::analyseFile(const string file, string format)
     {
         if (line.empty()) continue;
         LOG_EVENT logInfo = parseToLogInfo(line, format);
-        // cout << "Log matching : " << logInfo.is_matched << endl;
         result = match(logInfo, rules);
         if (logInfo.is_matched == 1)
         {
@@ -325,6 +324,7 @@ int LogAnalysis::analyseFile(const string file, string format)
         }
     }
     AgentUtils::writeLog("Total matched logs : " + std::to_string(alertLogs.size()), DEBUG);
+
     fp.close();
     return result;
 }
