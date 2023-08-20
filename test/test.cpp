@@ -8,8 +8,8 @@
 
 int main()
 {
-    LogAnalysis analysis("/home/krishna/security/rules/syslog_rules.xml");
-    if (analysis.start("/etc/scl/log/archives/2023/Aug/3-syslog") == SUCCESS)
+    LogAnalysis analysis("/home/pravin/Desktop/SecurityComponent/config/test-rules.xml");
+    if (analysis.start("/home/pravin/Desktop/SecurityComponent/config/syslog.test") == SUCCESS)
     {
         cout << "SUCCESS" << endl;
     }

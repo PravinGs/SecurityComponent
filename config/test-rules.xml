@@ -1,0 +1,7 @@
+<group name="syslog, error">
+<rule id="1010" level="5">
+    <pcre2>segfault at </pcre2>
+    <description>Process segfaulted.</description>
+    <group>service_availability,</group>
+</rule>
+</group>
