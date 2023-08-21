@@ -139,6 +139,9 @@ struct AConfig
     string hostname_pcre2;
     string match;
     string compiled_rule;
+
+    AConfig() : id(0), level(0), if_sid(0), if_matched_id(0), same_source_ip(0), frequency(0), 
+                timeframe(0), same_id(0), noalert(0), different_url(0), max_log_size(0) {}
 };
 
 struct LOG_EVENT
@@ -153,7 +156,10 @@ struct LOG_EVENT
     string dest_ip;
     string proto;
     int is_matched;
+    string group;
     int rule_id;
+
+    LOG_EVENT() : is_matched(0), rule_id(0) {}
 };
 
 namespace Monitor
@@ -231,14 +237,6 @@ namespace Monitor
     };
 }
 
-class Auth
-{
-    static int isValidUser(const string userName)
-    {
-        struct passwd *userInfo = getpwnam(userName.c_str());
-        return (userInfo == nullptr) ? FAILED : SUCCESS;
-    }
-};
 
 class OS
 {
