@@ -2,11 +2,11 @@
 
 LogAnalysis::LogAnalysis(const string configFile) : _rulesFile(configFile) {}
 
-LogAnalysis::LogAnalysis(){}
+LogAnalysis::LogAnalysis() {}
 
 void extractNetworkLog(LOG_EVENT &logInfo)
 {
-    /* IN= OUT=lo SRC=127.0.0.1 DST=127.0.0.1 LEN=52 TOS=0x00 PREC=0x00 
+    /* IN= OUT=lo SRC=127.0.0.1 DST=127.0.0.1 LEN=52 TOS=0x00 PREC=0x00
     TTL=64 ID=38860 DF PROTO=TCP SPT=8888 DPT=55764 WINDOW=512 RES=0x00 ACK URGP=0 */
 
     string temp = logInfo.log;
@@ -17,17 +17,16 @@ void extractNetworkLog(LOG_EVENT &logInfo)
     string proto = temp.substr(temp.find("PROTO") + 6);
     proto = proto.substr(0, proto.find_first_of(' '));
 
-    logInfo.src_ip  = src_ip;
+    logInfo.src_ip = src_ip;
     logInfo.dest_ip = dest_ip;
-    logInfo.proto   = proto;
+    logInfo.proto = proto;
 
     return;
-
 }
 
 void LogAnalysis::setConfigFile(const string configFile)
 {
-    _rulesFile = configFile;
+    this->_rulesFile = configFile;
 }
 
 int LogAnalysis::isValidSysLog(size_t size)
@@ -37,10 +36,7 @@ int LogAnalysis::isValidSysLog(size_t size)
 
 LOG_EVENT LogAnalysis::parseToLogInfo(string log, const string format)
 {
-    /* Log format should be checked before parsing */
     LOG_EVENT logInfo;
-    logInfo.rule_id = 0;
-    logInfo.is_matched = 0;
     string timestamp, user, program, message;
     std::stringstream ss;
     if (std::count(log.begin(), log.end(), '|') >= 3)
@@ -50,26 +46,27 @@ LOG_EVENT LogAnalysis::parseToLogInfo(string log, const string format)
     else
     {
         string fLog = formatSysLog(log, format);
-        if (fLog.empty()) { return logInfo; }
+        if (fLog.empty())
+        {
+            return logInfo;
+        }
         ss << fLog;
     }
     std::getline(ss, timestamp, '|');
     std::getline(ss, user, '|');
     std::getline(ss, program, '|');
     std::getline(ss, message, '|');
-    /* Set the values to the structure */
     logInfo.format = format;
     logInfo.size = log.size();
     logInfo.timestamp = timestamp;
     logInfo.user = user;
     logInfo.program = program;
-    logInfo.log = message;
+    logInfo.log = AgentUtils::trim(message);
 
     if (logInfo.log.find("SRC=") != string::npos)
     {
         extractNetworkLog(logInfo);
     }
-
     return logInfo;
 }
 
@@ -77,25 +74,18 @@ int LogAnalysis::regexMatch(const string log, const string pattern)
 {
     std::regex r(pattern);
     std::smatch matches;
-    if (regex_search(log, matches, r))
-    {
-        cout << "Found : " << matches.str() <<endl;
-        return SUCCESS;
-    }
-    return FAILED;
-    // return (regex_search(log, matches, r)) ? SUCCESS : FAILED;
+    return ((regex_search(log, matches, r) && matches.size() > 0)) ? 1 : 0;
 }
 
-int LogAnalysis::pcreMatch(const string input, const string pattern)
-{
-    int errorcode;
+int LogAnalysis::pcreMatch(const std::string& input, const std::string& pattern) {
+    int errorcode = -1;
     PCRE2_SIZE erroroffset;
 
     // Compile the pattern
     pcre2_code *re = pcre2_compile(
-        reinterpret_cast<PCRE2_SPTR>(pattern.c_str()),  // Pattern string
+        reinterpret_cast<PCRE2_SPTR8>(pattern.c_str()), // Pattern string
         PCRE2_ZERO_TERMINATED,                         // Length of pattern
-        0,                                             // Compile options
+        PCRE2_CASELESS,                                // Compile options (case-insensitive)
         &errorcode,                                    // Error code
         &erroroffset,                                  // Error offset
         nullptr);                                      // Compile context
@@ -110,37 +100,36 @@ int LogAnalysis::pcreMatch(const string input, const string pattern)
     // Match the input against the pattern
     pcre2_match_data *match_data = pcre2_match_data_create_from_pattern(re, nullptr);
     int rc = pcre2_match(
-        re,                                       // Compiled pattern
-        reinterpret_cast<PCRE2_SPTR>(input.c_str()), // Input string
-        PCRE2_ZERO_TERMINATED,                     // Length of input
-        0,                                         // Start offset
-        0,                                         // Match options
-        match_data,                                // Match data
-        nullptr);                                  // Match context
+        re,                                          // Compiled pattern
+        reinterpret_cast<PCRE2_SPTR8>(input.c_str()), // Input string
+        PCRE2_ZERO_TERMINATED,                       // Length of input
+        0,                                           // Start offset
+        0,                                           // Match options
+        match_data,                                  // Match data
+        nullptr);                                    // Match context
 
-    // Clean up
     pcre2_code_free(re);
     pcre2_match_data_free(match_data);
 
-    // Return true if the pattern matches the input, false otherwise
-    return (rc >= 0) ? SUCCESS : FAILED;
+    return rc ;
 }
-
 
 int LogAnalysis::isRuleFound(const int ruleId)
 {
     // auto result = std::find(_idRules.begin(), _idRules.end(), ruleId);
-    // return (result == _idRules.end()) ? true : false;
-    for (int rule: _idRules)
+    // return (result == _idRules.end()) ? FAILED : SUCCESS;
+    for (int rule : _idRules)
     {
-        if (rule == ruleId) return SUCCESS;
+        if (rule == ruleId)
+            return SUCCESS;
     }
     return FAILED;
 }
 
 void LogAnalysis::addMatchedRule(const int ruleId, const string log)
 {
-    if (isRuleFound(ruleId) == FAILED) 
+    int result = isRuleFound(ruleId);
+    if ( result == FAILED)
     {
         this->_idRules.push_back(ruleId);
         AgentUtils::writeLog("Rule Id: " + std::to_string(ruleId) + " -> " + log, DEBUG);
@@ -148,32 +137,26 @@ void LogAnalysis::addMatchedRule(const int ruleId, const string log)
     return;
 }
 
-int LogAnalysis::match(LOG_EVENT &logInfo,map<string, map<int, AConfig>> rules)
+int LogAnalysis::match(LOG_EVENT &logInfo)
 {
-    /*
-        read the rules one by one
-        checking if any rules in the memory, which is expired if it is remove it,
-        checking any rules is processing state wait for logs
-        Checking and do the regex matching for the logs
-        Checking the read syslog size. 
-        Checking any rule which have child id, that might be identified before.
-        Checking the timeframe or frequency is available for the rule if it is, do the given.
-        And during those checkings if rule matched add the rule id to the Id'd rules.
-    */
     int result = FAILED;
-    for (auto &rule: rules)
+    for (auto &rule : this->_rules)
     {
-        for (auto &r: rule.second)
+        for (auto &r : rule.second)
         {
+            bool isParentRuleMatching = false;
             AConfig ruleInfo = r.second;
             P_RULE pRule;
-            pRule.id = 0;
-            pRule.if_sid = 0;
-            pRule.same_source_ip = 0;
 
             for (int i : this->_processedRules) /* Removing all the processed rules. */
             {
-                this->_processingRules.erase(this->_processingRules.begin() + this->_processedRules[i]);
+                auto newEnd = std::remove_if(_processingRules.begin(), _processingRules.end(),
+                    [i](const P_RULE& s) {
+                        return s.id == i;
+                    });
+
+                _processingRules.erase(newEnd, _processingRules.end());
+                // this->_processingRules.erase(this->_processingRules.begin() + this->_processedRules[i]);
             }
 
             if (this->_processingRules.size() > 0) /* Checking if rules are about to expire or not. */
@@ -184,41 +167,59 @@ int LogAnalysis::match(LOG_EVENT &logInfo,map<string, map<int, AConfig>> rules)
                     if ((pRule.end < AgentUtils::convertStrToTime(logInfo.timestamp) && pRule.d_frequency != pRule.frequency))
                     {
                         this->_processedRules.push_back(i); /* The rule expired */
-
-                    } else if ((pRule.end < AgentUtils::convertStrToTime(logInfo.timestamp) && pRule.frequency == pRule.d_frequency) 
-                                || pRule.frequency <= pRule.d_frequency)
+                    }
+                    else if ((pRule.end < AgentUtils::convertStrToTime(logInfo.timestamp) && pRule.frequency == pRule.d_frequency) || pRule.frequency <= pRule.d_frequency)
                     {
                         /*The rule ID'd and have to alerted*/
-                        cout << "Rule Id(145): " << ruleInfo.id << "\t" << logInfo.log << endl;
                         logInfo.is_matched = 1;
                         logInfo.rule_id = pRule.id;
+                        logInfo.group = pRule.group;
                         addMatchedRule(pRule.id, logInfo.log);
                         this->_processedRules.push_back(i);
+                        break;
                     }
                 }
             }
 
             if (!ruleInfo.regex.empty()) /* Checking the regex patterns if exists in the rule */
             {
-                if ((result = regexMatch(logInfo.log, ruleInfo.regex)) == SUCCESS)
+                result = regexMatch(logInfo.log, ruleInfo.regex);
+                if (result == 1)
                 {
-                    // logInfo.log += "|" + std::to_string(ruleInfo.level);
-                    // logInfo.log += "|" + std::to_string(ruleInfo.id);
-                    cout << "Rule Id(160): " << ruleInfo.id << "\t" << logInfo.log << endl;
                     logInfo.is_matched = 1;
                     logInfo.rule_id = ruleInfo.id;
+                    logInfo.group = ruleInfo.group;
+                    isParentRuleMatching = true;
                     addMatchedRule(ruleInfo.id, logInfo.log);
+                    break;
+                }
+            }
+
+            if (!ruleInfo.pcre2.empty())
+            {
+                result = pcreMatch(logInfo.log, ruleInfo.pcre2);
+                if (result > 0)
+                {
+                    logInfo.is_matched = 1;
+                    logInfo.rule_id = ruleInfo.id;
+                    logInfo.group = ruleInfo.group;
+                    isParentRuleMatching = true;
+                    addMatchedRule(ruleInfo.id, logInfo.log);
+                    break;
                 }
             }
             
-            if (!ruleInfo.pcre2.empty())
+            if (!ruleInfo.program_name_pcre2.empty())
             {
-                if ((result = pcreMatch(logInfo.log, ruleInfo.pcre2)) == SUCCESS)
+                result = pcreMatch(logInfo.log, ruleInfo.pcre2);
+                if (result > 0)
                 {
-                    cout << "Rule Id(171): " << ruleInfo.id << "\t" << logInfo.log << endl;
                     logInfo.is_matched = 1;
                     logInfo.rule_id = ruleInfo.id;
-                    addMatchedRule(ruleInfo.id, logInfo.log); 
+                    logInfo.group = ruleInfo.group;
+                    isParentRuleMatching = true;
+                    addMatchedRule(ruleInfo.id, logInfo.log);
+                    break;
                 }
             }
 
@@ -226,65 +227,74 @@ int LogAnalysis::match(LOG_EVENT &logInfo,map<string, map<int, AConfig>> rules)
             {
                 if ((result = isValidSysLog(logInfo.size)) == FAILED)
                 {
-                    cout << "Rule Id(182): " << ruleInfo.id << "\t" << logInfo.log << endl;
                     logInfo.is_matched = 1;
                     logInfo.rule_id = ruleInfo.id;
+                    logInfo.group = ruleInfo.group;
                     addMatchedRule(ruleInfo.id, logInfo.log);
+                    break;
                 }
             }
-            
-            if (ruleInfo.if_matched_id > 0)
+
+            if (ruleInfo.frequency > 0 && ruleInfo.timeframe > 0) /*Check if the rule has time based matcher, if it is mark this rule as the processing rule.*/
             {
-                if (isRuleFound(ruleInfo.if_matched_id))
-                {
-                    cout << "Rule Id(193): " << ruleInfo.id << "\t" << logInfo.log << endl;
-                    logInfo.is_matched = 1;
-                    logInfo.rule_id = ruleInfo.id; // Adding alerted log to the alert file.
-                    addMatchedRule(ruleInfo.id, logInfo.log);
-                }
-            }
-            
-            if (ruleInfo.frequency > 0 && ruleInfo.timeframe > 0) /*Started the particular log files.*/
-            {
-                pRule.id        = ruleInfo.id;
-                pRule.start     = AgentUtils::convertStrToTime(logInfo.timestamp);
-                pRule.end       = pRule.start + ruleInfo.timeframe;
-                pRule.frequency = ruleInfo.frequency;   
-                pRule.d_frequency = 0;
-                pRule.time      = ruleInfo.timeframe;
-                if (ruleInfo.same_source_ip == 1)
+                pRule.id = ruleInfo.id;
+                pRule.start = AgentUtils::convertStrToTime(logInfo.timestamp);
+                pRule.end = pRule.start + ruleInfo.timeframe;
+                pRule.frequency = ruleInfo.frequency;
+                pRule.d_frequency = 1;
+                pRule.time = ruleInfo.timeframe;
+                if (ruleInfo.same_source_ip == 1) /* Check at the XML pasing. */
                 {
                     pRule.same_source_ip = 1;
                 }
+                if (ruleInfo.same_id == 1)
+                {
+                    pRule.same_id = 1;
+                }
             }
 
-            if (ruleInfo.if_sid == 1)
+            if (ruleInfo.if_matched_id > 0) /* If matched_sid enabled apply the child rules alert value to this rule. */
             {
-                pRule.if_sid = ruleInfo.if_sid;
-                pRule.src_ip   = logInfo.src_ip;
-                if (isRuleFound(pRule.if_sid))
+                pRule.if_mid = ruleInfo.if_matched_id;
+                if (isRuleFound(ruleInfo.if_matched_id) == SUCCESS)
                 {
                     pRule.d_frequency++;
+                    logInfo.is_matched = 1;
+                    logInfo.rule_id = ruleInfo.id;
+                    logInfo.group = ruleInfo.group;
+                    addMatchedRule(ruleInfo.id, logInfo.log);
+                    break;
                 }
-            }   
-
-            if (!logInfo.src_ip.empty() && this->_processingRules.size() > 0)
+            }
+            else if (ruleInfo.if_matched_id > 0 && ruleInfo.same_id == 1)
             {
                 for (P_RULE p: this->_processingRules)
                 {
-                    if (strcmp(p.src_ip.c_str(), logInfo.src_ip.c_str()) == 0 && p.same_source_ip == 1)
+                    if (isRuleFound(p.if_mid) == SUCCESS) { p.d_frequency++; }
+                }
+            }
+
+            if (ruleInfo.same_source_ip == 1 && !logInfo.src_ip.empty()) /* Is is firewall related log. Then check any rules are being in processing state.*/
+            { 
+                for (P_RULE p : this->_processingRules) /*Processing rule has the src_ip, that frequency will be monitored for the given timeframe in the rule.*/
+                {
+                    if (strcmp(p.src_ip.c_str(), logInfo.src_ip.c_str()) == 0 && p.same_source_ip == 1) /*src_ip matching, if it matches remove increase the helper_varible.*/
                     {
                         p.d_frequency++;
                     }
-                    else
-                    {
-                        p.src_ip = logInfo.src_ip;
-                        p.start  = AgentUtils::convertStrToTime(logInfo.timestamp);
-                        p.end    = p.start + p.time;
-                        p.d_frequency = 1;
-                    }
                 }
             }
+
+            if (ruleInfo.if_sid > 0 && ruleInfo.same_id == 1) /*If the child id of this rule exists, then you can set child id to the log*/
+            {
+                pRule.if_sid = ruleInfo.if_sid; 
+                for (P_RULE p: this->_processingRules)
+                {
+                    if (isRuleFound(p.if_sid == SUCCESS)) { p.d_frequency++; }
+                }
+            }
+
+            if (isParentRuleMatching) { logInfo.rule_id = ruleInfo.id; } /* If the parent, child matched, priority to parent. */
 
             if (pRule.id > 0)
             {
@@ -297,9 +307,8 @@ int LogAnalysis::match(LOG_EVENT &logInfo,map<string, map<int, AConfig>> rules)
 
 int LogAnalysis::analyseFile(const string file, string format)
 {
-    int result;
+    int result = SUCCESS;
     string line;
-    map<string, map<int, AConfig>> rules;
     vector<LOG_EVENT> alertLogs;
     fstream fp(file, std::ios::in);
     if (!fp)
@@ -307,17 +316,17 @@ int LogAnalysis::analyseFile(const string file, string format)
         AgentUtils::writeLog(FILE_ERROR + file, FAILED);
         return FAILED;
     }
-
-    if ((result = _configService.readRuleConfig(_rulesFile, rules)) == FAILED)
+    result = _configService.readRuleConfig(_rulesFile, this->_rules);
+    if (result == FAILED)
     {
         return result;
     }
     AgentUtils::writeLog("Log analysis started for " + file, INFO);
-    while(std::getline(fp, line))
+    while (std::getline(fp, line))
     {
-        if (line.empty()) continue;
+        if (line.empty()) { continue; }
         LOG_EVENT logInfo = parseToLogInfo(line, format);
-        result = match(logInfo, rules);
+        result = match(logInfo);
         if (logInfo.is_matched == 1)
         {
             alertLogs.push_back(logInfo);
@@ -326,7 +335,7 @@ int LogAnalysis::analyseFile(const string file, string format)
     AgentUtils::writeLog("Total matched logs : " + std::to_string(alertLogs.size()), DEBUG);
 
     fp.close();
-    return result;
+    return postAnalysis(alertLogs);
 }
 
 int LogAnalysis::start(const string path)
@@ -361,8 +370,9 @@ int LogAnalysis::start(const string path)
         }
         result = OS::getRegularFiles(currentFile, files);
 
-        if (result == FAILED) return FAILED;
-        
+        if (result == FAILED)
+            return FAILED;
+
         if (files.size() == 0)
         {
             AgentUtils::writeLog(INVALID_PATH + path, FAILED);
@@ -376,21 +386,82 @@ int LogAnalysis::start(const string path)
     return result;
 }
 
+int LogAnalysis::postAnalysis(const vector<LOG_EVENT> alerts)
+{
+    for (LOG_EVENT log: alerts)
+    {
+        AConfig config = getRule(log.group, log.rule_id);
+        if (config.id <= 0)
+        {
+            cout << "Invalid rule id" << endl;
+        }
+        else
+        {
+            printLogDetails(config, log);
+        }
+    }
+    return SUCCESS;
+}
+
+int LogAnalysis::printLogDetails(AConfig ruleInfo, LOG_EVENT logInfo)
+{
+    AConfig child = ruleInfo;
+    cout << "Timestamp : " << logInfo.timestamp << endl;
+    cout << "user      : " << logInfo.user << endl;
+    cout << "program   : " << logInfo.program << endl;
+    cout << "log       : " << logInfo.log << endl;
+    cout << "rule      : " << child.id << endl;
+    while(child.if_sid > 0)
+    {
+        child = getRule("pam,syslog,", child.if_sid);
+    }
+    if (ruleInfo.description.empty())
+    {
+        cout << "category  : " << child.decoded_as << endl;
+    }
+    else
+    {
+        cout << "category  : " << ruleInfo.decoded_as << endl;
+    }
+    
+    if (ruleInfo.description.empty())
+    {
+        cout << "Description: " << child.description << endl;
+    }
+    else
+    {
+        cout << "Description: " << ruleInfo.description << endl;
+    }
+    return SUCCESS;
+}
+
+AConfig LogAnalysis::getRule(const string group, const int ruleId)
+{
+    AConfig config;
+    for (const auto& parent: _rules)
+    {
+        for (const auto& child: parent.second)
+        {
+            if (child.first == ruleId) { config = child.second; break;}
+        }
+    }
+    return config;    
+}   
+
 string LogAnalysis::formatSysLog(string log, const string format)
 {
     string fLog, token, formattedTime;
     int index = 0;
-    string currentTime = log.substr(0, 15);     
-    std::stringstream stream; 
-    if (format == "dpkg")            
+    string currentTime = log.substr(0, 15);
+    std::stringstream stream;
+    if (format == "dpkg")
     {
         string temp;
-        fLog += log.substr(0,19);
+        fLog += log.substr(0, 19);
         temp = log.substr(20);
         fLog += "|" + temp.substr(0, temp.find(' '));
         temp = temp.substr(temp.find(' ') + 1);
         fLog += "|" + temp;
-        //cout << fLog << endl;
         return fLog;
     }
     else
@@ -415,7 +486,6 @@ string LogAnalysis::formatSysLog(string log, const string format)
         fLog += '|' + token;
         index++;
     }
-    // cout << fLog  << endl;
 
     return fLog;
 }
