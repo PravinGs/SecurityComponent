@@ -1,15 +1,11 @@
-// #include "service/configservice.hpp"
-// #include "service/loganalysis.hpp"
-// #include "controller/logController.hpp"
-
-// #include "service/reportgeneration.hpp"
 #include "service/configservice.hpp"
 #include "service/loganalysis.hpp"
 
 int main()
 {
-    LogAnalysis analysis("/home/pravin/Desktop/SecurityComponent/config/test-rules.xml");
-    if (analysis.start("/home/pravin/Desktop/SecurityComponent/config/syslog.test") == SUCCESS)
+    LogAnalysis analysis("/home/krishna/security/Agent/config/test-rules.xml");
+    int result = analysis.start("/home/krishna/security/Agent/config/syslog.test");
+    if (result == SUCCESS)
     {
         cout << "SUCCESS" << endl;
     }

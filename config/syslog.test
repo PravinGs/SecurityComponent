@@ -1,7 +1,30 @@
-Aug 14 21:32:20 pravin-HP-Pavilion-Laptop-15-eh1xxx kernel: [  656.920249] cpptools-srv[29455]: segfault at 0 ip 000000000042b66e sp 00007f392bffe5e0 error 4 in cpptools-srv[400000+926000]
-Aug 14 21:32:34 pravin-HP-Pavilion-Laptop-15-eh1xxx kernel: [  670.633205] cpptools-srv[29498]: segfault at 0 ip 000000000042b66e sp 00007f6be77fd5e0 error 4 in cpptools-srv[400000+926000]
-Aug 14 21:33:07 pravin-HP-Pavilion-Laptop-15-eh1xxx kernel: [  703.761560] cpptools-srv[29664]: segfault at 0 ip 000000000042b66e sp 00007f8a93ffe5e0 error 4 in cpptools-srv[400000+926000]
-Aug 14 21:33:11 pravin-HP-Pavilion-Laptop-15-eh1xxx kernel: [  707.274397] cpptools-srv[29698]:  000000000042b66e sp 00007f69ae3c25e0 error 4 in cpptools-srv[400000+926000]
-Aug 14 21:33:13 pravin-HP-Pavilion-Laptop-15-eh1xxx kernel: [  710.144602] cpptools-srv[29724]: segfault at 0 ip 000000000042b66e sp 00007f51da7fb5e0 error 4 in cpptools-srv[400000+926000]
-Aug 14 21:34:56 pravin-HP-Pavilion-Laptop-15-eh1xxx kernel: [  812.395454] cpptools-srv[30235]:  000000000042b66e sp 00007f677dffa5e0 error 4 in cpptools-srv[400000+926000]
-Aug 14 21:34:57 pravin-HP-Pavilion-Laptop-15-eh1xxx kernel: [  813.624945] cpptools-srv[30263]: segfault at 0 ip 000000000042b66e sp 00007fce227fb5e0 error 4 in cpptools-srv[400000+926000]
+2023-03-20 15:35:04|ubuntu-20|gnome-keyring-daemon[1040]:|asked to register item /org/freedesktop/secrets/collection/login/1, but it's already registered|none|sys
+2023-03-20 15:35:24|ubuntu-20|dbus-daemon[807]:|[system] Failed to activate service 'org.bluez': timed out (service_start_timeout=25000ms)|none|sys
+2023-03-20 15:35:44|ubuntu-20|pkexec:|pam_unix(polkit-1:session): session opened for user root by (uid=1000)|none|sys
+2023-03-20 15:35:44|ubuntu-20|pkexec[4094]:|krishna: Executing command [USER=root] [TTY=unknown] [CWD=/home/krishna] [COMMAND=/usr/lib/update-notifier/package-system-locked]|none|sys
+2023-03-20 15:35:49|ubuntu-20|CRON[4113]:|pam_unix(cron:session): session opened for user root by (uid=0)|none|sys
+2023-03-20 15:35:49|ubuntu-20|CRON[4113]:|pam_unix(cron:session): session closed for user root|none|sys
+2023-03-20 15:45:01|ubuntu-20|CRON[4644]:|pam_unix(cron:session): session opened for user root by (uid=0)|none|sys
+2023-03-20 15:45:01|ubuntu-20|CRON[4644]:|pam_unix(cron:session): session closed for user root|none|sys
+2023-03-20 15:52:27|ubuntu-20|systemd-logind[833]:|System is powering down.|none|sys
+2023-03-20 15:52:34|ubuntu-20|systemd-logind[860]:|New seat seat0.|none|sys
+2023-03-20 15:52:34|ubuntu-20|systemd-logind[860]:|Watching system buttons on /dev/input/event2 (Power Button)|none|sys
+2023-03-20 15:52:34|ubuntu-20|systemd-logind[860]:|Watching system buttons on /dev/input/event1 (Power Button)|none|sys
+2023-03-20 15:52:34|ubuntu-20|systemd-logind[860]:|Watching system buttons on /dev/input/event0 (Sleep Button)|none|sys
+2023-03-20 15:52:34|ubuntu-20|systemd-logind[860]:|Watching system buttons on /dev/input/event5 (Chicony HP Elite USB Keyboard)|none|sys
+2023-03-20 15:52:34|ubuntu-20|systemd-logind[860]:|Watching system buttons on /dev/input/event6 (Chicony HP Elite USB Keyboard System Control)|none|sys
+2023-03-20 15:52:34|ubuntu-20|systemd-logind[860]:|Watching system buttons on /dev/input/event7 (Chicony HP Elite USB Keyboard Consumer Control)|none|sys
+2023-03-20 15:52:36|ubuntu-20|sshd[974]:|Server listening on 0.0.0.0 port 22.|none|sys
+2023-03-20 15:52:36|ubuntu-20|sshd[974]:|Server listening on :: port 22.|none|sys
+2023-03-20 15:52:38|ubuntu-20|gdm-autologin]:|gkr-pam: no password is available for user|none|sys
+2023-03-20 15:52:39|ubuntu-20|gdm-autologin]:|pam_unix(gdm-autologin:session): session opened for user krishna by (uid=0)|none|sys
+2023-03-20 15:52:39|ubuntu-20|systemd-logind[860]:|New session 1 of user krishna.|none|sys
+2023-03-20 15:52:39|ubuntu-20|systemd:|pam_unix(systemd-user:session): session opened for user krishna by (uid=0)|none|sys
+2023-03-20 15:52:41|ubuntu-20|gdm-autologin]:|gkr-pam: gnome-keyring-daemon started properly|none|sys
+2023-03-20 15:52:53|ubuntu-20|gnome-keyring-daemon[1103]:|The Secret Service was already initialized|none|sys
+2023-03-20 15:52:53|ubuntu-20|gnome-keyring-daemon[1103]:|The PKCS#11 component was already initialized|none|sys
+2023-03-20 15:52:58|ubuntu-20|polkitd(authority=local):|Registered Authentication Agent for unix-session:1 (system bus name :1.44 [/usr/bin/gnome-shell], object path /org/freedesktop/PolicyKit1/AuthenticationAgent, locale en_IN)|none|sys
+2023-03-20 15:53:08|ubuntu-20|dbus-daemon[816]:|[system] Failed to activate service 'org.bluez': timed out (service_start_timeout=25000ms)|none|sys
+2023-03-20 15:53:24|ubuntu-20|PackageKit:|uid 1000 is trying to obtain org.freedesktop.packagekit.system-sources-refresh auth (only_trusted:0)|none|sys
+2023-03-20 15:53:24|ubuntu-20|PackageKit:|uid 1000 obtained auth for org.freedesktop.packagekit.system-sources-refresh|none|sys
+2023-03-20 15:53:37|ubuntu-20|dbus-daemon[816]:|[system] Failed to activate service 'org.bluez': timed out (service_start_timeout=25000ms)|none|sys

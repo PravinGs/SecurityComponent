@@ -632,7 +632,7 @@
     <description>Squid debug message</description>
     <group>syslog,squid,</group>
   </rule>
-  <rule id="2900" level="0">
+  <rule id="2900" level="0"> 
     <decoded_as>windows-date-format</decoded_as>
     <pcre2>^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} startup |</pcre2>
     <pcre2>^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} status |</pcre2>
