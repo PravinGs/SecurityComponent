@@ -2,24 +2,6 @@
 #define CONFIGSERVICE_HPP
 #pragma once
 
-#define R_ID "id"
-#define R_CHILD_ID "child_id"
-#define R_LEVEL "level"
-#define R_MAX_SIZE "maxsize"
-#define R_ALERT "alert"
-#define R_FREQUENCY "frequency"
-#define R_TIMEFRAME "timeframe"
-#define R_NAME "name"
-#define R_DESCRIPTION "description"
-#define R_GROUP "group"
-#define R_REGEX "regex"
-#define R_INFO "info"
-#define R_SRC_IP "src_ip"
-#define R_SRC_PORT "src_port"
-#define R_DST_IP "dst_ip"
-#define R_DST_PORT "dst_port"
-#define R_OPTIONS "options"
-
 #include "agentUtils.hpp"
 
 class IniConfig
@@ -69,15 +51,6 @@ public:
         for (pugi::xml_node groupNode = root; groupNode; groupNode = groupNode.next_sibling("group"))
         {
             AConfig rule;
-            rule.id = 0;
-            rule.timeframe = 0;
-            rule.if_sid = 0;
-            rule.if_matched_id = 0;
-            rule.same_source_ip = 0;
-            rule.frequency = 0;
-            rule.noalert = 0;
-            rule.different_url = 0;
-            rule.max_log_size = 0;
 
             std::string currentSection = root.attribute("name").value();
 
@@ -94,38 +67,43 @@ public:
                 {
                     rule.id = digit;
                 }
+                digit = -1;
 
                 digit = isDigit(ruleNode.attribute("level").value());
                 if (digit != -1)
                 {
                     rule.level = digit;
                 }
-
+                digit = -1;
                 digit = isDigit(ruleNode.attribute("frequency").value());
                 if (digit != -1)
                 {
                     rule.frequency = digit;
                 }
-
+                digit = -1;
                 digit = isDigit(ruleNode.attribute("timeframe").value());
                 if (digit != -1)
                 {
                     rule.timeframe = digit;
                 }
-
+                digit = -1;
                 digit = isDigit(ruleNode.attribute("ignore").value());
                 if (digit != -1)
                 {
                     rule.ignore = digit;
                 }
-
+                digit = -1;
                 digit = isDigit(ruleNode.child_value("if_sid"));
-
                 if (digit != -1)
                 {
                     rule.if_sid = digit;
                 }
-
+                digit = -1;
+                digit = isDigit(ruleNode.child_value("same_source_ip"));
+                if (digit != -1){
+                    rule.same_source_ip = 1;
+                }
+                digit = -1;
                 str = ruleNode.child_value("status_pcre2");
                 if (!str.empty())
                 {
@@ -203,7 +181,7 @@ public:
                 {
                     rule.if_matched_id = digit;
                 }
-
+                digit = -1;
                 str = ruleNode.child_value("url_pcre2");
                 if (!str.empty())
                 {
