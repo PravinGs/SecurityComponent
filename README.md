@@ -13,7 +13,12 @@
 * Created a Scheduler module to periodically start the services.
 
 * Created a Watcher module for file monitoring to backup the updated files.
+
 * Admins can change agent-software configuration files from the remote machine using TLS1.3.
+
+* Created LogAnalyzer module to analyze logs and its severity level based on the configured rules.
+
+* Created RootCheck Module to check untrusted file locations based on the pre identified malware paths.
 
 ## **Technologies used**
 * c++17
@@ -21,5 +26,6 @@
 * Openssl 
 * jsoncpp
 * eventloop
+* pcre2
 
 
