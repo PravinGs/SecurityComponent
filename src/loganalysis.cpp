@@ -1,6 +1,13 @@
 #include "service/loganalysis.hpp"
 
-LogAnalysis::LogAnalysis(const string configFile) : _rulesFile(configFile) {}
+LogAnalysis::LogAnalysis(const string configFile) : _rulesFile(configFile) 
+{
+   int result = _configService.readRuleConfig(_rulesFile, this->_rules); 
+   if (result == SUCCESS)
+   {
+        isValidConfig = true;    
+   }
+}
 
 LogAnalysis::LogAnalysis() {}
 
@@ -27,6 +34,11 @@ void extractNetworkLog(LOG_EVENT &logInfo)
 void LogAnalysis::setConfigFile(const string configFile)
 {
     this->_rulesFile = configFile;
+    int result = _configService.readRuleConfig(_rulesFile, this->_rules); 
+    if (result == SUCCESS)
+    {
+        isValidConfig = true;    
+    }
 }
 
 int LogAnalysis::isValidSysLog(size_t size)
@@ -56,7 +68,7 @@ LOG_EVENT LogAnalysis::parseToLogInfo(string log, const string format)
     std::getline(ss, user, '|');
     std::getline(ss, program, '|');
     std::getline(ss, message, '|');
-    logInfo.format = format;
+    logInfo.format = (strcmp(format.c_str(), "auth") == 0) ? "pam" : format;
     logInfo.size = log.size();
     logInfo.timestamp = timestamp;
     logInfo.user = user;
@@ -137,177 +149,178 @@ void LogAnalysis::addMatchedRule(const int ruleId, const string log)
     return;
 }
 
-int LogAnalysis::match(LOG_EVENT &logInfo)
+void LogAnalysis::match(LOG_EVENT &logInfo)
 {
-    int result = FAILED;
-    for (auto &rule : this->_rules)
+    if (logInfo.format.empty() || this->_rules.find(logInfo.format) == this->_rules.end())
     {
-        for (auto &r : rule.second)
+        return;
+    }
+    map<int, AConfig> currentRuleSet = this->_rules.at(logInfo.format);
+    for (const auto &r : currentRuleSet)
+    {
+        bool isParentRuleMatching = false;
+        AConfig ruleInfo = r.second;
+        P_RULE pRule;
+
+        for (int i : this->_processedRules) /* Removing all the processed rules. */
         {
-            bool isParentRuleMatching = false;
-            AConfig ruleInfo = r.second;
-            P_RULE pRule;
+            auto newEnd = std::remove_if(_processingRules.begin(), _processingRules.end(),
+                [i](const P_RULE& s) {
+                    return s.id == i;
+                });
 
-            for (int i : this->_processedRules) /* Removing all the processed rules. */
+            this->_processingRules.erase(newEnd, _processingRules.end());
+        }
+
+        if (!ruleInfo.regex.empty()) /* Checking the regex patterns if exists in the rule */
+        {
+            int result = regexMatch(logInfo.log, ruleInfo.regex);
+            if (result == 1)
             {
-                auto newEnd = std::remove_if(_processingRules.begin(), _processingRules.end(),
-                    [i](const P_RULE& s) {
-                        return s.id == i;
-                    });
-
-                _processingRules.erase(newEnd, _processingRules.end());
-                // this->_processingRules.erase(this->_processingRules.begin() + this->_processedRules[i]);
+                logInfo.is_matched = 1;
+                logInfo.rule_id = ruleInfo.id;
+                logInfo.group = ruleInfo.group;
+                isParentRuleMatching = true;
+                addMatchedRule(ruleInfo.id, logInfo.log);
+                break;
             }
+        }
 
-            if (this->_processingRules.size() > 0) /* Checking if rules are about to expire or not. */
+        if (!ruleInfo.pcre2.empty())
+        {
+            int result = pcreMatch(logInfo.log, ruleInfo.pcre2);
+            if (result > 0)
             {
-                for (int i = 0; i < (int)this->_processingRules.size(); i++)
+                logInfo.is_matched = 1;
+                logInfo.rule_id = ruleInfo.id;
+                logInfo.group = ruleInfo.group;
+                isParentRuleMatching = true;
+                addMatchedRule(ruleInfo.id, logInfo.log);
+                break;
+            }
+        }
+        
+        if (!ruleInfo.program_name_pcre2.empty())
+        {
+            int result = pcreMatch(logInfo.log, ruleInfo.pcre2);
+            if (result > 0)
+            {
+                logInfo.is_matched = 1;
+                logInfo.rule_id = ruleInfo.id;
+                logInfo.group = ruleInfo.group;
+                isParentRuleMatching = true;
+                addMatchedRule(ruleInfo.id, logInfo.log);
+                break;
+            }
+        }
+
+        if (ruleInfo.max_log_size > 0) /* Validating the syslog size */
+        {
+            int result = isValidSysLog(logInfo.size);
+            if (result == FAILED)
+            {
+                logInfo.is_matched = 1;
+                logInfo.rule_id = ruleInfo.id;
+                logInfo.group = ruleInfo.group;
+                addMatchedRule(ruleInfo.id, logInfo.log);
+                break;
+            }
+        }
+
+        if (ruleInfo.frequency > 0 && ruleInfo.timeframe > 0) /*Check if the rule has time based matcher, if it is mark this rule as the processing rule.*/
+        {
+            pRule.id = ruleInfo.id;
+            pRule.start = AgentUtils::convertStrToTime(logInfo.timestamp);
+            pRule.end = pRule.start + ruleInfo.timeframe;
+            pRule.frequency = ruleInfo.frequency;
+            pRule.d_frequency = 1;
+            pRule.time = ruleInfo.timeframe;
+            if (ruleInfo.same_source_ip == 1) /* Check at the XML pasing. */
+            {
+                pRule.same_source_ip = 1;
+            }
+            if (ruleInfo.same_id == 1)
+            {
+                pRule.same_id = 1;
+            }
+        }
+
+        if (ruleInfo.if_matched_id > 0) /* If matched_sid enabled apply the child rules alert value to this rule. */
+        {
+            pRule.if_mid = ruleInfo.if_matched_id;
+            if (isRuleFound(ruleInfo.if_matched_id) == SUCCESS)
+            {
+                pRule.d_frequency++;
+                logInfo.is_matched = 1;
+                logInfo.rule_id = ruleInfo.id;
+                logInfo.group = ruleInfo.group;
+                addMatchedRule(ruleInfo.id, logInfo.log);
+                break;
+            }
+        }
+        else if (ruleInfo.if_matched_id > 0 && ruleInfo.same_id == 1)
+        {
+            pRule.if_mid = ruleInfo.if_matched_id;
+            for (P_RULE p: this->_processingRules)
+            {
+                if (isRuleFound(p.if_mid) == SUCCESS) { p.d_frequency++; }
+            }
+        }
+
+        if (ruleInfo.same_source_ip == 1 && !logInfo.src_ip.empty()) /* Is is firewall related log. Then check any rules are being in processing state.*/
+        { 
+            for (P_RULE p : this->_processingRules) /*Processing rule has the src_ip, that frequency will be monitored for the given timeframe in the rule.*/
+            {
+                if (strcmp(p.src_ip.c_str(), logInfo.src_ip.c_str()) == 0 && p.same_source_ip == 1) /*src_ip matching, if it matches remove increase the helper_varible.*/
                 {
-                    P_RULE pRule = this->_processingRules[i];
-                    if ((pRule.end < AgentUtils::convertStrToTime(logInfo.timestamp) && pRule.d_frequency != pRule.frequency))
-                    {
-                        this->_processedRules.push_back(i); /* The rule expired */
-                    }
-                    else if ((pRule.end < AgentUtils::convertStrToTime(logInfo.timestamp) && pRule.frequency == pRule.d_frequency) || pRule.frequency <= pRule.d_frequency)
-                    {
-                        /*The rule ID'd and have to alerted*/
-                        logInfo.is_matched = 1;
-                        logInfo.rule_id = pRule.id;
-                        logInfo.group = pRule.group;
-                        addMatchedRule(pRule.id, logInfo.log);
-                        this->_processedRules.push_back(i);
-                        break;
-                    }
+                    p.d_frequency++;
                 }
             }
+        }
 
-            if (!ruleInfo.regex.empty()) /* Checking the regex patterns if exists in the rule */
+        if (ruleInfo.if_sid > 0 && ruleInfo.same_id == 1) /*If the child id of this rule exists, then you can set child id to the log*/
+        {
+            pRule.if_sid = ruleInfo.if_sid; 
+            for (P_RULE p: this->_processingRules)
             {
-                result = regexMatch(logInfo.log, ruleInfo.regex);
-                if (result == 1)
+                if (isRuleFound(p.if_sid == SUCCESS)) { p.d_frequency++; }
+            }
+        }
+
+        if (isParentRuleMatching) { logInfo.rule_id = ruleInfo.id; } /* If the parent, child matched, priority to parent. */
+
+        if (pRule.id > 0)
+        {
+            this->_processingRules.push_back(pRule);
+        }
+
+        if (this->_processingRules.size() > 0) /* Checking if rules are about to expire or not. */
+        {
+            for (int i = 0; i < (int)this->_processingRules.size(); i++)
+            {
+                P_RULE pRule = this->_processingRules[i];
+                if ((pRule.end < AgentUtils::convertStrToTime(logInfo.timestamp) && pRule.d_frequency != pRule.frequency))
                 {
+                    this->_processedRules.push_back(i); /* The rule expired */
+                }
+                else if ((pRule.end < AgentUtils::convertStrToTime(logInfo.timestamp) && pRule.frequency == pRule.d_frequency) || pRule.frequency <= pRule.d_frequency)
+                {
+                    /*The rule ID'd and have to alerted*/
                     logInfo.is_matched = 1;
-                    logInfo.rule_id = ruleInfo.id;
-                    logInfo.group = ruleInfo.group;
-                    isParentRuleMatching = true;
-                    addMatchedRule(ruleInfo.id, logInfo.log);
+                    logInfo.rule_id = pRule.id;
+                    logInfo.group = pRule.group;
+                    addMatchedRule(pRule.id, logInfo.log);
+                    this->_processedRules.push_back(i);
                     break;
                 }
-            }
-
-            if (!ruleInfo.pcre2.empty())
-            {
-                result = pcreMatch(logInfo.log, ruleInfo.pcre2);
-                if (result > 0)
-                {
-                    logInfo.is_matched = 1;
-                    logInfo.rule_id = ruleInfo.id;
-                    logInfo.group = ruleInfo.group;
-                    isParentRuleMatching = true;
-                    addMatchedRule(ruleInfo.id, logInfo.log);
-                    break;
-                }
-            }
-            
-            if (!ruleInfo.program_name_pcre2.empty())
-            {
-                result = pcreMatch(logInfo.log, ruleInfo.pcre2);
-                if (result > 0)
-                {
-                    logInfo.is_matched = 1;
-                    logInfo.rule_id = ruleInfo.id;
-                    logInfo.group = ruleInfo.group;
-                    isParentRuleMatching = true;
-                    addMatchedRule(ruleInfo.id, logInfo.log);
-                    break;
-                }
-            }
-
-            if (ruleInfo.max_log_size > 0) /* Validating the syslog size */
-            {
-                if ((result = isValidSysLog(logInfo.size)) == FAILED)
-                {
-                    logInfo.is_matched = 1;
-                    logInfo.rule_id = ruleInfo.id;
-                    logInfo.group = ruleInfo.group;
-                    addMatchedRule(ruleInfo.id, logInfo.log);
-                    break;
-                }
-            }
-
-            if (ruleInfo.frequency > 0 && ruleInfo.timeframe > 0) /*Check if the rule has time based matcher, if it is mark this rule as the processing rule.*/
-            {
-                pRule.id = ruleInfo.id;
-                pRule.start = AgentUtils::convertStrToTime(logInfo.timestamp);
-                pRule.end = pRule.start + ruleInfo.timeframe;
-                pRule.frequency = ruleInfo.frequency;
-                pRule.d_frequency = 1;
-                pRule.time = ruleInfo.timeframe;
-                if (ruleInfo.same_source_ip == 1) /* Check at the XML pasing. */
-                {
-                    pRule.same_source_ip = 1;
-                }
-                if (ruleInfo.same_id == 1)
-                {
-                    pRule.same_id = 1;
-                }
-            }
-
-            if (ruleInfo.if_matched_id > 0) /* If matched_sid enabled apply the child rules alert value to this rule. */
-            {
-                pRule.if_mid = ruleInfo.if_matched_id;
-                if (isRuleFound(ruleInfo.if_matched_id) == SUCCESS)
-                {
-                    pRule.d_frequency++;
-                    logInfo.is_matched = 1;
-                    logInfo.rule_id = ruleInfo.id;
-                    logInfo.group = ruleInfo.group;
-                    addMatchedRule(ruleInfo.id, logInfo.log);
-                    break;
-                }
-            }
-            else if (ruleInfo.if_matched_id > 0 && ruleInfo.same_id == 1)
-            {
-                for (P_RULE p: this->_processingRules)
-                {
-                    if (isRuleFound(p.if_mid) == SUCCESS) { p.d_frequency++; }
-                }
-            }
-
-            if (ruleInfo.same_source_ip == 1 && !logInfo.src_ip.empty()) /* Is is firewall related log. Then check any rules are being in processing state.*/
-            { 
-                for (P_RULE p : this->_processingRules) /*Processing rule has the src_ip, that frequency will be monitored for the given timeframe in the rule.*/
-                {
-                    if (strcmp(p.src_ip.c_str(), logInfo.src_ip.c_str()) == 0 && p.same_source_ip == 1) /*src_ip matching, if it matches remove increase the helper_varible.*/
-                    {
-                        p.d_frequency++;
-                    }
-                }
-            }
-
-            if (ruleInfo.if_sid > 0 && ruleInfo.same_id == 1) /*If the child id of this rule exists, then you can set child id to the log*/
-            {
-                pRule.if_sid = ruleInfo.if_sid; 
-                for (P_RULE p: this->_processingRules)
-                {
-                    if (isRuleFound(p.if_sid == SUCCESS)) { p.d_frequency++; }
-                }
-            }
-
-            if (isParentRuleMatching) { logInfo.rule_id = ruleInfo.id; } /* If the parent, child matched, priority to parent. */
-
-            if (pRule.id > 0)
-            {
-                this->_processingRules.push_back(pRule);
             }
         }
     }
-    return result;
+    return;
 }
 
 int LogAnalysis::analyseFile(const string file, string format)
 {
-    int result = SUCCESS;
     string line;
     vector<LOG_EVENT> alertLogs;
     fstream fp(file, std::ios::in);
@@ -316,17 +329,18 @@ int LogAnalysis::analyseFile(const string file, string format)
         AgentUtils::writeLog(FILE_ERROR + file, FAILED);
         return FAILED;
     }
-    result = _configService.readRuleConfig(_rulesFile, this->_rules);
-    if (result == FAILED)
+    if (!isValidConfig) /*Validating rules are extracted or not.*/
     {
-        return result;
+        AgentUtils::writeLog("Failed to parse XML configuration file, check the file", FAILED);
+        fp.close();
+        return FAILED;
     }
     AgentUtils::writeLog("Log analysis started for " + file, INFO);
     while (std::getline(fp, line))
     {
         if (line.empty()) { continue; }
         LOG_EVENT logInfo = parseToLogInfo(line, format);
-        result = match(logInfo);
+        match(logInfo);
         if (logInfo.is_matched == 1)
         {
             alertLogs.push_back(logInfo);
@@ -346,6 +360,10 @@ int LogAnalysis::start(const string path)
         format = "dpkg";
     }
     else if (path.find("auth") != string::npos)
+    {
+        format = "auth";
+    }
+    else 
     {
         format = "syslog";
     }

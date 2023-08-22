@@ -4,7 +4,7 @@
 int main()
 {
     LogAnalysis analysis("/home/krishna/security/Agent/config/test-rules.xml");
-    int result = analysis.start("/home/krishna/security/Agent/config/syslog.test");
+    int result = analysis.start("/home/krishna/security/Agent/config/ah.test");
     if (result == SUCCESS)
     {
         cout << "SUCCESS" << endl;

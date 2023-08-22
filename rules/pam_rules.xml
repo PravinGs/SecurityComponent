@@ -1,20 +1,4 @@
-<!-- @(#) $Id: ./etc/rules/pam_rules.xml, 2012/07/23 dcid Exp $
-
-  -  Official Unix Pam rules for OSSEC.
-  -
-  -  Copyright (C) 2009 Trend Micro Inc.
-  -  All rights reserved.
-  -
-  -  This program is a free software; you can redistribute it
-  -  and/or modify it under the terms of the GNU General Public
-  -  License (version 2) as published by the FSF - Free Software
-  -  Foundation.
-  -
-  -  License details: http://www.ossec.net/en/licensing.html
-  -->
-
-
-<group name="pam,syslog,">
+<group name="pam">
   <rule id="5500" level="0" noalert="1">
     <decoded_as>pam</decoded_as>
     <description>Grouping of the pam_unix rules.</description>
@@ -109,9 +93,4 @@
     <description>Password check failed.</description>
     <group>authentication_failure</group>
   </rule>
-
-
-</group> <!-- SYSLOG,pam -->
-
-
-<!-- EOF -->
+</group>
