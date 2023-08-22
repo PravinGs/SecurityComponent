@@ -37,11 +37,11 @@ private:
     map<string, map<int, AConfig>> _rules;
 
 private:
+    bool isValidConfig = false;
     int isRuleFound(const int ruleId);
     void addMatchedRule(const int ruleId, const string log);
 
 public:
-
     LogAnalysis();
     
     LogAnalysis(const string configFile);
@@ -67,7 +67,7 @@ public:
         Checking the timeframe or frequency is available for the rule if it is, do the given.
         And during those checkings if rule matched add the rule id to the Id'd rules.
     */
-    int match(LOG_EVENT &logInfo);
+    void match(LOG_EVENT &logInfo);
 
     int analyseFile(const string file, const string format);
 

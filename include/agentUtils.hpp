@@ -40,8 +40,6 @@
 #include <pcre2.h>
 #include "service/croncpp.h"
 
-
-
 using std::cerr;
 using std::cout;
 using std::endl;
@@ -270,6 +268,7 @@ class AgentUtils
 {
 
 public:
+
     static string trim(string line);
 
     static void updateLogWrittenTime(const string appName, const string time);
@@ -285,6 +284,7 @@ public:
     static void writeLog(string log, int logLevel);
 
     static std::time_t convertStrToTime(const string &datetime);
+
 };
 
 #endif
