@@ -1,14 +1,14 @@
 #include "service/configservice.hpp"
 #include "service/loganalysis.hpp"
 
-int main()
-{
-    LogAnalysis analysis("/home/krishna/security/Agent/config/test-rules.xml");
-    int result = analysis.start("/home/krishna/security/Agent/config/ah.test");
-    if (result == SUCCESS)
-    {
-        cout << "SUCCESS" << endl;
-    }
+// int main()
+// {
+//     LogAnalysis analysis("/home/krishna/security/Agent/config/test-rules.xml");
+//     int result = analysis.start("/home/krishna/security/Agent/config/ah.test");
+//     if (result == SUCCESS)
+//     {
+//         cout << "SUCCESS" << endl;
+//     }
 
     // IniConfig config;
     // string path = "/home/krishna/security/rules/syslog_rules.xml";
@@ -54,8 +54,8 @@ int main()
     // cout << dpkg << endl;
     // analysis.start("/home/krishna/security/Agent/config/syslog.test");
     
-    return 0;
-}
+//     return 0;
+// }
 
 /*
 void printLogInfo(LOG_EVENT logInfo)
