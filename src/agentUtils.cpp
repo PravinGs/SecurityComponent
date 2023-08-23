@@ -7,7 +7,7 @@ int OS::CurrentYear = 0;
 string AgentUtils::trim(string line)
 {
     const auto strBegin = line.find_first_not_of(" \t");
-    if (strBegin == std::string::npos)
+    if (strBegin == string::npos)
         return "";
 
     const auto strEnd = line.find_last_not_of(" \t");
@@ -68,10 +68,31 @@ string AgentUtils::getCurrentTime()
     return currentTime;
 }
 
+bool AgentUtils::isValidTimeString(const std::string& timeString) {
+    std::tm tm_struct = {};
+    std::istringstream ss(timeString);
+
+    ss >> std::get_time(&tm_struct, "%b %d %H:%M:%S");
+
+    if (ss.fail()) {
+        return false; // Parsing failed
+    }
+
+    // Validate additional constraints, if necessary
+    if (tm_struct.tm_hour < 0 || tm_struct.tm_hour > 23 ||
+        tm_struct.tm_min < 0 || tm_struct.tm_min > 59 ||
+        tm_struct.tm_sec < 0 || tm_struct.tm_sec > 59) {
+        return false; // Invalid time values
+    }
+
+    return true;
+}
+
 int AgentUtils::convertTimeFormat(const std::string &inputTime, std::string &formatTime)
 {
+    if (!isValidTimeString(inputTime)) { return FAILED; }
     std::stringstream ss(inputTime);
-    string year, month, day, time;
+    string year, month, day, time; 
     std::tm tm = {};
     int m = 0, d;
     month = trim(inputTime.substr(0, 4));

@@ -2,8 +2,11 @@
 #define LOG_ANALYSIS_HPP
 
 #define STANDARD_TIMESTAMP_SIZE 19
+#define RULES_DIR "/home/krishna/security/Agent/rules"
 
 #include "service/configservice.hpp"
+
+
 
 typedef struct P_RULE P_RULE;
 
@@ -28,7 +31,7 @@ struct P_RULE
 
 class LogAnalysis
 {
-private:
+public:
     string _rulesFile;
     IniConfig _configService;
     vector<P_RULE> _processingRules;
@@ -36,7 +39,7 @@ private:
     vector<int> _idRules;
     map<string, map<int, AConfig>> _rules;
 
-private:
+public:
     bool isValidConfig = false;
     int isRuleFound(const int ruleId);
     void addMatchedRule(const int ruleId, const string log);
@@ -57,6 +60,7 @@ public:
     int regexMatch(const string log, const string pattern);
 
     int pcreMatch(const std::string& input, const std::string& pattern);
+    
     /*
         read the rules one by one
         checking if any rules in the memory, which is expired if it is remove it,
@@ -67,9 +71,10 @@ public:
         Checking the timeframe or frequency is available for the rule if it is, do the given.
         And during those checkings if rule matched add the rule id to the Id'd rules.
     */
-    void match(LOG_EVENT &logInfo);
+   
+    int match(LOG_EVENT &logInfo);
 
-    int analyseFile(const string file, const string format);
+    int analyseFile(const string file);
 
     int start(const string path);
 
@@ -78,7 +83,6 @@ public:
     AConfig getRule(const string group,const int ruleId);
 
     int printLogDetails(AConfig ruleInfo, LOG_EVENT logInfo);
-
 
     ~LogAnalysis(){}
 };

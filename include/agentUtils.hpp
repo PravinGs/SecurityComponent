@@ -157,7 +157,7 @@ struct LOG_EVENT
     string group;
     int rule_id;
 
-    LOG_EVENT() : is_matched(0), rule_id(0) {}
+    LOG_EVENT() : size(0L), is_matched(0), rule_id(0) {}
 };
 
 namespace Monitor
@@ -270,6 +270,8 @@ class AgentUtils
 public:
 
     static string trim(string line);
+
+    static bool isValidTimeString(const std::string& timeString);
 
     static void updateLogWrittenTime(const string appName, const string time);
 
