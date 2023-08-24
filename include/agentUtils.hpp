@@ -57,6 +57,8 @@ using std::vector;
 #define FATAL         5
 #define ALARM         6
 
+#define SCHEDULAR_WAIT 11
+
 #define SUCCESS       8
 #define FAILED        ERROR
 

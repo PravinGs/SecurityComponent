@@ -3,10 +3,31 @@
 
 #include "agentUtils.hpp"
 
+#define MAX_RETRY_COUNT 3
+#define TIME_OUT_ERROR 12
+
+typedef struct D_PROP D_PROP;
+
+struct D_PROP
+{
+   long size;
+   int maxSpeed;
+   int minSpeed;
+   int timeout;
+   int retry;
+   string writePath;
+   string url;
+   string fileName;
+   string downloadPath;
+   
+   D_PROP() : size(0L), maxSpeed(0), minSpeed(0), timeout(0), retry(MAX_RETRY_COUNT) {}
+
+};
+
 class IFService
 {
 public:
-    virtual int download(map<string, map<string, string>> configTable) = 0;
+    virtual int start(map<string, map<string, string>> configTable) = 0;
     virtual ~IFService() {}
 };
 
@@ -15,16 +36,18 @@ class FService : public IFService
 private:
     CURL *curl = nullptr;
     long fileSize = 0L;
+    D_PROP dProperties;
 
 private:
-    void updateCurl(CURL *curl);
     long readFileSize(FILE *file);
-    void setFileSize(long size);
-
+    void setTerminalSetting(bool terminalMode);
+    int createDProps(const map<string, map<string, string>> table);
+    string extractFileName(const string &url);
+    int download();
 public:
-    FService() {}
-    int download(map<string, map<string, string>> configTable);
-    ~FService() {}
+    FService();
+    int start(const map<string, map<string, string>> configTable);
+    ~FService();
 };
 
 #endif

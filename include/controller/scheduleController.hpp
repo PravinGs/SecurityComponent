@@ -93,9 +93,16 @@ void Schedule::run(std::string processName, std::string timePattern, int index, 
                 }
                 else if (strcmp(processName.c_str(), "firmware") == 0)
                 {
-                    if (_fController.start(_configTable) == SUCCESS)
+                    int response = _fController.start(_configTable);
+                    if (response == SUCCESS)
                     {
                         std::cout << "FirmWare operation done" << std::endl;
+                    }
+                    else if (response == SCHEDULAR_WAIT)
+                    {
+                        int timeoutMinutes = 30;
+                        std::chrono::minutes timeoutDuration(timeoutMinutes);
+                        std::this_thread::sleep_for(timeoutDuration);
                     }
                     else
                     {
@@ -130,7 +137,6 @@ void Schedule::printTime(std::chrono::system_clock::time_point &t)
     std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", now_tm);
     cout << buffer << endl;
 }
-
 
 int Schedule::processTimePattern(vector<int> &patternTable, const string &pattern)
 {
