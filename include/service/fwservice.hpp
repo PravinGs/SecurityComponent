@@ -37,6 +37,7 @@ private:
     CURL *curl = nullptr;
     long fileSize = 0L;
     D_PROP dProperties;
+    string username, password;
 
 private:
     long readFileSize(FILE *file);
@@ -44,6 +45,8 @@ private:
     int createDProps(const map<string, map<string, string>> table);
     string extractFileName(const string &url);
     int download();
+    int download(const string username, const string password);
+    
 public:
     FService();
     int start(const map<string, map<string, string>> configTable);
