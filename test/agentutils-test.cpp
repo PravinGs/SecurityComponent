@@ -17,8 +17,8 @@ TEST( Utilities, TrimSuccess )
     EXPECT_STREQ(result.c_str(), "Aunty spotted");
 }
 
-// int main(int argc, char **argv)
-// {
-//     testing::InitGoogleTest(&argc, argv);
-//     return RUN_ALL_TESTS();
-// }
+int main(int argc, char **argv)
+{
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}

@@ -16,7 +16,7 @@ int Command::validateCommand(const string command)
     return result;
 }
 
-int Command::readCommand(const string command)
+int Command::readCommand(const string command, const string processName)
 {
     int result = SUCCESS;
     vector<string> logs;
@@ -24,10 +24,6 @@ int Command::readCommand(const string command)
     if (result == FAILED)
     {
         return FAILED;
-    }
-    for (string log: logs)
-    {
-        cout << log << endl;
     }
     return SUCCESS;
 }
