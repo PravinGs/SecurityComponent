@@ -139,6 +139,7 @@ TEST_F(LogAnalysisTest, Report)
     // 
     EXPECT_EQ(result, SUCCESS);
 }
+
 // TEST_F(LogAnalysisTest, analyzeFile1)
 // {
 //     string file = "/home/krishna/security/Agent/rules";
