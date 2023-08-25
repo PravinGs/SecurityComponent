@@ -21,7 +21,7 @@ public:
             return SUCCESS;
         }
         int nextDownloadingTime = std::stoi(configTable["cloud"]["waiting_time"]);
-        int result = _service->download(configTable);
+        int result = _service->start(configTable);
         while (result == SERVER_ERROR)
         {
 
