@@ -60,10 +60,10 @@ string FService::extractFileName(const string &url)
     return "";
 }
 
-
 int FService::download()
 {
     int returnVal = SUCCESS;
+    int retry = dProperties.retry;
     FILE *file = NULL;
     CURLcode res;
     file = fopen(dProperties.downloadPath.c_str(), "ab");
@@ -75,8 +75,6 @@ int FService::download()
     }
 
     dProperties.size = this->readFileSize(file);
-
-    cout << "Existing file size " << dProperties.size << endl;
 
     if (curl == NULL)
     {
@@ -96,23 +94,34 @@ int FService::download()
     do
     {
         res = curl_easy_perform(curl);
+        
         if (res != CURLE_OK)
         {
             string error = curl_easy_strerror(res);
             AgentUtils::writeLog(error, FAILED);
             std::cerr << "Error: " << error << std::endl;
-            dProperties.retry--;
-            if (dProperties.retry > 0)
+            if (res == CURLE_COULDNT_RESOLVE_HOST)
+            {
+                returnVal = FAILED;
+                break;
+            }
+            retry--;
+            if (retry > 0)
             {
                 std::cerr << "Retrying download in 10 seconds..." << std::endl;
                 AgentUtils::writeLog("Retrying download in 10 seconds...");
+                std::this_thread::sleep_for(std::chrono::seconds(5));
             }
             else
             {
                 returnVal = SERVER_ERROR;
             }
         }
-    } while (res != CURLE_OK && dProperties.retry > 0);
+        else
+        {
+            retry = dProperties.retry;
+        }
+    } while (res != CURLE_OK && retry > 0);
     if (dProperties.retry <= 0)
     {
         returnVal = FAILED;
@@ -127,14 +136,19 @@ int FService::start(map<string, map<string, string>> table)
     int count = 5;
     if (createDProps(table) == FAILED) { return FAILED; }
     curl = curl_easy_init();
-    while(result != FAILED || count > 0)
-    {
-        if (result == TIME_OUT_ERROR)
+    while(count > 0)
+    {        
+        result = download();
+        if (result == SUCCESS)
+        {
+            AgentUtils::writeLog("Download completed..", SUCCESS);
+            break;
+        }
+        else
         {
             std::this_thread::sleep_for(std::chrono::seconds(dProperties.timeout));
             count--;
-        }        
-        result = download();
+        }
     }
     if (curl != nullptr)
     {
