@@ -131,12 +131,12 @@ private:
 public:
     Proxy() = default;
 
-    bool directoryExists(const std::string &directoryPath)
+    bool directoryExists(const string &directoryPath)
     {
         return std::filesystem::is_directory(directoryPath);
     }
 
-    int isValidLogConfig(map<string, map<string, string>> configTable, Json::Value &json, const string name, char &remote, string prevTime)
+    int isValidLogConfig(map<string, map<string, string>> &configTable, Json::Value &json, const string& name, char &remote, const string& prevTime)
     {
         int result = SUCCESS;
         try
@@ -144,8 +144,6 @@ public:
             string hostName = "unknown";
 
             vector<string> names = _configService.toVector(configTable[name]["columns"], ',');
-
-            // if (name == "syslog" && configTable[name]["path"].length() == 0) { throw std::invalid_argument("Log path not configured for " + name); }
 
             if (name != "syslog" && directoryExists(configTable[name]["log_directory"]))
             {
@@ -185,7 +183,7 @@ public:
         return result;
     }
 
-    string getLastLogWrittenTime(const string name, const string path)
+    string getLastLogWrittenTime(const string& name, const string& path)
     {
         string nonEmtPath = OS::isEmpty(path);
         if (nonEmtPath.size() == 0)
@@ -234,7 +232,6 @@ public:
         if (name == "syslog" || name == "auth")
         {
             string timestamp = line.substr(0, 15);
-            cout << timestamp << endl;
             AgentUtils::convertTimeFormat(timestamp, lastTime);
         }
         else if (name == "dpkg")
@@ -247,7 +244,7 @@ public:
         return lastTime;
     }
 
-    long post(const string postUrl, const string formName, const string jsonFile)
+    long post(const string& postUrl, const string& formName, const string& jsonFile)
     {
         return CurlHandler::post(postUrl, formName, jsonFile);
     }

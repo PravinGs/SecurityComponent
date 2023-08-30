@@ -38,6 +38,7 @@
 #include <regex>
 #include <pugixml.hpp>
 #include <pcre2.h>
+#include <future>
 #include "service/croncpp.h"
 
 using std::cerr;
@@ -97,7 +98,25 @@ const int UDP_PORT = 8080;
 typedef struct SYS_PROPERTIES SYS_PROPERTIES;
 typedef struct AConfig AConfig;
 typedef struct LOG_EVENT LOG_EVENT;
+typedef struct Timer Timer;
 
+struct Timer
+{
+    std::chrono::time_point<std::chrono::steady_clock> start, end;
+    std::chrono::duration<float> duration;
+    Timer()
+    {
+        start = std::chrono::steady_clock::now();
+    }
+    ~Timer()
+    {
+        end = std::chrono::steady_clock::now();
+        duration = end - start;
+        float ms = duration.count() * 1000.0f;
+        cout << "Timer took " << ms << "ms\n";
+    }
+
+};
 struct AConfig
 {
     int id;

@@ -10,17 +10,18 @@ string toLowerCase(string &str)
     return lowerCaseString;
 }
 
-int LogService::_saveAsJSON(Json::Value &json, string path, const vector<string> logs, const vector<string> columns, char delimeter)
+int LogService::_saveAsJSON(Json::Value &json, const string& path, const vector<string>& logs, const vector<string>& columns, const char& delimeter)
 {
-    if (verifyJsonPath(path) == FAILED)
+    string jsonPath = path;
+    if (verifyJsonPath(jsonPath) == FAILED)
     {
         return FAILED;
     }
-    fstream file(path, std::ios::out);
+    fstream file(jsonPath, std::ios::out);
     Json::StreamWriterBuilder writerBuilder;
     if (!file)
     {
-        AgentUtils::writeLog(FWRITE_FAILED + path, FAILED);
+        AgentUtils::writeLog(FWRITE_FAILED + jsonPath, FAILED);
         return FAILED;
     }
 
@@ -69,11 +70,11 @@ int LogService::_saveAsJSON(Json::Value &json, string path, const vector<string>
     std::unique_ptr<Json::StreamWriter> writer(writerBuilder.newStreamWriter());
     writer->write(json, &file);
     file.close();
-    AgentUtils::writeLog("Log written to " + path, SUCCESS);
+    AgentUtils::writeLog("Log written to " + jsonPath, SUCCESS);
     return SUCCESS;
 }
 
-bool LogService::isPriorityLog(string &line, vector<string> levels, Json::Value &json)
+bool LogService::isPriorityLog(string &line, const vector<string>& levels, Json::Value &json)
 {
     bool result = false;
     string levelOut;
@@ -139,7 +140,7 @@ bool filterLog(string &line, vector<string> levels)
     return result;
 }
 
-int LogService::_readSysLog(Json::Value &json, string path, vector<string> &logs, const char delimeter, string &previousTime, bool &flag, vector<string> levels, string &nextReadingTime)
+int LogService::_readSysLog(Json::Value &json, const string& path, vector<string> &logs, const char& delimeter, const string &previousTime, bool &flag, const vector<string>& levels, string &nextReadingTime)
 {
     const string sep = "|";
     string formattedTime, line;
@@ -222,7 +223,7 @@ int LogService::_readSysLog(Json::Value &json, string path, vector<string> &logs
     return SUCCESS;
 }
 
-int LogService::getSysLog(string appName, Json::Value &json, vector<string> names, const string path, string &previousTime, vector<string> levels, const char remote)
+int LogService::getSysLog(const string& appName, Json::Value &json, const vector<string>& names, const string& path, string &previousTime, const vector<string>& levels, const char& remote)
 {
     string logDir = BASE_LOG_DIR;
     logDir += BASE_LOG_ARCHIVE;
@@ -300,7 +301,7 @@ int LogService::getSysLog(string appName, Json::Value &json, vector<string> name
     return result;
 }
 
-int LogService::getAppLog(Json::Value &json, vector<string> names, const string readDir, const string writePath, string &previousTime, vector<string> levels, const char delimeter)
+int LogService::getAppLog(Json::Value &json, const vector<string>& names, const string& readDir, const string& writePath, string &previousTime, const vector<string>& levels, const char& delimeter)
 {
     vector<string> logs;
     bool flag = true;
@@ -333,7 +334,7 @@ int LogService::getAppLog(Json::Value &json, vector<string> names, const string 
     return _saveAsJSON(json, writePath, logs, names, delimeter);
 }
 
-int LogService::_readAppLog(Json::Value &json, string path, vector<string> &logs, const char delimeter, const string previousTime, bool &flag, vector<string> levels, string &nextReadingTime)
+int LogService::_readAppLog(Json::Value &json, const string& path, vector<string> &logs, const char& delimeter, const string& previousTime, bool &flag, const vector<string>& levels, string &nextReadingTime)
 {
     fstream file(path);
     string line;
@@ -378,7 +379,7 @@ int LogService::_readAppLog(Json::Value &json, string path, vector<string> &logs
     return SUCCESS;
 }
 
-vector<std::filesystem::directory_entry> LogService::_getDirFiles(const string directory)
+vector<std::filesystem::directory_entry> LogService::_getDirFiles(const string& directory)
 {
     vector<std::filesystem::directory_entry> files;
 
@@ -393,7 +394,7 @@ vector<std::filesystem::directory_entry> LogService::_getDirFiles(const string d
     return files;
 }
 
-int LogService::saveToLocal(vector<string> logs, string appName)
+int LogService::saveToLocal(const vector<string>& logs, const string& appName)
 {
     string filePath;
     auto today = std::chrono::system_clock::now();
@@ -450,7 +451,7 @@ int LogService::verifyJsonPath(string &timestamp)
     return SUCCESS;
 }
 
-int LogService::readDpkgLog(const string path, vector<string> &logs, string &previousTime, string &nextReadingTime, bool &flag)
+int LogService::readDpkgLog(const string& path, vector<string> &logs, string &previousTime, string &nextReadingTime, bool &flag)
 {
     string formattedTime, line;
     std::time_t lastWrittenTime = AgentUtils::convertStrToTime(previousTime);

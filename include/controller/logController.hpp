@@ -14,18 +14,18 @@ class LogController
 private:
     ILog *_logService = nullptr;
     IniConfig _configService;
+    vector<std::future<int>> asyncTasks;
     Proxy _proxy;
 
 public:
     LogController() : _logService(new LogService()) {}
 
-    int sysLogManager(map<string, map<string, string>> configTable)
+    int sysLogManager(map<string, map<string, string>> &configTable)
     {
         int result = SUCCESS;
         vector<string> syslogFiles = _configService.toVector(configTable["syslog"]["paths"], ',');
-        vector<string> commands = _configService.toVector(configTable["syslog"]["commands"], ',');
 
-        for (string file : syslogFiles)
+        for (const string &file : syslogFiles)
         {
             string appName;
             if (file.size() == 0)
@@ -44,23 +44,25 @@ public:
             {
                 break;
             }
-            result = getSysLog(configTable, file, appName);
-            std::chrono::seconds sleepDuration(2);
-            std::this_thread::sleep_for(sleepDuration);
+            auto asyncTask = [&, file, appName]() -> int
+            {
+                return getSysLog(configTable, file, appName);
+            };
+            asyncTasks.push_back(std::async(std::launch::async, asyncTask));
         }
 
-        for (string command : commands)
+        for (auto &asyncTask : asyncTasks)
         {
-            cout << "Command : " << command << endl;
+            result = asyncTask.get();
         }
 
         return result;
     }
 
-    int getSysLog(map<string, map<string, string>> configTable, const string readPath, const string logName)
+    int getSysLog(map<string, map<string, string>> &configTable, const string &readPath, const string &logName)
     {
-        // long postResult;
-        AgentUtils::writeLog("Reading " + logName + " starting...");
+        int result;
+        AgentUtils::writeLog("Reading " + logName + " starting...", INFO);
         Json::Value json;
         char remote;
         const string postUrl = configTable["cloud"]["log_url"];
@@ -68,28 +70,19 @@ public:
         string previousTime = _configService.trim(_proxy.getLastLogWrittenTime(logName, readPath));
         vector<string> names = _configService.toVector(configTable[sysLogName]["columns"], ',');
         vector<string> levels = _configService.toVector(configTable[sysLogName]["level"], ',');
-
-        if (_proxy.isValidLogConfig(configTable, json, sysLogName, remote, previousTime) == FAILED)
-            return FAILED;
+        result = _proxy.isValidLogConfig(configTable, json, sysLogName, remote, previousTime);
+        if (result == FAILED)
+            return result;
 
         json["AppName"] = logName;
-
-        if (_logService->getSysLog(logName, json, names, readPath, previousTime, levels, remote) == FAILED)
-            return FAILED;
-
-        // postResult = _proxy.post(postUrl, name, writePath); /*To read a json file path is required, so have previous time before update*/
-
-        // if (postResult == POST_SUCCESS) { AgentUtils::updateLogWrittenTime(configTable[sysLogName]["last_time"], previousTime);}
-
+        result = _logService->getSysLog(logName, json, names, readPath, previousTime, levels, remote);
+        if (result == FAILED)
+            return result;
         AgentUtils::updateLogWrittenTime(logName, previousTime);
-
-        // _configService.cleanFile(writePath);
-
-        // return postResult == POST_SUCCESS ? SUCCESS : FAILED;
-        return SUCCESS;
+        return result;
     }
 
-    int appLogManager(map<string, map<string, string>> table)
+    int appLogManager(map<string, map<string, string>> &table)
     {
         int result = SUCCESS;
         vector<string> apps = _configService.toVector(table["applog"]["list"], ',');
@@ -101,9 +94,9 @@ public:
         return result;
     }
 
-    int getAppLog(map<string, map<string, string>> configTable, string appLogName)
+    int getAppLog(map<string, map<string, string>> &configTable, const string &appLogName)
     {
-        AgentUtils::writeLog("Reading " + appLogName + " log starting...");
+        AgentUtils::writeLog("Reading " + appLogName + " log starting...", INFO);
         long postResult;
         Json::Value json;
         char sep = ' ';
