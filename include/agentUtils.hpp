@@ -95,7 +95,6 @@ const vector<string> MONTHS = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", 
 const int BUFFER_SIZE = 1024;
 const int UDP_PORT = 8080;
 
-typedef struct SYS_PROPERTIES SYS_PROPERTIES;
 typedef struct AConfig AConfig;
 typedef struct LOG_EVENT LOG_EVENT;
 typedef struct Timer Timer;
@@ -180,82 +179,6 @@ struct LOG_EVENT
 
     LOG_EVENT() : size(0L), is_matched(0), rule_id(0) {}
 };
-
-namespace Monitor
-{
-    struct SYS_PROPERTIES
-    {
-        double ram;
-        double disk;
-        double cpu;
-    };
-    class Data
-    {
-    private:
-        string _processId;
-        string _processName;
-        string _cpuTime;
-        string _memUsage;
-        string _diskUsage;
-
-    public:
-        Data(string id, string name, string cpuTime, string memUsage, string diskUsage)
-        {
-            this->_processId = id;
-            this->_processName = name;
-            this->_cpuTime = cpuTime;
-            this->_memUsage = memUsage;
-            this->_diskUsage = diskUsage;
-        }
-        string getProcessId() { return this->_processId; }
-        string getProcessName() { return this->_processName; }
-        string getCpuTime() { return this->_cpuTime; }
-        string getMemUsage() { return this->_memUsage; }
-        string getDiskUsage() { return this->_diskUsage; }
-        string toString()
-        {
-            return this->_processId + "," + this->_processName + "," + this->_cpuTime + "," + this->_memUsage + "," + this->_diskUsage;
-        }
-    };
-    class CpuTable
-    {
-    private:
-        int _utime;
-        int _stime;
-        int _cutime;
-        int _cstime;
-        int _startTime;
-        int _niceTime;
-        int _upTime;
-        int _cpuCount;
-        int _getUpTime();
-
-    public:
-        CpuTable(int utime, int stime, int cutime, int cstime, int niceTime, int startTime)
-        {
-            this->_utime = utime;
-            this->_stime = stime;
-            this->_cutime = cutime;
-            this->_cstime = cstime;
-            this->_niceTime = niceTime;
-            this->_startTime = startTime;
-            this->_upTime = _getUpTime();
-            this->_cpuCount = (int)sysconf(_SC_NPROCESSORS_ONLN);
-        }
-
-        CpuTable() {}
-
-        int getUTime() { return _utime; }
-        int getSTime() { return _stime; }
-        int getCuTime() { return _cutime; }
-        int getCsTime() { return _cstime; }
-        int getStartTime() { return _startTime; }
-        int getUpTime() { return _upTime; }
-        int getCpuCount() { return _cpuCount; }
-        int getNiceTime() { return _niceTime; }
-    };
-}
-
 
 class OS
 {

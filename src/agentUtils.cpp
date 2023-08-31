@@ -70,22 +70,7 @@ string AgentUtils::getCurrentTime()
 
 bool AgentUtils::isValidTimeString(const std::string& timeString) {
     std::tm tm_struct = {};
-    std::istringstream ss(timeString);
-
-    ss >> std::get_time(&tm_struct, "%b %d %H:%M:%S");
-
-    if (ss.fail()) {
-        return false; // Parsing failed
-    }
-
-    // Validate additional constraints, if necessary
-    if (tm_struct.tm_hour < 0 || tm_struct.tm_hour > 23 ||
-        tm_struct.tm_min < 0 || tm_struct.tm_min > 59 ||
-        tm_struct.tm_sec < 0 || tm_struct.tm_sec > 59) {
-        return false; // Invalid time values
-    }
-
-    return true;
+    return (strptime(timeString.c_str(), "%b %e %H:%M:%S", &tm_struct) != nullptr) ? true : false;
 }
 
 int AgentUtils::convertTimeFormat(const std::string &inputTime, std::string &formatTime)

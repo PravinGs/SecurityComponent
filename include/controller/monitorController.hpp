@@ -27,8 +27,8 @@ public:
         if (_monitorService->getData(writePath, columns) == FAILED)
             return FAILED;
 
-        result = proxy.post(postUrl, attributeName, writePath);
-        _configService.cleanFile(writePath);
+        // result = proxy.post(postUrl, attributeName, writePath);
+        // _configService.cleanFile(writePath);
         return result;
     }
 

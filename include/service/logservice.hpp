@@ -6,7 +6,36 @@
 #include "service/configservice.hpp"
 #include "udp.hpp"
 
-#define MAX_RECORD_LIMIT 100
+typedef struct standard_log_attrs standard_log_attrs;
+
+static map<string, int> LogCategory{{"sys", 2}, {"network", 3}, {"ufw", 4}};
+
+struct standard_log_attrs
+{
+    string timestamp;
+    string user;
+    string program;
+    string message;
+    short level;
+    short category;
+
+    standard_log_attrs(const string& log)
+    {
+        string t_level, t_category;
+        std::stringstream ss(log);
+        std::getline(ss, timestamp, '|');
+        std::getline(ss, user, '|');
+        std::getline(ss, program, '|');
+        std::getline(ss, message, '|');
+        std::getline(ss, t_level, '|');
+        std::getline(ss, t_category, '|');
+        level = std::stoi(t_level);
+        category = LogCategory[t_category];
+    }
+
+    ~standard_log_attrs(){}
+    
+};
 
 class ILog
 {
@@ -35,9 +64,7 @@ class LogService : public ILog
 private:
     IniConfig _configService;
     map<string, int> _logLevel{{"none", 0}, {"trace", 1}, {"debug", 2}, {"warning", 3}, {"error", 4}, {"critical", 5}};
-    map<string, int> _priorityLevel{{"none", 0}, {"trace", 1}, {"interaction", 2}, {"standard", 3}, {"alarm", 4}};
-    map<string, int> _logCategory{{"sys", 2}, {"network", 3}, {"ufw", 4}};
-
+    
 private:
     int _saveAsJSON(Json::Value &json, const string& path, const vector<string>& logs, const vector<string>& columns, const char& delimeter);
     std::time_t _convertToTime(const std::string &datetime);
@@ -46,7 +73,7 @@ private:
     vector<std::filesystem::directory_entry> _getDirFiles(const string& directory);
     int saveToLocal(const vector<string>& logs, const string& appName);
     int verifyJsonPath(string &timestamp);
-    bool isPriorityLog(string &line, const vector<string>& levels, Json::Value &json);
+    void categorize(string &line, const vector<string>& levels);
 
 public:
     LogService() = default;

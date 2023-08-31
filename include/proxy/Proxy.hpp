@@ -157,7 +157,7 @@ public:
 
             if (configTable[name]["remote"].length() == 1)
             {
-                remote = configTable[name]["remote"][0];
+                remote = (configTable[name]["remote"][0] == '1') ? 'y' : 'n';
             }
 
             // else if (configTable[name]["remote"].length() > 1) { throw std::invalid_argument("Delimeter not configured Properly"); }
