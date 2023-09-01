@@ -76,14 +76,13 @@ public:
     virtual int getData(const string& writePath, const vector<string>& columns) = 0;
     virtual sys_properties getSystemProperties() = 0;
     virtual sys_properties getAvailedSystemProperties() = 0;
-
     virtual ~IMonitor() {}
 };
 
 class MonitorService : public IMonitor
 {
 private:
-    vector<std::future<void>> asyncTasks;
+    vector<std::future<void>> _asyncTasks;
     CpuTable _table;
     double _cpuTime;
     int _saveLog(const vector<process_data>& logs, const vector<string>& columns);
@@ -97,7 +96,7 @@ private:
 
 public:
     MonitorService() {}
-    void create_process_data(int processId, vector<process_data>& data);
+    void createProcessData(int processId, vector<process_data>& data);
     int getData(const string& writePath, const vector<string>& columns);
     sys_properties getSystemProperties();
     sys_properties getAvailedSystemProperties();

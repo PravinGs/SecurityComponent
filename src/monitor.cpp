@@ -359,7 +359,7 @@ sys_properties MonitorService::getAvailedSystemProperties()
     return properties;
 }
 
-void MonitorService::create_process_data(int processId, vector<process_data> &data)
+void MonitorService::createProcessData(int processId, vector<process_data> &data)
 {
     CpuTable table = _readProcessingTimeById(processId);
     string processName = _getProcesNameById(processId);
@@ -384,15 +384,15 @@ int MonitorService::getData(const string &writePath, const vector<string> &colum
         auto asyncTask = [&, p_id]()
         {
             vector<process_data> localData;
-            create_process_data(p_id, localData);
+            createProcessData(p_id, localData);
             std::lock_guard<std::mutex> lock(p_mutex);
             parent.insert(parent.end(), localData.begin(), localData.end());
         };
-        asyncTasks.push_back(std::async(std::launch::async, asyncTask));
+        _asyncTasks.push_back(std::async(std::launch::async, asyncTask));
     }
 
     // Wait for async tasks to complete
-    for (auto &task : asyncTasks)
+    for (auto &task : _asyncTasks)
     {
         task.wait();
     }

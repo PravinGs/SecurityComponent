@@ -148,7 +148,7 @@ int Schedule::processTimePattern(vector<int> &patternTable, const string &patter
     }
     int position = 0;
     string token;
-    std::stringstream iss(pattern);
+    std::istringstream iss(pattern);
     while (std::getline(iss, token, ' '))
     {
         int processedToken;

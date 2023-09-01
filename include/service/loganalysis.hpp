@@ -6,8 +6,6 @@
 
 #include "service/configservice.hpp"
 
-
-
 typedef struct P_RULE P_RULE;
 
 struct P_RULE
@@ -39,27 +37,28 @@ public:
     vector<int> _idRules;
     map<string, map<int, AConfig>> _rules;
 
-public:
+private:
     bool isValidConfig = false;
     int isRuleFound(const int ruleId);
-    void addMatchedRule(const int ruleId, const string log);
+    void addMatchedRule(const int ruleId, const string& log);
 
 public:
     LogAnalysis();
     
-    LogAnalysis(const string configFile);
+    LogAnalysis(const string& configFile);
     
-    void setConfigFile(const string configFile);
+    void setConfigFile(const string& configFile);
 
-    int isValidSysLog(size_t size);
+    // No need to pass this as reference cause the copying size is negligble
+    int isValidSysLog(const size_t size); 
 
-    LOG_EVENT parseToLogInfo(string log, const string format);
+    LOG_EVENT parseToLogInfo(const string& log, const string& format);
 
-    string formatSysLog(string log, const string format);
+    string formatSysLog(const string& log, const string& format);
 
-    int regexMatch(const string log, const string pattern);
+    int regexMatch(const string& log, const string& pattern);
 
-    int pcreMatch(const std::string& input, const std::string& pattern);
+    int pcreMatch(const string& input, const string& pattern);
     
     /*
         read the rules one by one
@@ -74,15 +73,15 @@ public:
    
     int match(LOG_EVENT &logInfo);
 
-    int analyseFile(const string file);
+    int analyseFile(const string& file);
 
-    int start(const string path);
+    int start(const string& path);
 
-    int postAnalysis(const vector<LOG_EVENT> alerts);
+    int postAnalysis(const vector<LOG_EVENT>& alerts);
 
-    AConfig getRule(const string group,const int ruleId);
+    AConfig getRule(const string& group, const int ruleId);
 
-    int printLogDetails(AConfig ruleInfo, LOG_EVENT logInfo);
+    int printLogDetails(const AConfig& ruleInfo, const LOG_EVENT& logInfo);
 
     ~LogAnalysis(){}
 };
