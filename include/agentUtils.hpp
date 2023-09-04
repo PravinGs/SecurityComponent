@@ -98,6 +98,9 @@ const int UDP_PORT = 8080;
 typedef struct AConfig AConfig;
 typedef struct LOG_EVENT LOG_EVENT;
 typedef struct Timer Timer;
+typedef struct decoder decoder;
+
+
 
 struct Timer
 {
@@ -178,6 +181,18 @@ struct LOG_EVENT
     int rule_id;
 
     LOG_EVENT() : size(0L), is_matched(0), rule_id(0) {}
+};
+
+struct decoder
+{
+    string decoder;
+    string parent;
+    string program_name_pcre2;
+    string pcre2;
+    string order;
+    string prematch_pcre2;
+    string fts;
+    string offset;
 };
 
 class OS

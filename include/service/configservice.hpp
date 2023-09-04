@@ -257,6 +257,13 @@ public:
         return result;
     }
 
+    int readDecoderConfig(const string& path, map<string, decoder>& table)
+    {
+        int result = SUCCESS;
+        /* Code need to be updated here */
+        return result;
+    }
+
     int readRuleConfig(const string path, map<string, map<int, AConfig>> &table)
     {
         AgentUtils::writeLog("Reading " + path, DEBUG);

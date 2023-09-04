@@ -8,6 +8,7 @@
 
 typedef struct P_RULE P_RULE;
 
+
 struct P_RULE
 {
     int id;
@@ -36,23 +37,23 @@ public:
     vector<int> _processedRules;
     vector<int> _idRules;
     map<string, map<int, AConfig>> _rules;
+    map<string, decoder> _decoder_list;
 
 private:
     bool isValidConfig = false;
     int isRuleFound(const int ruleId);
     void addMatchedRule(const int ruleId, const string& log);
+    string decodeGroup(const string& log);
 
 public:
     LogAnalysis();
-    
-    LogAnalysis(const string& configFile);
-    
-    void setConfigFile(const string& configFile);
+        
+    void setConfigFile(const string &decoderPath, const string &ruledDir);
 
     // No need to pass this as reference cause the copying size is negligble
     int isValidSysLog(const size_t size); 
 
-    LOG_EVENT parseToLogInfo(const string& log, const string& format);
+    LOG_EVENT decodeLog(const string& log, const string& format);
 
     string formatSysLog(const string& log, const string& format);
 
@@ -75,7 +76,7 @@ public:
 
     int analyseFile(const string& file);
 
-    int start(const string& path);
+    int start(const string& decoderPath, const string& rulesDir, const string & readDir);
 
     int postAnalysis(const vector<LOG_EVENT>& alerts);
 
