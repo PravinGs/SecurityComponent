@@ -15,7 +15,7 @@ TEST_F(LogAnalysisTest, SyslogCheck)
     string log = "Aug 22 18:09:37 ubuntu-20 kernel: [18374.181445] audit: type=1400 audit(1692707977.617:2879):";
     string convertTime;
     string format = "syslog";
-    LOG_EVENT logInfo = analysis->parseToLogInfo(log, format);
+    LOG_EVENT logInfo = analysis->decodeLog(log, format);
     int result = AgentUtils::convertTimeFormat("Aug 22 18:09:37", convertTime);
     ASSERT_TRUE(logInfo.size > 0);
     EXPECT_EQ(result, SUCCESS);
@@ -29,7 +29,7 @@ TEST_F(LogAnalysisTest, FailSyslogCheck)
     string log = "Aug 22 9:37 ubuntu-20 kernel: [18374.181445] audit: type=1400 audit(1692707977.617:2879):";
     string convertTime;
     string format = "syslog";
-    LOG_EVENT logInfo = analysis->parseToLogInfo(log, format);
+    LOG_EVENT logInfo = analysis->decodeLog(log, format);
     int result = AgentUtils::convertTimeFormat("Aug 22 9:37", convertTime);
     ASSERT_EQ(result, FAILED);
     cout << "LogInfo size : " << logInfo.size << endl;
@@ -39,7 +39,7 @@ TEST_F(LogAnalysisTest, FailSyslogCheck)
 TEST_F(LogAnalysisTest, CheckConfigFile)
 {
     string configFile = "/home/krishna/security/Agent/rules";
-    analysis->setConfigFile(configFile);
+    analysis->setConfigFile(configFile, "");
     auto size = analysis->_rules.size();
     ASSERT_TRUE( size > 0); // Assert - Fatal, EXPECT - NonFatal
 }
@@ -47,7 +47,7 @@ TEST_F(LogAnalysisTest, CheckConfigFile)
 TEST_F(LogAnalysisTest, CheckCorrectConfigFile)
 {
     string configFile = "/home/krishna/curity/Agent/rules";
-    analysis->setConfigFile(configFile);
+    analysis->setConfigFile(configFile, "");
     auto size = analysis->_rules.size();
     ASSERT_TRUE(size == 0); // Assert - Fatal, EXPECT - NonFatal
 }
@@ -55,7 +55,7 @@ TEST_F(LogAnalysisTest, CheckCorrectConfigFile)
 TEST_F(LogAnalysisTest, CheckInvaidConfigFile)
 {
     string configFile = "";
-    analysis->setConfigFile(configFile);
+    analysis->setConfigFile(configFile, "");
     auto size = analysis->_rules.size();
     ASSERT_TRUE(size == 0); // Assert - Fatal, EXPECT - NonFatal
 }
@@ -64,7 +64,7 @@ TEST_F(LogAnalysisTest, dpkgLogCheck)
 {
     string log = "2023-08-22 12:32:20 status installed systemd:amd64 245.4-4ubuntu3.22";
     string format = "dpkg";
-    LOG_EVENT logInfo = analysis->parseToLogInfo(log, format);    
+    LOG_EVENT logInfo = analysis->decodeLog(log, format);    
     ASSERT_TRUE(logInfo.size > 0);
     EXPECT_STREQ("status", logInfo.program.c_str());
 }
@@ -74,7 +74,7 @@ TEST_F(LogAnalysisTest, InvaliddpkgLogCheck)
     string log = "2023-08-22 32:20  status installed systemd:amd64 245.4-4ubuntu3.22";
     string convertTime;
     string format = "dpkg";
-    LOG_EVENT logInfo = analysis->parseToLogInfo(log, format);
+    LOG_EVENT logInfo = analysis->decodeLog(log, format);
     EXPECT_TRUE(logInfo.size == 0);
 }
 
@@ -83,7 +83,7 @@ TEST_F(LogAnalysisTest, AuthlogCheck)
     string log = "Mar 21 18:13:07 ubuntu-20 sudo: pam_unix(sudo:session): session opened for user root by (uid=0):";
     string convertTime;
     string format = "authlog";
-    LOG_EVENT logInfo = analysis->parseToLogInfo(log, format);
+    LOG_EVENT logInfo = analysis->decodeLog(log, format);
     int result = AgentUtils::convertTimeFormat("Mar 21 18:13:07", convertTime);
     EXPECT_TRUE(logInfo.size > 0);
     EXPECT_EQ(result, SUCCESS);
@@ -96,13 +96,13 @@ TEST_F(LogAnalysisTest, InvalidAuthlogCheck)
     string log = "Mar 21 18:13 ubuntu-20 sudo: pam_unix(sudo:session): session opened for user root by (uid=0):";
     string convertTime;
     string format = "authlog";
-    LOG_EVENT logInfo = analysis->parseToLogInfo(log, format);
+    LOG_EVENT logInfo = analysis->decodeLog(log, format);
     EXPECT_TRUE(logInfo.size == 0);
 }
 
 TEST_F(LogAnalysisTest, Report)
 {
-    analysis->setConfigFile("/home/krishna/security/Agent/config/test-rules.xml");
+    analysis->setConfigFile("/home/krishna/security/Agent/config/test-rules.xml", "");
     //Arrange, Act, Assert
     vector<string> logs = {
         "Aug 22 18:09:37 ubuntu-20 kernel: [18374.181445] audit: type=1400 audit(1692707977.617:2879):",
@@ -116,7 +116,7 @@ TEST_F(LogAnalysisTest, Report)
 
     for (string l: logs)
     {
-        LOG_EVENT event = analysis->parseToLogInfo(l, "syslog");
+        LOG_EVENT event = analysis->decodeLog(l, "syslog");
         int size = event.size;
         EXPECT_TRUE(size > 0);
         alerts.push_back(event);

@@ -7,7 +7,12 @@
 int main()
 {
     Timer timer;
-    LogAnalysis logAnalysis("/home/krishna/security/Agent/config/test-rules.xml");
-    logAnalysis.start("/home/krishna/security/Agent/config/auth.test");
+    IniConfig config;
+    map<string, map<string, string>> table;
+    MonitorController monitorController;
+    config.readConfigFile("/home/krishna/security/Agent/config/schedule.config", table);
+    OS::CurrentDay = 4;
+    OS::CurrentMonth = 9;
+    monitorController.getMonitorLog(table);
     return 0;
 }
