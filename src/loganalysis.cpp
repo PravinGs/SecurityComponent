@@ -2,23 +2,21 @@
 
 LogAnalysis::LogAnalysis() {}
 
-LogAnalysis::LogAnalysis(const string &configFile) : _rulesFile(configFile)
+void LogAnalysis::setConfigFile(const string &decoderPath, const string &ruledDir)
 {
-    int result = _configService.readRuleConfig(_rulesFile, this->_rules);
-    if (result == SUCCESS)
+   
+    int result = _configService.readDecoderConfig(decoderPath, this->_decoder_list);
+    if (result == FAILED)
     {
-        isValidConfig = true;
+        isValidConfig = false;
     }
-}
-
-void LogAnalysis::setConfigFile(const string &configFile)
-{
-    this->_rulesFile = configFile;
-    int result = _configService.readRuleConfig(_rulesFile, this->_rules);
-    if (result == SUCCESS)
+    this->_rulesFile = ruledDir;
+    result = _configService.readRuleConfig(_rulesFile, this->_rules);
+    if (result == FAILED)
     {
-        isValidConfig = true;
+        isValidConfig = false;
     }
+   
 }
 
 void extractNetworkLog(LOG_EVENT &logInfo)
@@ -46,7 +44,14 @@ int LogAnalysis::isValidSysLog(size_t size)
     return (size <= OS_SIZE_1024) ? SUCCESS : FAILED;
 }
 
-LOG_EVENT LogAnalysis::parseToLogInfo(const string &log, const string &format)
+string LogAnalysis::decodeGroup(const string& log)
+{
+    string group;
+    
+    return group;
+}
+
+LOG_EVENT LogAnalysis::decodeLog(const string &log, const string &format)
 {
     LOG_EVENT logInfo;
     string timestamp, user, program, message;
@@ -68,6 +73,7 @@ LOG_EVENT LogAnalysis::parseToLogInfo(const string &log, const string &format)
     logInfo.user = user;
     logInfo.program = program;
     logInfo.log = AgentUtils::trim(message);
+    logInfo.group = decodeGroup(message); // Need to invoke the decoder group function
 
     if (logInfo.log.find("SRC=") != string::npos)
     {
@@ -417,7 +423,7 @@ int LogAnalysis::analyseFile(const string &file)
         {
             continue;
         }
-        LOG_EVENT logInfo = parseToLogInfo(line, format);
+        LOG_EVENT logInfo = decodeLog(line, format);
         match(logInfo);
         if (logInfo.is_matched == 1)
         {
@@ -429,11 +435,20 @@ int LogAnalysis::analyseFile(const string &file)
     return postAnalysis(alertLogs);
 }
 
-int LogAnalysis::start(const string &path)
+int LogAnalysis::start(const string& decoderPath, const string& rulesDir, const string & path)
 {
-    string format;
     int result = SUCCESS;
+    string format;
     vector<string> files;
+    
+    // Setting configuration files for the LogAnalysis instance;
+    {
+        setConfigFile(decoderPath, rulesDir);
+    }
+
+    if (!isValidConfig) return FAILED;
+
+    // Actual start function implentation
 
     int isFile = (OS::isDirExist(path) && std::filesystem::is_regular_file(path)) ? 1 : 0;
 
