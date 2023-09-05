@@ -1,14 +1,18 @@
 #include "service/fwservice.hpp"
 #include "service/configservice.hpp"
 #include "agentUtils.hpp"
-
+#include "controller/logController.hpp"
+#include "controller/monitorController.hpp"
+#include "service/loganalysis.hpp"
 int main()
 {
-    IFService *service = new FService();
-    IniConfig config;
+    Timer timer;
+    Config config;
     map<string, map<string, string>> table;
-    config.readConfigFile("/home/krishna/security/Agent/config/schedule.config", table);
-    service->start(table);
-    delete service;
+    MonitorController monitorController;
+    config.readIniConfigFile("/home/krishna/security/Agent/config/schedule.config", table);
+    OS::CurrentDay = 4;
+    OS::CurrentMonth = 9;
+    monitorController.getMonitorLog(table);
     return 0;
 }

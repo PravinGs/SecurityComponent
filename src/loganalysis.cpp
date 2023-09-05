@@ -1,15 +1,23 @@
 #include "service/loganalysis.hpp"
 
-LogAnalysis::LogAnalysis(const string configFile) : _rulesFile(configFile)
-{
-    int result = _configService.readRuleConfig(_rulesFile, this->_rules);
-    if (result == SUCCESS)
-    {
-        isValidConfig = true;
-    }
-}
-
 LogAnalysis::LogAnalysis() {}
+
+void LogAnalysis::setConfigFile(const string &decoderPath, const string &ruledDir)
+{
+   
+    int result = _configService.readDecoderConfig(decoderPath, this->_decoder_list);
+    if (result == FAILED)
+    {
+        isValidConfig = false;
+    }
+    this->_rulesFile = ruledDir;
+    result = _configService.readRuleConfig(_rulesFile, this->_rules);
+    if (result == FAILED)
+    {
+        isValidConfig = false;
+    }
+   
+}
 
 void extractNetworkLog(LOG_EVENT &logInfo)
 {
@@ -31,39 +39,30 @@ void extractNetworkLog(LOG_EVENT &logInfo)
     return;
 }
 
-void LogAnalysis::setConfigFile(const string configFile)
-{
-    this->_rulesFile = configFile;
-    int result = _configService.readRuleConfig(_rulesFile, this->_rules);
-    if (result == SUCCESS)
-    {
-        isValidConfig = true;
-    }
-}
-
 int LogAnalysis::isValidSysLog(size_t size)
 {
     return (size <= OS_SIZE_1024) ? SUCCESS : FAILED;
 }
 
-LOG_EVENT LogAnalysis::parseToLogInfo(string log, const string format)
+string LogAnalysis::decodeGroup(const string& log)
+{
+    string group;
+    
+    return group;
+}
+
+LOG_EVENT LogAnalysis::decodeLog(const string &log, const string &format)
 {
     LOG_EVENT logInfo;
     string timestamp, user, program, message;
-    std::stringstream ss;
-    if (std::count(log.begin(), log.end(), '|') >= 2)
-    {
-        ss << log;
-    }
-    else
-    {
-        string fLog = formatSysLog(log, format);
-        if (fLog.empty())
-        {
-            return logInfo;
-        }
-        ss << fLog;
-    }
+
+    const string &logToParse = (std::count(log.begin(), log.end(), '|') >= 2) ? log : formatSysLog(log, format);
+
+    if (logToParse.empty())
+        return logInfo;
+
+    std::istringstream ss(logToParse);
+
     std::getline(ss, timestamp, '|');
     std::getline(ss, user, '|');
     std::getline(ss, program, '|');
@@ -74,6 +73,7 @@ LOG_EVENT LogAnalysis::parseToLogInfo(string log, const string format)
     logInfo.user = user;
     logInfo.program = program;
     logInfo.log = AgentUtils::trim(message);
+    logInfo.group = decodeGroup(message); // Need to invoke the decoder group function
 
     if (logInfo.log.find("SRC=") != string::npos)
     {
@@ -82,14 +82,61 @@ LOG_EVENT LogAnalysis::parseToLogInfo(string log, const string format)
     return logInfo;
 }
 
-int LogAnalysis::regexMatch(const string log, const string pattern)
+string LogAnalysis::formatSysLog(const string &log, const string &format)
+{
+    string fLog, token, formattedTime;
+    int index = 0;
+    string currentTime = log.substr(0, 15);
+    std::stringstream stream;
+    if (format == "dpkg")
+    {
+        string temp, host;
+        AgentUtils::getHostName(host);
+        fLog += log.substr(0, 19);
+        fLog += "|" + host;
+        temp = log.substr(20);
+        fLog += "|" + temp.substr(0, temp.find(' '));
+        temp = temp.substr(temp.find(' ') + 1);
+        fLog += "|" + temp;
+        return fLog;
+    }
+    else
+    {
+        if (AgentUtils::convertTimeFormat(currentTime, formattedTime) == FAILED)
+        {
+            return "";
+        }
+        stream << log.substr(16);
+    }
+    fLog += formattedTime;
+    while (std::getline(stream, token, ' ') && index < 3)
+    {
+        if (index == 2)
+        {
+            string message = token;
+            while (std::getline(stream, token, ' '))
+            {
+                message += ' ' + token;
+            }
+            fLog += '|' + message;
+            index = 4;
+            continue;
+        }
+        fLog += '|' + token;
+        index++;
+    }
+
+    return fLog;
+}
+
+int LogAnalysis::regexMatch(const string &log, const string &pattern)
 {
     std::regex r(pattern);
     std::smatch matches;
     return ((regex_search(log, matches, r) && matches.size() > 0)) ? 1 : 0;
 }
 
-int LogAnalysis::pcreMatch(const std::string &input, const std::string &pattern)
+int LogAnalysis::pcreMatch(const string &input, const string &pattern)
 {
     int errorcode = -1;
     PCRE2_SIZE erroroffset;
@@ -140,12 +187,14 @@ int LogAnalysis::isRuleFound(const int ruleId)
     return FAILED;
 }
 
-void LogAnalysis::addMatchedRule(const int ruleId, const string log)
+void LogAnalysis::addMatchedRule(const int ruleId, const string &log)
 {
     int result = isRuleFound(ruleId);
     if (result == FAILED)
     {
-        this->_idRules.push_back(ruleId);
+        {
+            this->_idRules.push_back(ruleId);
+        }
         AgentUtils::writeLog("Rule Id: " + std::to_string(ruleId) + " -> " + log, DEBUG);
     }
     return;
@@ -164,14 +213,22 @@ int LogAnalysis::match(LOG_EVENT &logInfo)
         AConfig ruleInfo = r.second;
         P_RULE pRule;
 
-        for (int i : this->_processedRules) /* Removing all the processed rules. */
         {
-            auto newEnd = std::remove_if(_processingRules.begin(), _processingRules.end(),
-                                         [i](const P_RULE &s)
-                                         {
-                                             return s.id == i;
-                                         });
-            this->_processingRules.erase(newEnd, _processingRules.end());
+            std::set<int> processedRuleIDs;
+            for (int i : this->_processedRules)
+            {
+                processedRuleIDs.insert(i);
+            }
+            _processingRules.erase(
+                std::remove_if(
+                    _processingRules.begin(),
+                    _processingRules.end(),
+                    [&processedRuleIDs](const P_RULE &s)
+                    {
+                        // Return true if the P_RULE.id is in processedRuleIDs
+                        return processedRuleIDs.find(s.id) != processedRuleIDs.end();
+                    }),
+                _processingRules.end());
         }
 
         if (!ruleInfo.regex.empty()) /* Checking the regex patterns if exists in the rule */
@@ -302,6 +359,7 @@ int LogAnalysis::match(LOG_EVENT &logInfo)
 
         if (pRule.id > 0)
         {
+
             this->_processingRules.push_back(pRule);
         }
 
@@ -330,7 +388,7 @@ int LogAnalysis::match(LOG_EVENT &logInfo)
     return SUCCESS;
 }
 
-int LogAnalysis::analyseFile(const string file)
+int LogAnalysis::analyseFile(const string &file)
 {
     string line, format;
     vector<LOG_EVENT> alertLogs;
@@ -340,7 +398,7 @@ int LogAnalysis::analyseFile(const string file)
         AgentUtils::writeLog(FILE_ERROR + file, FAILED);
         return FAILED;
     }
-    if (!isValidConfig) /*Validating rules are extracted or not.*/
+    if (!isValidConfig) // Validating rules are extracted or not.
     {
         AgentUtils::writeLog("Failed to parse XML configuration file, check the file", FAILED);
         fp.close();
@@ -365,7 +423,7 @@ int LogAnalysis::analyseFile(const string file)
         {
             continue;
         }
-        LOG_EVENT logInfo = parseToLogInfo(line, format);
+        LOG_EVENT logInfo = decodeLog(line, format);
         match(logInfo);
         if (logInfo.is_matched == 1)
         {
@@ -377,17 +435,22 @@ int LogAnalysis::analyseFile(const string file)
     return postAnalysis(alertLogs);
 }
 
-int LogAnalysis::start(const string path)
+int LogAnalysis::start(const string& decoderPath, const string& rulesDir, const string & path)
 {
-    string format;
     int result = SUCCESS;
-    int isFile = 0;
+    string format;
     vector<string> files;
-
-    if (OS::isDirExist(path) && std::filesystem::is_regular_file(path))
+    
+    // Setting configuration files for the LogAnalysis instance;
     {
-        isFile = 1;
+        setConfigFile(decoderPath, rulesDir);
     }
+
+    if (!isValidConfig) return FAILED;
+
+    // Actual start function implentation
+
+    int isFile = (OS::isDirExist(path) && std::filesystem::is_regular_file(path)) ? 1 : 0;
 
     if (isFile)
     {
@@ -410,7 +473,7 @@ int LogAnalysis::start(const string path)
             AgentUtils::writeLog(INVALID_PATH + path, FAILED);
             return FAILED;
         }
-        for (string file : files)
+        for (const string &file : files)
         {
             result = analyseFile(file);
         }
@@ -418,9 +481,9 @@ int LogAnalysis::start(const string path)
     return result;
 }
 
-int LogAnalysis::postAnalysis(const vector<LOG_EVENT> alerts)
+int LogAnalysis::postAnalysis(const vector<LOG_EVENT> &alerts)
 {
-    for (LOG_EVENT log : alerts)
+    for (const auto &log : alerts)
     {
         AConfig config = getRule(log.group, log.rule_id);
         if (config.id <= 0)
@@ -435,39 +498,39 @@ int LogAnalysis::postAnalysis(const vector<LOG_EVENT> alerts)
     return SUCCESS;
 }
 
-int LogAnalysis::printLogDetails(AConfig ruleInfo, LOG_EVENT logInfo)
+int LogAnalysis::printLogDetails(const AConfig &ruleInfo, const LOG_EVENT &logInfo)
 {
     AConfig child = ruleInfo;
-    cout << "Timestamp : " << logInfo.timestamp << endl;
-    cout << "user      : " << logInfo.user << endl;
-    cout << "program   : " << logInfo.program << endl;
-    cout << "log       : " << logInfo.log << endl;
-    cout << "rule      : " << child.id << endl;
+    cout << "Timestamp : " << logInfo.timestamp << "\n";
+    cout << "user      : " << logInfo.user << "\n";
+    cout << "program   : " << logInfo.program << "\n";
+    cout << "log       : " << logInfo.log << "\n";
+    cout << "rule      : " << child.id << "\n";
     while (child.if_sid > 0)
     {
         child = getRule(logInfo.group, child.if_sid);
     }
     if (ruleInfo.description.empty())
     {
-        cout << "category  : " << child.decoded_as << endl;
+        cout << "category  : " << child.decoded_as << "\n";
     }
     else
     {
-        cout << "category  : " << ruleInfo.decoded_as << endl;
+        cout << "category  : " << ruleInfo.decoded_as << "\n";
     }
 
     if (ruleInfo.description.empty())
     {
-        cout << "Description: " << child.description << endl;
+        cout << "Description: " << child.description << "\n";
     }
     else
     {
-        cout << "Description: " << ruleInfo.description << endl;
+        cout << "Description: " << ruleInfo.description << "\n";
     }
     return SUCCESS;
 }
 
-AConfig LogAnalysis::getRule(const string group, const int ruleId)
+AConfig LogAnalysis::getRule(const string &group, const int ruleId)
 {
     AConfig config;
     for (const auto &parent : _rules)
@@ -482,51 +545,4 @@ AConfig LogAnalysis::getRule(const string group, const int ruleId)
         }
     }
     return config;
-}
-
-string LogAnalysis::formatSysLog(string log, const string format)
-{
-    string fLog, token, formattedTime;
-    int index = 0;
-    string currentTime = log.substr(0, 15);
-    std::stringstream stream;
-    if (format == "dpkg")
-    {
-        string temp, host;
-        AgentUtils::getHostName(host);
-        fLog += log.substr(0, 19);
-        fLog += "|" + host;
-        temp = log.substr(20);
-        fLog += "|" + temp.substr(0, temp.find(' '));
-        temp = temp.substr(temp.find(' ') + 1);
-        fLog += "|" + temp;
-        return fLog;
-    }
-    else
-    {
-        if (AgentUtils::convertTimeFormat(currentTime, formattedTime) == FAILED)
-        {
-            return "";
-        }
-        stream << log.substr(16);
-    }
-    fLog += formattedTime;
-    while (std::getline(stream, token, ' ') && index < 3)
-    {
-        if (index == 2)
-        {
-            string message = token;
-            while (std::getline(stream, token, ' '))
-            {
-                message += ' ' + token;
-            }
-            fLog += '|' + message;
-            index = 4;
-            continue;
-        }
-        fLog += '|' + token;
-        index++;
-    }
-
-    return fLog;
 }
