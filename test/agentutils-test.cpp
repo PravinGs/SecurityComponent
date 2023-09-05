@@ -1,4 +1,4 @@
-#include "agentUtils.hpp"
+#include "utils/agentUtils.hpp"
 #include <gtest/gtest.h>
 
 TEST( Utilities, TrimSuccess )
