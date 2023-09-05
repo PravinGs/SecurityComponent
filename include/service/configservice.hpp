@@ -265,7 +265,7 @@ public:
      *         - SUCCESS: The file was successfully cleaned or truncated.
      *         - FAILED: The operation encountered errors and failed to clean or truncate the file.
      */
-    int cleanFile(const string& filePath);
+    int cleanFile(const string& filePath)
     {
         std::ofstream file(filePath, std::ios::trunc);
         if (file.is_open())

@@ -11,7 +11,7 @@ void LogAnalysis::setConfigFile(const string &decoderPath, const string &ruledDi
         isValidConfig = false;
     }
     this->_rulesFile = ruledDir;
-    result = _configService.readRuleConfig(_rulesFile, this->_rules);
+    result = _configService.readXmlRuleConfig(_rulesFile, this->_rules);
     if (result == FAILED)
     {
         isValidConfig = false;
