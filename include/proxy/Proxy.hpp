@@ -5,136 +5,40 @@
 
 int ORG_ID = 234225;
 
-class CurlHandler
-{
-public:
-    static size_t writeCallback(char *data, size_t size, size_t nmemb, std::string *response)
-    {
-        if (response)
-        {
-            response->append(data, size * nmemb);
-            return size * nmemb;
-        }
-        return 0;
-    }
-
-    static size_t headerCallback(char *buffer, size_t size, size_t nitems, long *httpCode)
-    {
-        std::string header(buffer, size * nitems);
-        size_t pos = header.find("HTTP/1.");
-        if (pos != std::string::npos)
-        {
-            *httpCode = std::stoi(header.substr(pos + 9, 3));
-        }
-        return size * nitems;
-    }
-
-    static size_t verboseCallback(char *data, size_t size, size_t nmemb, std::string *output)
-    {
-        if (output)
-        {
-            output->append(data, size * nmemb);
-            return size * nmemb;
-        }
-        return 0;
-    }
-
-    static long post(const string postUrl, const string formName, const string logName)
-    {
-        CURLcode res;
-        const char *contentType = "application/json";
-        std::string response;
-        long httpCode = 0;
-        curl_global_init(CURL_GLOBAL_DEFAULT);
-
-        CURL *curl = curl_easy_init();
-        vector<string> jsonFiles;
-        int result = OS::readRegularFiles(jsonFiles);
-        if (result == FAILED)
-        {
-            AgentUtils::writeLog(FILE_ERROR + logName, FAILED);
-            return FAILED;
-        }
-
-        if (curl)
-        {
-            // Set the target URL
-            curl_easy_setopt(curl, CURLOPT_URL, postUrl.c_str());
-
-            // Set the request headers
-            struct curl_slist *headers = nullptr;
-            headers = curl_slist_append(headers, "accept: */*");
-            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-            // Set the request as a POST
-            curl_easy_setopt(curl, CURLOPT_POST, 1L);
-            for (string jsonFile : jsonFiles)
-            {
-
-                // Set the request as multipart/form-data
-                struct curl_httppost *form = nullptr;
-                struct curl_httppost *last = nullptr;
-                curl_formadd(&form, &last, CURLFORM_COPYNAME, formName.c_str(), CURLFORM_FILE, jsonFile.c_str(), CURLFORM_CONTENTTYPE, contentType, CURLFORM_END);
-                curl_easy_setopt(curl, CURLOPT_HTTPPOST, form);
-
-                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
-                curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-
-                curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, headerCallback);
-                curl_easy_setopt(curl, CURLOPT_HEADERDATA, &httpCode);
-
-                // Enable verbose output
-                // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-
-                curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-                curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-
-                res = curl_easy_perform(curl);
-                if (res == CURLE_OK)
-                {
-                    AgentUtils::writeLog("Request successful");
-                    AgentUtils::writeLog("HTTP Status Code: " + std::to_string(httpCode), SUCCESS);
-                    std::cout << "Response: " << response << std::endl;
-                }
-                else
-                {
-                    string error = curl_easy_strerror(res);
-                    AgentUtils::writeLog("Request failed: " + error, FAILED);
-                }
-
-                if (httpCode == POST_SUCCESS)
-                {
-                    OS::deleteFile(jsonFile);
-                }
-                else
-                {
-                    AgentUtils::writeLog("Failed to send this file " + jsonFile, FAILED);
-                }
-                std::chrono::seconds sleepDuration(1);
-                std::this_thread::sleep_for(sleepDuration);
-            }
-
-            curl_slist_free_all(headers);
-            curl_easy_cleanup(curl);
-        }
-
-        curl_global_cleanup();
-        return httpCode;
-    }
-};
-
+/**
+ * @brief Proxy Validation and Control
+ *
+ * The `Proxy` class serves as the validation and control component for the agent application. It is responsible for
+ * validating various aspects of the application's functionality and ensuring that the agent operates within predefined
+ * criteria and security constraints. This class plays a crucial role in maintaining the integrity and security of the
+ * agent's activities.
+ */
 class Proxy
 {
 private:
-    IniConfig _configService;
-
+    Config _configService; /**< A private instance of IniConfig for configuration management. */
 public:
     Proxy() = default;
 
-    bool directoryExists(const string &directoryPath)
-    {
-        return std::filesystem::is_directory(directoryPath);
-    }
+    /**
+     * @brief Validate Log Configuration
+     *
+     * The `isValidLogConfig` function validates the configuration for syslog, application log, or similar log types.
+     * It uses the `configTable` parameter to access and validate the log configuration settings. The `json` parameter
+     * is utilized to set common information about the logs. The `name` parameter specifies the log's identifier.
+     * The `remote` parameter is used to identify whether a remote connection is configured or not.
+     * The `prevTime` parameter is used to obtain the last read time of the log file.
+     *
+     * @param[in] configTable A map containing log configuration data.
+     *                       The map should be structured to include settings for the specified log type.
+     * @param[in, out] json A JSON object used to set common log information.
+     * @param[in] name The identifier of the log being validated.
+     * @param[in, out] remote A character indicating whether a remote connection is established ('Y' for yes, 'N' for no).
+     * @param[in] prevTime The last read time of the log file.
+     * @return An integer result code:
+     *         - SUCCESS: The log configuration is valid.
+     *         - FAILED: The validation encountered errors or the configuration is invalid.
+     */
 
     int isValidLogConfig(map<string, map<string, string>> &configTable, Json::Value &json, const string& name, char &remote, const string& prevTime)
     {
@@ -145,7 +49,7 @@ public:
 
             vector<string> names = _configService.toVector(configTable[name]["columns"], ',');
 
-            if (name != "syslog" && directoryExists(configTable[name]["log_directory"]))
+            if (name != "syslog" && OS::isDirExist(configTable[name]["log_directory"]))
             {
                 throw std::invalid_argument("Invalid log directory for " + name);
             };
@@ -183,6 +87,17 @@ public:
         return result;
     }
 
+    /**
+     * @brief Get Last Log Written Time
+     *
+     * The `getLastLogWrittenTime` function is used to extract the last written time of a log file specified by its `name`
+     * and `path`. This information is essential for tracking when the log file was last read to avoid reading duplicates.
+     *
+     * @param[in] name The identifier of the log file.
+     * @param[in] path The path to the log file.
+     * @return A string representing the last written time of the log file, formatted according to a specific timestamp format.
+     *         If the operation fails, an empty string is returned.
+     */
     string getLastLogWrittenTime(const string& name, const string& path)
     {
         string nonEmtPath = OS::isEmpty(path);
@@ -244,11 +159,12 @@ public:
         return lastTime;
     }
 
-    long post(const string& postUrl, const string& formName, const string& jsonFile)
-    {
-        return CurlHandler::post(postUrl, formName, jsonFile);
-    }
-
+    /**
+     * @brief Destructor for Proxy.
+     *
+     * The destructor performs cleanup tasks for the `Proxy` class, which may include
+     * releasing resources and deallocating memory.
+     */
     ~Proxy() {}
 };
 

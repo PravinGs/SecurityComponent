@@ -117,8 +117,8 @@ struct Timer
         float ms = duration.count() * 1000.0f;
         cout << "Timer took " << ms << "ms\n";
     }
-
 };
+
 struct AConfig
 {
     int id;

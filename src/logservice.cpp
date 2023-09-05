@@ -104,7 +104,7 @@ bool filterLog(string &line, vector<string> levels)
     return result;
 }
 
-int LogService::_readSysLog(Json::Value &json, const string &path, vector<string> &logs, const char &delimeter, const string &previousTime, bool &flag, const vector<string> &levels, string &nextReadingTime)
+int LogService::_readSysLog(const string &path, vector<string> &logs, const char &delimeter, const string &previousTime, bool &flag, const vector<string> &levels, string &nextReadingTime)
 {
     int result = SUCCESS;
     const string sep = "|";
@@ -167,7 +167,7 @@ int LogService::_readSysLog(Json::Value &json, const string &path, vector<string
 
     if (flag)
     {
-        _readSysLog(json, path + ".1", logs, delimeter, previousTime, flag, levels, nextReadingTime);
+        _readSysLog(path + ".1", logs, delimeter, previousTime, flag, levels, nextReadingTime);
     }
     return result;
 }
@@ -193,7 +193,7 @@ int LogService::getSysLog(const string &appName, Json::Value &json, const vector
         }
         else
         {
-            result = _readSysLog(json, path, logs, delimeter, previousTime, flag, levels, nextReadingTime);
+            result = _readSysLog(path, logs, delimeter, previousTime, flag, levels, nextReadingTime);
         }
         if (logs.size() == 0 || result == FAILED)
         {
@@ -267,7 +267,7 @@ int LogService::getAppLog(Json::Value &json, const vector<string> &names, const 
             continue;
         }
 
-        if (_readAppLog(json, path, logs, delimeter, previousTime, flag, levels, nextReadingTime) == FAILED || logs.size() == 0)
+        if (_readAppLog(path, logs, delimeter, previousTime, flag, levels, nextReadingTime) == FAILED || logs.size() == 0)
         {
             return FAILED;
         }
@@ -284,7 +284,7 @@ int LogService::getAppLog(Json::Value &json, const vector<string> &names, const 
     return _saveAsJSON(json, writePath, logs, names, delimeter);
 }
 
-int LogService::_readAppLog(Json::Value &json, const string &path, vector<string> &logs, const char &delimeter, const string &previousTime, bool &flag, const vector<string> &levels, string &nextReadingTime)
+int LogService::_readAppLog(const string &path, vector<string> &logs, const char &delimeter, const string &previousTime, bool &flag, const vector<string> &levels, string &nextReadingTime)
 {
     fstream file(path);
     string line;

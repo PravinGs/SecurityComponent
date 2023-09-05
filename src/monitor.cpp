@@ -9,7 +9,7 @@ const string BOOTTIME = "uptime";
 const string COMM = "/comm";
 const string IO = "/io";
 
-string MonitorService::_getFileName()
+string MonitorService::_getWritePath()
 {
     string time = AgentUtils::getCurrentTime();
     string filePath = BASE_LOG_DIR;
@@ -112,7 +112,7 @@ string MonitorService::_getProcesNameById(const unsigned int &processId)
 int MonitorService::_saveLog(const vector<process_data> &logs, const vector<string> &columns)
 {
     string hostName;
-    string path = _getFileName();
+    string path = _getWritePath();
     AgentUtils::getHostName(hostName);
     sys_properties properties = getSystemProperties();
     Json::Value props;
@@ -359,7 +359,7 @@ sys_properties MonitorService::getAvailedSystemProperties()
     return properties;
 }
 
-void MonitorService::createProcessData(int processId, vector<process_data> &data)
+process_data MonitorService::createProcessData(int processId)
 {
     CpuTable table = _readProcessingTimeById(processId);
     string processName = _getProcesNameById(processId);
@@ -370,10 +370,11 @@ void MonitorService::createProcessData(int processId, vector<process_data> &data
         std::to_string(processId), processName,
         std::to_string(cpuTime), std::to_string(memUsage),
         std::to_string(diskUsage)};
-    data.push_back(processData);
+    // data.push_back(processData);
+    return processData;
 }
 
-int MonitorService::getData(const string &writePath, const vector<string> &columns)
+int MonitorService::getData(const vector<string> &columns)
 {
     AgentUtils::writeLog("Request for collecting process details", DEBUG);
     vector<process_data> parent;
@@ -383,10 +384,11 @@ int MonitorService::getData(const string &writePath, const vector<string> &colum
         int p_id = processIds[i];
         auto asyncTask = [&, p_id]()
         {
-            vector<process_data> localData;
-            createProcessData(p_id, localData);
+            // vector<process_data> localData;
+            process_data localData = createProcessData(p_id);
             std::lock_guard<std::mutex> lock(p_mutex);
-            parent.insert(parent.end(), localData.begin(), localData.end());
+            parent.push_back(localData);
+            // parent.insert(parent.end(), localData.begin(), localData.end());
         };
         _asyncTasks.push_back(std::async(std::launch::async, asyncTask));
     }

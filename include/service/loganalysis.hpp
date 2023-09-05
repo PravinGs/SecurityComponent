@@ -32,7 +32,7 @@ class LogAnalysis
 {
 public:
     string _rulesFile;
-    IniConfig _configService;
+    Config _configService;
     vector<P_RULE> _processingRules;
     vector<int> _processedRules;
     vector<int> _idRules;

@@ -2,7 +2,7 @@
 
 FService::FService(){}
 
-int FService::createDProps(map<string, map<string, string>> table)
+int FService::createDProps(map<string, map<string, string>>& table)
 {
     int result = SUCCESS;
     this->dProperties.writePath = table["firmware"]["write_path"];
@@ -62,7 +62,7 @@ string FService::extractFileName(const string &url)
     return "";
 }
 
-int FService::download(const string username, const string password)
+int FService::download(const string& username, const string& password)
 {
     int returnVal = SUCCESS;
     string credential = username + ":" + password;
@@ -210,7 +210,7 @@ int FService::download()
     return returnVal;
 }
 
-int FService::start(map<string, map<string, string>> table)
+int FService::start(map<string, map<string, string>>& table)
 {
     int result = SUCCESS;
     int count = 5;

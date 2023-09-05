@@ -10,7 +10,6 @@ class Report
     public:
         int generateFromFile(string path);
         int generate(vector<LOG_EVENT> alerts);
-
 };
 
 int Report::generateFromFile(string path) 

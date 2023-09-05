@@ -7,10 +7,10 @@
 int main()
 {
     Timer timer;
-    IniConfig config;
+    Config config;
     map<string, map<string, string>> table;
     MonitorController monitorController;
-    config.readConfigFile("/home/krishna/security/Agent/config/schedule.config", table);
+    config.readIniConfigFile("/home/krishna/security/Agent/config/schedule.config", table);
     OS::CurrentDay = 4;
     OS::CurrentMonth = 9;
     monitorController.getMonitorLog(table);
