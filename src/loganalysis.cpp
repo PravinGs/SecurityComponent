@@ -4,22 +4,21 @@ LogAnalysis::LogAnalysis() {}
 
 void LogAnalysis::setConfigFile(const string &decoderPath, const string &ruledDir)
 {
-   
+
     int result = _configService.readDecoderConfig(decoderPath, this->_decoder_list);
     if (result == FAILED)
     {
         isValidConfig = false;
     }
     this->_rulesFile = ruledDir;
-    result = _configService.readRuleConfig(_rulesFile, this->_rules);
+    result = _configService.readXmlRuleConfig(_rulesFile, this->_rules);
     if (result == FAILED)
     {
         isValidConfig = false;
     }
-   
 }
 
-void extractNetworkLog(LOG_EVENT &logInfo)
+void extractNetworkLog(log_event &logInfo)
 {
     /* IN= OUT=lo SRC=127.0.0.1 DST=127.0.0.1 LEN=52 TOS=0x00 PREC=0x00
     TTL=64 ID=38860 DF PROTO=TCP SPT=8888 DPT=55764 WINDOW=512 RES=0x00 ACK URGP=0 */
@@ -44,16 +43,16 @@ int LogAnalysis::isValidSysLog(size_t size)
     return (size <= OS_SIZE_1024) ? SUCCESS : FAILED;
 }
 
-string LogAnalysis::decodeGroup(const string& log)
+string LogAnalysis::decodeGroup(const string &log)
 {
     string group;
-    
+
     return group;
 }
 
-LOG_EVENT LogAnalysis::decodeLog(const string &log, const string &format)
+log_event LogAnalysis::decodeLog(const string &log, const string &format)
 {
-    LOG_EVENT logInfo;
+    log_event logInfo;
     string timestamp, user, program, message;
 
     const string &logToParse = (std::count(log.begin(), log.end(), '|') >= 2) ? log : formatSysLog(log, format);
@@ -154,7 +153,7 @@ int LogAnalysis::pcreMatch(const string &input, const string &pattern)
     {
         PCRE2_UCHAR buffer[256];
         pcre2_get_error_message(errorcode, buffer, sizeof(buffer));
-        std::cerr << "PCRE2 compilation failed at offset " << erroroffset << ": " << buffer << std::endl;
+        std::cerr << "PCRE2 compilation failed at offset " << erroroffset << ": " << buffer << "\n";
         return FAILED;
     }
 
@@ -200,7 +199,7 @@ void LogAnalysis::addMatchedRule(const int ruleId, const string &log)
     return;
 }
 
-int LogAnalysis::match(LOG_EVENT &logInfo)
+int LogAnalysis::match(log_event &logInfo)
 {
     if (logInfo.format.empty() || this->_rules.find(logInfo.format) == this->_rules.end())
     {
@@ -211,7 +210,7 @@ int LogAnalysis::match(LOG_EVENT &logInfo)
     {
         bool isParentRuleMatching = false;
         AConfig ruleInfo = r.second;
-        P_RULE pRule;
+        p_rule pRule;
 
         {
             std::set<int> processedRuleIDs;
@@ -223,9 +222,9 @@ int LogAnalysis::match(LOG_EVENT &logInfo)
                 std::remove_if(
                     _processingRules.begin(),
                     _processingRules.end(),
-                    [&processedRuleIDs](const P_RULE &s)
+                    [&processedRuleIDs](const p_rule &s)
                     {
-                        // Return true if the P_RULE.id is in processedRuleIDs
+                        // Return true if the p_rule.id is in processedRuleIDs
                         return processedRuleIDs.find(s.id) != processedRuleIDs.end();
                     }),
                 _processingRules.end());
@@ -320,7 +319,7 @@ int LogAnalysis::match(LOG_EVENT &logInfo)
         else if (ruleInfo.if_matched_id > 0 && ruleInfo.same_id == 1)
         {
             pRule.if_mid = ruleInfo.if_matched_id;
-            for (P_RULE p : this->_processingRules)
+            for (p_rule p : this->_processingRules)
             {
                 if (isRuleFound(p.if_mid) == SUCCESS)
                 {
@@ -331,7 +330,7 @@ int LogAnalysis::match(LOG_EVENT &logInfo)
 
         if (ruleInfo.same_source_ip == 1 && !logInfo.src_ip.empty()) /* Is is firewall related log. Then check any rules are being in processing state.*/
         {
-            for (P_RULE p : this->_processingRules) /*Processing rule has the src_ip, that frequency will be monitored for the given timeframe in the rule.*/
+            for (p_rule p : this->_processingRules) /*Processing rule has the src_ip, that frequency will be monitored for the given timeframe in the rule.*/
             {
                 if (strcmp(p.src_ip.c_str(), logInfo.src_ip.c_str()) == 0 && p.same_source_ip == 1) /*src_ip matching, if it matches remove increase the helper_varible.*/
                 {
@@ -343,7 +342,7 @@ int LogAnalysis::match(LOG_EVENT &logInfo)
         if (ruleInfo.if_sid > 0 && ruleInfo.same_id == 1) /*If the child id of this rule exists, then you can set child id to the log*/
         {
             pRule.if_sid = ruleInfo.if_sid;
-            for (P_RULE p : this->_processingRules)
+            for (p_rule p : this->_processingRules)
             {
                 if (isRuleFound(p.if_sid == SUCCESS))
                 {
@@ -367,7 +366,7 @@ int LogAnalysis::match(LOG_EVENT &logInfo)
         {
             for (int i = 0; i < (int)this->_processingRules.size(); i++)
             {
-                P_RULE pRule = this->_processingRules[i];
+                p_rule pRule = this->_processingRules[i];
                 if ((pRule.end < AgentUtils::convertStrToTime(logInfo.timestamp) && pRule.d_frequency != pRule.frequency))
                 {
                     this->_processedRules.push_back(i); /* The rule expired */
@@ -391,7 +390,7 @@ int LogAnalysis::match(LOG_EVENT &logInfo)
 int LogAnalysis::analyseFile(const string &file)
 {
     string line, format;
-    vector<LOG_EVENT> alertLogs;
+    vector<log_event> alertLogs;
     fstream fp(file, std::ios::in);
     if (!fp)
     {
@@ -423,7 +422,7 @@ int LogAnalysis::analyseFile(const string &file)
         {
             continue;
         }
-        LOG_EVENT logInfo = decodeLog(line, format);
+        log_event logInfo = decodeLog(line, format);
         match(logInfo);
         if (logInfo.is_matched == 1)
         {
@@ -435,18 +434,19 @@ int LogAnalysis::analyseFile(const string &file)
     return postAnalysis(alertLogs);
 }
 
-int LogAnalysis::start(const string& decoderPath, const string& rulesDir, const string & path)
+int LogAnalysis::start(const string &decoderPath, const string &rulesDir, const string &path)
 {
     int result = SUCCESS;
     string format;
     vector<string> files;
-    
+
     // Setting configuration files for the LogAnalysis instance;
     {
         setConfigFile(decoderPath, rulesDir);
     }
 
-    if (!isValidConfig) return FAILED;
+    if (!isValidConfig)
+        return FAILED;
 
     // Actual start function implentation
 
@@ -481,7 +481,7 @@ int LogAnalysis::start(const string& decoderPath, const string& rulesDir, const 
     return result;
 }
 
-int LogAnalysis::postAnalysis(const vector<LOG_EVENT> &alerts)
+int LogAnalysis::postAnalysis(const vector<log_event> &alerts)
 {
     for (const auto &log : alerts)
     {
@@ -498,7 +498,7 @@ int LogAnalysis::postAnalysis(const vector<LOG_EVENT> &alerts)
     return SUCCESS;
 }
 
-int LogAnalysis::printLogDetails(const AConfig &ruleInfo, const LOG_EVENT &logInfo)
+int LogAnalysis::printLogDetails(const AConfig &ruleInfo, const log_event &logInfo)
 {
     AConfig child = ruleInfo;
     cout << "Timestamp : " << logInfo.timestamp << "\n";

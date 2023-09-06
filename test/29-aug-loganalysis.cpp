@@ -15,7 +15,7 @@ TEST_F(LogAnalysisTest, SyslogCheck)
     string log = "Aug 22 18:09:37 ubuntu-20 kernel: [18374.181445] audit: type=1400 audit(1692707977.617:2879):";
     string convertTime;
     string format = "syslog";
-    LOG_EVENT logInfo = analysis->decodeLog(log, format);
+    log_event logInfo = analysis->decodeLog(log, format);
     int result = AgentUtils::convertTimeFormat("Aug 22 18:09:37", convertTime);
     ASSERT_TRUE(logInfo.size > 0);
     EXPECT_EQ(result, SUCCESS);
@@ -29,10 +29,10 @@ TEST_F(LogAnalysisTest, FailSyslogCheck)
     string log = "Aug 22 9:37 ubuntu-20 kernel: [18374.181445] audit: type=1400 audit(1692707977.617:2879):";
     string convertTime;
     string format = "syslog";
-    LOG_EVENT logInfo = analysis->decodeLog(log, format);
+    log_event logInfo = analysis->decodeLog(log, format);
     int result = AgentUtils::convertTimeFormat("Aug 22 9:37", convertTime);
     ASSERT_EQ(result, FAILED);
-    cout << "LogInfo size : " << logInfo.size << endl;
+    cout << "LogInfo size : " << logInfo.size << "\n";
     EXPECT_TRUE(logInfo.size == 0);
 }
 
@@ -64,7 +64,7 @@ TEST_F(LogAnalysisTest, dpkgLogCheck)
 {
     string log = "2023-08-22 12:32:20 status installed systemd:amd64 245.4-4ubuntu3.22";
     string format = "dpkg";
-    LOG_EVENT logInfo = analysis->decodeLog(log, format);    
+    log_event logInfo = analysis->decodeLog(log, format);    
     ASSERT_TRUE(logInfo.size > 0);
     EXPECT_STREQ("status", logInfo.program.c_str());
 }
@@ -74,7 +74,7 @@ TEST_F(LogAnalysisTest, InvaliddpkgLogCheck)
     string log = "2023-08-22 32:20  status installed systemd:amd64 245.4-4ubuntu3.22";
     string convertTime;
     string format = "dpkg";
-    LOG_EVENT logInfo = analysis->decodeLog(log, format);
+    log_event logInfo = analysis->decodeLog(log, format);
     EXPECT_TRUE(logInfo.size == 0);
 }
 
@@ -83,7 +83,7 @@ TEST_F(LogAnalysisTest, AuthlogCheck)
     string log = "Mar 21 18:13:07 ubuntu-20 sudo: pam_unix(sudo:session): session opened for user root by (uid=0):";
     string convertTime;
     string format = "authlog";
-    LOG_EVENT logInfo = analysis->decodeLog(log, format);
+    log_event logInfo = analysis->decodeLog(log, format);
     int result = AgentUtils::convertTimeFormat("Mar 21 18:13:07", convertTime);
     EXPECT_TRUE(logInfo.size > 0);
     EXPECT_EQ(result, SUCCESS);
@@ -96,7 +96,7 @@ TEST_F(LogAnalysisTest, InvalidAuthlogCheck)
     string log = "Mar 21 18:13 ubuntu-20 sudo: pam_unix(sudo:session): session opened for user root by (uid=0):";
     string convertTime;
     string format = "authlog";
-    LOG_EVENT logInfo = analysis->decodeLog(log, format);
+    log_event logInfo = analysis->decodeLog(log, format);
     EXPECT_TRUE(logInfo.size == 0);
 }
 
@@ -112,11 +112,11 @@ TEST_F(LogAnalysisTest, Report)
     };
 
     vector<string> ruleInputs = {"124,syslog", "456,syslog", "768,syslog","657,syslog"};
-    vector<LOG_EVENT> alerts;
+    vector<log_event> alerts;
 
     for (string l: logs)
     {
-        LOG_EVENT event = analysis->decodeLog(l, "syslog");
+        log_event event = analysis->decodeLog(l, "syslog");
         int size = event.size;
         EXPECT_TRUE(size > 0);
         alerts.push_back(event);
@@ -126,9 +126,9 @@ TEST_F(LogAnalysisTest, Report)
     {
         string rule = ruleInputs[i];
         int ruleId = std::stoi(rule.substr(0, rule.find_first_of(',')));
-        cout << ruleId << endl;
+        cout << ruleId << "\n";
         string group = rule.substr(rule.find_first_of(',') + 1);
-        cout << group << endl;
+        cout << group << "\n";
         alerts[i].rule_id = ruleId;
         alerts[i].group = group;
     }

@@ -110,7 +110,7 @@ public:
                 {
                     AgentUtils::writeLog("Request successful");
                     AgentUtils::writeLog("HTTP Status Code: " + std::to_string(httpCode), SUCCESS);
-                    std::cout << "Response: " << response << std::endl;
+                    std::cout << "Response: " << response << "\n";
                 }
                 else
                 {

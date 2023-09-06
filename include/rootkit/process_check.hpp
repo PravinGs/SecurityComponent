@@ -27,7 +27,7 @@ class ProcessCheck
                 result = true;
             }catch(exception &e)
             {
-                cerr<< e.what() << endl;
+                cerr<< e.what() << "\n";
             }
             return result;
         }
@@ -116,7 +116,7 @@ class ProcessCheck
 
                 if (position == PROC_)
                 {   
-                    cout << entry_name << endl;
+                    cout << entry_name << "\n";
                     if (!isDigit(entry_name)) continue;
                     string fileName = dir_name +  "/" + entry_name;
                     result = read_proc_file(fileName, pid, position + 1);
@@ -177,7 +177,7 @@ class ProcessCheck
 
             for (;; i++) 
             {
-                cout << i << endl;
+                cout << i << "\n";
                 if ((i <= 0) || (i > max_pid)) {
                     break;
                 }

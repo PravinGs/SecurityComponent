@@ -23,7 +23,7 @@ int Report::generateFromFile(string path)
     fstream file(path, std::ios::in); 
     if(!file)
     {
-        cout << "File path not valid " << path << endl;
+        cout << "File path not valid " << path << "\n";
         return FAILED;
     }
 

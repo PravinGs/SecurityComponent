@@ -4,6 +4,8 @@
 #include "service/fwservice.hpp"
 #include "proxy/Proxy.hpp"
 
+#define DOWNLOAD_WAITING_TIME 5
+
 /**
  * @brief Firmware Controller
  * 
@@ -42,18 +44,19 @@ public:
      */
     int start(map<string, map<string, string>> &configTable)
     {
-        if (configTable[firmware]["current_version"] == configTable[firmware]["latest_version"])
+        string application = configTable[firmware]["application"];
+        string rootDir     = configTable[firmware]["root_dir"];
+        if (application.empty()) //Precheck
         {
-            AgentUtils::writeLog("No Update Required");
+            AgentUtils::writeLog("No Application configured for patch management.", WARNING);
             return SUCCESS;
         }
-        int nextDownloadingTime = std::stoi(configTable["cloud"]["waiting_time"]);
         int result = _fservice->start(configTable);
         while (result == SERVER_ERROR)
         {
 
             std::chrono::system_clock::time_point currentTime = std::chrono::system_clock::now();
-            std::chrono::system_clock::time_point executionTime = currentTime + std::chrono::seconds(nextDownloadingTime);
+            std::chrono::system_clock::time_point executionTime = currentTime + std::chrono::seconds(DOWNLOAD_WAITING_TIME);
             std::chrono::system_clock::duration duration = executionTime - currentTime;
             int waitingTime = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
             std::this_thread::sleep_for(std::chrono::seconds(waitingTime));

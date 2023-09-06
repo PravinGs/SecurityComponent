@@ -16,8 +16,8 @@ struct standard_log_attrs
     string user;
     string program;
     string message;
-    short level;
-    short category;
+    int level;
+    int category;
 
     standard_log_attrs(const string& log)
     {
@@ -29,8 +29,22 @@ struct standard_log_attrs
         std::getline(ss, message, '|');
         std::getline(ss, t_level, '|');
         std::getline(ss, t_category, '|');
-        level = std::stoi(t_level);
+        level = handle_exception(t_level);
         category = LogCategory[t_category];
+    }
+
+    int handle_exception(const string& level)
+    {
+        int r;
+        try
+        {
+            r = std::stoi(level);
+        }
+        catch(const std::exception& e)
+        {
+            r = 0;
+        }
+        return r;
     }
 
     ~standard_log_attrs(){}

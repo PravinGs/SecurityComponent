@@ -62,10 +62,72 @@ public:
         catch (exception &e)
         {
             digit = -1;
-            cerr << e.what() << endl;
+            cerr << e.what() << "\n";
         }
         return digit;
     }
+
+    int parseToDecoder(const string & fileName, map<string, decoder>& table)
+    {        
+        pugi::xml_parse_result result = doc.load_file(fileName.c_str());
+
+        if (!result)
+        {
+            string error = result.description();
+            cout << "Error: " << error << "\n";
+            AgentUtils::writeLog(FILE_ERROR + fileName, FAILED);
+            return FAILED;
+        }
+        pugi::xml_node root = doc.child("decoder-parent");
+        for (pugi::xml_node groupNode = root; groupNode; groupNode = groupNode.next_sibling("group"))
+        {
+            decoder d;
+            std::string currentSection = root.attribute("decoder").value();
+            if (!currentSection.empty())
+            {
+                d.decoder=currentSection;
+            }
+            currentSection = root.attribute("parent").value();
+            if (!currentSection.empty())
+            {
+                d.parent=currentSection;
+            }
+            currentSection = root.attribute("program_name_pcre2").value();
+            if (!currentSection.empty())
+            {
+                d.program_name_pcre2=currentSection;
+            }
+            currentSection = root.attribute("pcre2").value();
+            if (!currentSection.empty())
+            {
+                d.pcre2=currentSection;
+            }
+            currentSection = root.attribute("order").value();
+            if (!currentSection.empty())
+            {
+                d.order=currentSection;
+            }
+            currentSection = root.attribute("prematch_pcre2").value();
+            if (!currentSection.empty())
+            {
+                d.prematch_pcre2=currentSection;
+            }
+            currentSection = root.attribute("fts").value();
+            if (!currentSection.empty())
+            {
+                d.fts=currentSection;
+            }
+            currentSection = root.attribute("offset").value();
+            if (!currentSection.empty())
+            {
+                d.offset=currentSection;
+            }
+        }
+        AgentUtils::writeLog("XML parsing success for " + fileName, DEBUG);
+        return SUCCESS;
+    }
+
+
 
     /**
      * @brief Parse XML Nodes into AConfig Table
@@ -88,7 +150,7 @@ public:
         if (!result)
         {
             string error = result.description();
-            cout << "Error: " << error << endl;
+            cout << "Error: " << error << "\n";
             AgentUtils::writeLog(FILE_ERROR + fileName, FAILED);
             return FAILED;
         }
@@ -265,7 +327,7 @@ public:
      *         - SUCCESS: The file was successfully cleaned or truncated.
      *         - FAILED: The operation encountered errors and failed to clean or truncate the file.
      */
-    int cleanFile(const string& filePath);
+    int cleanFile(const string& filePath)
     {
         std::ofstream file(filePath, std::ios::trunc);
         if (file.is_open())
@@ -360,9 +422,12 @@ public:
      */
     int readDecoderConfig(const string& path, map<string, decoder>& table)
     {
-        int result = SUCCESS;
-        /* Code need to be updated here */
-        return result;
+        AgentUtils::writeLog("Reading " + path, DEBUG);
+        if (!std::filesystem::is_regular_file(path))
+        {
+           AgentUtils::writeLog("Expected a file " + path, FATAL);
+        }
+        return parseToDecoder(path, table);
     }
 
     /**

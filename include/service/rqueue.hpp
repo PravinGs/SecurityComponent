@@ -4,6 +4,10 @@
 
 #include "agentUtils.hpp"
 
+/**
+ * @cond HIDE_THIS_CLASS
+ * @brief This class is for internal use only and should not be documented.
+ */
 class Handler : public AMQP::LibEvHandler
 {
 private:
@@ -61,6 +65,10 @@ public:
         AgentUtils::writeLog(message, FAILED);
     }
 };
+
+/**
+ * @endcond
+ */
 
 class Queue
 {
