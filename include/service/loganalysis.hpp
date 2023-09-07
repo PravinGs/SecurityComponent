@@ -54,14 +54,14 @@ public:
     vector<p_rule> _processingRules;
     vector<int> _processedRules;
     vector<int> _idRules;
-    map<string, map<int, AConfig>> _rules;
-    map<string, decoder> _decoder_list;
+    std::unordered_map<string, std::unordered_map<int, AConfig>> _rules;
+    std::unordered_map<string, decoder> _decoder_list;
 
 private:
-    bool isValidConfig = false;
+    bool isValidConfig = true;
     int isRuleFound(const int ruleId);
     void addMatchedRule(const int ruleId, const string& log);
-    string decodeGroup(const string& log);
+    string decodeGroup(const string& log, const string& program);
 
 public:
     /**
@@ -183,6 +183,8 @@ public:
      *         - (-1) if an error occurred during the matching process.
      */
     int match(log_event &logInfo);
+
+    int match(log_event &logInfo, std::unordered_map<int, AConfig>& ruleSet);
 
     /**
      * @brief Analyze a log file by initiating log matching and managing the log matcher.

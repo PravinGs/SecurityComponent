@@ -67,96 +67,80 @@ public:
         return digit;
     }
 
-    int parseToDecoder(const string & fileName, map<string, decoder>& table)
-    {        
+    int parseToDecoder(const string & fileName, std::unordered_map<string, decoder>& table)
+    {   
+        /*
+            for (const auto& d: decoders)
+            {
+                decoder s = d.second;
+                cout << "<decoder name=" << d.first << " </decoder>\n";
+                cout << "    <parent> " << s.parent << " </parent>\n";
+                cout << "    <program_name_pcre2> " << s.program_name_pcre2 << " </program_name_pcre2>\n";
+                cout << "    <pcre2> " << s.pcre2 << " </pcre2>\n";
+                cout << "    <prematch_pcre2> " << s.prematch_pcre2 << " </prematch_pcre2>\n";
+                cout << "    <order> " << s.order << " </order>\n";
+            }
+        */     
         pugi::xml_parse_result result = doc.load_file(fileName.c_str());
 
         if (!result)
         {
             string error = result.description();
-            cout << "Error: " << error << "\n";
             AgentUtils::writeLog(FILE_ERROR + fileName, FAILED);
             return FAILED;
         }
-        pugi::xml_node root = doc.child("decoder-parent");
-        for (pugi::xml_node groupNode = root; groupNode; groupNode = groupNode.next_sibling("group"))
+        pugi::xml_node root = doc.child("root");
+        for (pugi::xml_node groupNode = root.child("decoder"); groupNode; groupNode = groupNode.next_sibling("decoder"))
         {
             decoder d;
-            std::string currentSection = root.attribute("decoder").value();
+            std::string currentSection = groupNode.attribute("name").value();
             if (!currentSection.empty())
             {
                 d.decoder=currentSection;
             }
-            currentSection = root.attribute("parent").value();
+            currentSection = groupNode.child_value("parent");
             if (!currentSection.empty())
             {
                 d.parent=currentSection;
             }
-            currentSection = root.attribute("program_name_pcre2").value();
+            currentSection = groupNode.child_value("program_name_pcre2");
             if (!currentSection.empty())
             {
                 d.program_name_pcre2=currentSection;
             }
-            currentSection = root.attribute("pcre2").value();
+            currentSection = groupNode.child_value("pcre2");
             if (!currentSection.empty())
             {
                 d.pcre2=currentSection;
             }
-            currentSection = root.attribute("order").value();
+            currentSection = groupNode.child_value("order");
             if (!currentSection.empty())
             {
                 d.order=currentSection;
             }
-            currentSection = root.attribute("prematch_pcre2").value();
+            currentSection = groupNode.child_value("prematch_pcre2");
             if (!currentSection.empty())
             {
                 d.prematch_pcre2=currentSection;
             }
-            currentSection = root.attribute("fts").value();
+            currentSection = groupNode.child_value("fts");
             if (!currentSection.empty())
             {
                 d.fts=currentSection;
             }
-            currentSection = root.attribute("offset").value();
+            currentSection = groupNode.child_value("offset");
             if (!currentSection.empty())
             {
                 d.offset=currentSection;
             }
+            table[d.decoder] = d;
         }
         AgentUtils::writeLog("XML parsing success for " + fileName, DEBUG);
         return SUCCESS;
     }
 
-
-
-    /**
-     * @brief Parse XML Nodes into AConfig Table
-     *
-     * The `parseToAConfig` function is used to parse XML nodes from a specified XML file and populate a structured table of
-     * `AConfig` objects. Each XML node represents configuration data, and the parsed data is organized within the table.
-     *
-     * @param[in] fileName The file name of the XML file containing configuration nodes.
-     * @param[out] table A reference to a map for storing the parsed configuration data. The map is structured as follows:
-     *                  - The keys represent unique identifiers for each configuration.
-     *                  - The values are maps containing configuration settings organized by integer keys.
-     * @return An integer result code:
-     *         - SUCCESS: The XML nodes were successfully parsed and populated into the AConfig table.
-     *         - FAILED: The operation encountered errors and failed to parse or populate the configuration data.
-     */
-    int parseToAConfig(string fileName, map<string, map<int, AConfig>> &table)
+    void extractRuleAttributes(pugi::xml_node & root, std::unordered_map<string, std::unordered_map<int, AConfig>> &table)
     {
-        pugi::xml_parse_result result = doc.load_file(fileName.c_str());
-
-        if (!result)
-        {
-            string error = result.description();
-            cout << "Error: " << error << "\n";
-            AgentUtils::writeLog(FILE_ERROR + fileName, FAILED);
-            return FAILED;
-        }
-
-        pugi::xml_node root = doc.child("group");
-
         for (pugi::xml_node groupNode = root; groupNode; groupNode = groupNode.next_sibling("group"))
         {
             AConfig rule;
@@ -312,6 +296,47 @@ public:
                 table[currentSection][rule.id] = rule;
             }
         }
+    }
+
+    /**
+     * @brief Parse XML Nodes into AConfig Table
+     *
+     * The `parseToAConfig` function is used to parse XML nodes from a specified XML file and populate a structured table of
+     * `AConfig` objects. Each XML node represents configuration data, and the parsed data is organized within the table.
+     *
+     * @param[in] fileName The file name of the XML file containing configuration nodes.
+     * @param[out] table A reference to a map for storing the parsed configuration data. The map is structured as follows:
+     *                  - The keys represent unique identifiers for each configuration.
+     *                  - The values are maps containing configuration settings organized by integer keys.
+     * @return An integer result code:
+     *         - SUCCESS: The XML nodes were successfully parsed and populated into the AConfig table.
+     *         - FAILED: The operation encountered errors and failed to parse or populate the configuration data.
+     */
+    int parseToAConfig(string fileName, std::unordered_map<string, std::unordered_map<int, AConfig>> &table)
+    {
+        pugi::xml_parse_result result = doc.load_file(fileName.c_str());
+
+        if (!result)
+        {
+            string error = result.description();
+            AgentUtils::writeLog(FILE_ERROR + fileName, FAILED);
+            return FAILED;
+        }
+
+        pugi::xml_node root = doc.child("root");
+        if (root)
+        {
+            for (pugi::xml_node groupNode = root.child("group"); groupNode; groupNode = groupNode.next_sibling("group"))
+            {
+                extractRuleAttributes(groupNode, table);
+            }
+        }
+        else
+        {
+            root = doc.child("group");
+            extractRuleAttributes(root, table);
+        }
+        
         AgentUtils::writeLog("XML parsing success for " + fileName, DEBUG);
         return SUCCESS;
     }
@@ -420,7 +445,7 @@ public:
      *         - SUCCESS: The XML decoder configuration file was successfully read and parsed into the table.
      *         - FAILED: The operation encountered errors and failed to read or parse the configuration.
      */
-    int readDecoderConfig(const string& path, map<string, decoder>& table)
+    int readDecoderConfig(const string& path, std::unordered_map<string, decoder>& table)
     {
         AgentUtils::writeLog("Reading " + path, DEBUG);
         if (!std::filesystem::is_regular_file(path))
@@ -445,7 +470,7 @@ public:
      *         - SUCCESS: The XML rule configuration was successfully read and parsed into the table.
      *         - FAILED: The operation encountered errors and failed to read or parse the configuration.
      */
-    int readXmlRuleConfig(const string path, map<string, map<int, AConfig>> &table)
+    int readXmlRuleConfig(const string path, std::unordered_map<string, std::unordered_map<int, AConfig>> &table)
     {
         AgentUtils::writeLog("Reading " + path, DEBUG);
         int result = SUCCESS;

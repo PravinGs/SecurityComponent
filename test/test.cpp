@@ -9,12 +9,9 @@ int main()
     AgentUtils::logfp.open(LOG_PATH, std::ios::app);
     Timer timer;
     Config config;
-    map<string, map<string, string>> table;
-    MonitorController logController;
-    config.readIniConfigFile("/home/krishna/security/Agent/config/schedule.config", table);
-    OS::CurrentDay = 6;
-    OS::CurrentMonth = 9;
-    logController.getMonitorLog(table);
+    LogAnalysis logAnalysis;
+    std::unordered_map<string, std::unordered_map<int, AConfig>> table;
+    logAnalysis.start("/home/krishna/security/Agent/decoder.xml", "/home/krishna/security/Agent/rules/", "/home/krishna/Documents/syslog");
     if (AgentUtils::logfp.is_open())
     {
         AgentUtils::logfp.close();

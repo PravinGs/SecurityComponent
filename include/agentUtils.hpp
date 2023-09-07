@@ -10,6 +10,7 @@
 #include <fstream>
 #include <sstream>
 #include <map>
+#include <unordered_map>
 #include <sys/sysinfo.h>
 #include <sys/statvfs.h>
 #include <sys/stat.h>
@@ -196,7 +197,6 @@ struct log_event
      */
     log_event() : size(0L), is_matched(0), rule_id(0) {}
 };
-
 
 struct decoder
 {

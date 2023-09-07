@@ -43,10 +43,47 @@ int LogAnalysis::isValidSysLog(size_t size)
     return (size <= OS_SIZE_1024) ? SUCCESS : FAILED;
 }
 
-string LogAnalysis::decodeGroup(const string &log)
+string LogAnalysis::decodeGroup(const string &log, const string& program)
 {
     string group;
+    for (const auto &d: this->_decoder_list)
+    {
+        decoder p = d.second;
+        int match = 0;
 
+        if (!p.program_name_pcre2.empty())
+        {   
+            
+            match = pcreMatch(program, p.program_name_pcre2);
+            cout << p.program_name_pcre2 << "&" << program << "&[match]="<< match << "\n";
+            if (match == 1)
+            {
+                cout << "Entered\n";
+                group = (!p.parent.empty()) ? p.parent : p.decoder;
+                break;
+            }
+        }
+
+        if (!p.pcre2.empty())   
+        {
+            match = pcreMatch(log, p.pcre2);
+            if (match == 1)
+            {
+                group = (!p.parent.empty()) ? p.parent : p.decoder;
+                break;
+            }
+        }
+
+        if (!p.prematch_pcre2.empty())   
+        {
+            match = pcreMatch(log, p.prematch_pcre2);
+            if (match == 1)
+            {
+                group = (!p.parent.empty()) ? p.parent : p.decoder;
+                break;
+            }
+        }
+    }
     return group;
 }
 
@@ -71,8 +108,8 @@ log_event LogAnalysis::decodeLog(const string &log, const string &format)
     logInfo.timestamp = timestamp;
     logInfo.user = user;
     logInfo.program = program;
-    logInfo.log = AgentUtils::trim(message);
-    logInfo.group = decodeGroup(message); // Need to invoke the decoder group function
+    logInfo.log = AgentUtils::trim(logToParse);
+    logInfo.group = decodeGroup(message, program); // Need to invoke the decoder group function
 
     if (logInfo.log.find("SRC=") != string::npos)
     {
@@ -199,19 +236,13 @@ void LogAnalysis::addMatchedRule(const int ruleId, const string &log)
     return;
 }
 
-int LogAnalysis::match(log_event &logInfo)
+int LogAnalysis::match(log_event &logInfo, std::unordered_map<int, AConfig>& ruleSet)
 {
-    if (logInfo.format.empty() || this->_rules.find(logInfo.format) == this->_rules.end())
-    {
-        return FAILED;
-    }
-    map<int, AConfig> currentRuleSet = this->_rules.at(logInfo.format);
-    for (const auto &r : currentRuleSet)
+    for (const auto &r : ruleSet)
     {
         bool isParentRuleMatching = false;
         AConfig ruleInfo = r.second;
         p_rule pRule;
-
         {
             std::set<int> processedRuleIDs;
             for (int i : this->_processedRules)
@@ -385,6 +416,25 @@ int LogAnalysis::match(log_event &logInfo)
         }
     }
     return SUCCESS;
+}
+
+int LogAnalysis::match(log_event &logInfo)
+{
+    std::unordered_map<int, AConfig> currentRuleSet;
+    int result = SUCCESS;
+    if (logInfo.format.empty() || this->_rules.find(logInfo.group) == this->_rules.end())
+    {
+        for (auto &r : this->_rules)
+        {
+            currentRuleSet = r.second;
+            result = match(logInfo, currentRuleSet);
+        }
+    }
+    else
+    {
+       result = match(logInfo, this->_rules.at(logInfo.group));
+    }
+    return result;
 }
 
 int LogAnalysis::analyseFile(const string &file)
