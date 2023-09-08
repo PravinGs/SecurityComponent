@@ -72,7 +72,7 @@ public:
             }
             catch (const std::exception &e)
             {
-                cerr << e.what() << endl;
+                cerr << e.what() << "\n";
             }
         }
 

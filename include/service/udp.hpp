@@ -11,7 +11,10 @@
     Wait until the datagrams packets arrived from the client.
     Process the datagram packet and send reply to the client.
 */
-
+/**
+ * @cond HIDE_THIS_CLASS
+ * @brief This class is for internal use only and should not be documented.
+ */
 class UdpQueue
 {
 private:
@@ -88,12 +91,15 @@ public:
 
         if (sendBytes == -1)
         {
-            cerr << "Error sending data." << endl;
+            cerr << "Error sending data." << "\n";
             close(serverSocket);
             return FAILED;
         }
         return SUCCESS;
     }
 };
+/**
+ * @endcond
+ */
 
 #endif

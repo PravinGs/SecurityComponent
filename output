@@ -1,0 +1,141 @@
+match: &^slapd
+match: &^clamd
+match: &^portsentry
+match: &groupdel
+match: &userdel
+match: &^/bsd
+match: &^asterisk
+match: &^audit$
+match: &^freshclam
+match: &^WPsyslog|^wpcore
+match: &vmware
+match: &^pf$
+match: &^smbd
+match: &^vm-pop3d
+match: &^dropbear
+match: &^postfix
+match: &^sudo
+match: &^isakmpd
+match: &^sshd
+match: &^suhosin
+match: &^rshd$
+match: &^vsftpd
+match: &^smtpd
+match: &^Checkpoint
+match: &^proftpd
+match: &^ftpd|^in\.ftpd
+match: &^sendmail|^sm-mta|^sm-msp-queue
+match: &^cimserver$
+match: &^ipmon
+match: &^telnetd|^in\.telnetd
+match: &^mountd
+match: &^pop3d|^courierpop3login|^imaplogin|^courier-pop3|^courier-imap
+match: &^ntpd
+match: &^pure-ftpd
+match: &^Info$|^Warn$
+match: &^MailScanner
+match: &^arpwatch
+match: &^imapd
+match: &^kernel
+match: &^dovecot
+match: &^smf-sav
+match: &^nmbd
+match: &^named
+match: &^ipsec_logd
+match: &^vpopmail
+ids,
+syslog,cimserver,
+clamd,freshclam,
+syslog,pure-ftpd,
+syslog,asterisk,
+syslog,hordeimp,
+syslog,ftpd,
+syslog,attacks,
+postgresql_log,
+firewall,
+linux, usb,
+local,syslog,
+syslog,vpopmail,
+syslog
+syslog,arpwatch,
+windows,firewall,
+syslog,cisco_ios,
+symantec,
+windows,usb,
+syslog,vm-pop3d,
+squid,
+dovecot,
+windows,dhcp,
+ms,exchange,
+syslog,sendmail,
+syslog,linuxkernel,
+zeus,
+syslog,postfix,
+exim,
+syslog,proftpd,
+syslog,sonicwall,
+syslog,spamd,
+policy_violation,
+local,firewalld,
+syslog,roundcube,
+sysmon_process-anomalies
+syslog,sudo
+apache,
+local,systemd,
+syslog,yum,
+web,appsec,attack
+syslog,dns,nsd,
+web,accesslog,
+pam
+syslog,cron,
+syslog,cisco_vpn,
+syslog,sshd,
+local,syslog,apparmor
+syslog,racoon,
+syslog,sshd,dropbear
+syslog,adduser
+syslog,wordpress,
+syslog,imapd,
+syslog,named,
+trend_micro,ocse
+syslog,smtpd,
+access-control,
+netscreenfw,
+windows, ipsec,
+syslog,courier,
+mhn,json
+syslog,telnetd
+syslog,errors,
+kesl,
+windows,mse,
+local,dns,dnsmasq,
+syslog,nfs,
+syslog,fts,
+syslog,xinetd
+syslog,owncloud,
+syslog,mail,
+syslog,smartd,
+syslog, su,
+vmware,
+syslog,tripwire,
+syslog,smbd,
+syslog,pptp
+syslog,squid,
+mcafee,
+syslog,mailscanner,
+syslog,psad,
+syslog,dpkg,
+syslog,solaris_bsm,
+syslog,unbound,
+local,lighttpd
+syslog,access_control,
+syslog,msftp,
+ossec,
+syslog,proxmox-ve,
+mysql_log,
+syslog,vsftpd,
+syslog,dhcpd,
+syslog,pix,
+windows,powershell,
+web-access,
+Timer took 1854.51ms

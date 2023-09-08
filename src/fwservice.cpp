@@ -11,6 +11,12 @@ int FService::createDProps(map<string, map<string, string>>& table)
         AgentUtils::writeLog("Write path not defined", WARNING);
         result = FAILED;
     }
+    this->dProperties.writePath = table["firmware"]["root_dir"];
+    if (dProperties.writePath.empty()) 
+    {
+        AgentUtils::writeLog("Root directory not defined", WARNING);
+        result = FAILED;
+    }
     dProperties.url = table["firmware"]["url"];
     if (dProperties.url.empty()) 
     {
@@ -109,7 +115,7 @@ int FService::download(const string& username, const string& password)
         {
             string error = curl_easy_strerror(res);
             AgentUtils::writeLog(error, FAILED);
-            std::cerr << "Error: " << error << std::endl;
+            std::cerr << "Error: " << error << "\n";
             if (res == CURLE_COULDNT_RESOLVE_HOST)
             {
                 returnVal = FAILED;
@@ -118,7 +124,7 @@ int FService::download(const string& username, const string& password)
             retry--;
             if (retry > 0)
             {
-                std::cerr << "Retrying download in 10 seconds..." << std::endl;
+                std::cerr << "Retrying download in 10 seconds..." << "\n";
                 AgentUtils::writeLog("Retrying download in 10 seconds...");
                 std::this_thread::sleep_for(std::chrono::seconds(5));
             }
@@ -179,7 +185,7 @@ int FService::download()
         {
             string error = curl_easy_strerror(res);
             AgentUtils::writeLog(error, FAILED);
-            std::cerr << "Error: " << error << std::endl;
+            std::cerr << "Error: " << error << "\n";
             if (res == CURLE_COULDNT_RESOLVE_HOST)
             {
                 returnVal = FAILED;
@@ -188,7 +194,7 @@ int FService::download()
             retry--;
             if (retry > 0)
             {
-                std::cerr << "Retrying download in 10 seconds..." << std::endl;
+                std::cerr << "Retrying download in 10 seconds..." << "\n";
                 AgentUtils::writeLog("Retrying download in 10 seconds...");
                 std::this_thread::sleep_for(std::chrono::seconds(5));
             }

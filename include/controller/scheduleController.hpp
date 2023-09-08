@@ -117,7 +117,7 @@ void Schedule::run(const string &processName, const string &timePattern, int ind
                 {
                     if (_monitorController.getMonitorLog(_configTable) == SUCCESS)
                     {
-                        std::cout << "Monitor Log collected successfully." << std::endl;
+                        std::cout << "Monitor Log collected successfully." << "\n";
                     }
                     else
                     {
@@ -130,7 +130,7 @@ void Schedule::run(const string &processName, const string &timePattern, int ind
                 {
                     if (_logController.appLogManager(_configTable) == SUCCESS)
                     {
-                        std::cout << "Applog operation done" << std::endl;
+                        std::cout << "Applog operation done" << "\n";
                     }
                     else
                     {
@@ -143,7 +143,7 @@ void Schedule::run(const string &processName, const string &timePattern, int ind
                 {
                     if (_logController.getSysLog(_configTable) == SUCCESS)
                     {
-                        std::cout << "Syslog operation done" << std::endl;
+                        std::cout << "Syslog operation done" << "\n";
                     }
                     else
                     {
@@ -157,7 +157,7 @@ void Schedule::run(const string &processName, const string &timePattern, int ind
                     int response = _fController.start(_configTable);
                     if (response == SUCCESS)
                     {
-                        std::cout << "FirmWare operation done" << std::endl;
+                        std::cout << "FirmWare operation done" << "\n";
                     }
                     else if (response == SCHEDULAR_WAIT)
                     {
@@ -174,7 +174,7 @@ void Schedule::run(const string &processName, const string &timePattern, int ind
                 }
             }
 
-            std::cout << processName << " execution done." << std::endl;
+            std::cout << processName << " execution done." << "\n";
 
         } // end of while loop
         // Additional check after the loop to write the log message if the process failed
@@ -196,7 +196,7 @@ void Schedule::printTime(std::chrono::system_clock::time_point &t)
 
     char buffer[80];
     std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", now_tm);
-    cout << buffer << endl;
+    cout << buffer << "\n";
 }
 
 int Schedule::processTimePattern(vector<int> &patternTable, const string &pattern)
@@ -270,7 +270,7 @@ void Schedule::start()
         {
             std::string processName = processes[i];
             std::string processTimePattern = schedular[processes[i]];
-            //            std::cout << processName << " : " << processTimePattern << std::endl;
+            //            std::cout << processName << " : " << processTimePattern << "\n";
             threads[i] = std::thread([&, processName, processTimePattern]()
                                      {
                 if (processStatus[i]) 
@@ -280,7 +280,7 @@ void Schedule::start()
         }
         catch (const std::exception &e)
         {
-            std::cerr << e.what() << std::endl;
+            std::cerr << e.what() << "\n";
             string error = e.what();
             AgentUtils::writeLog(error, FAILED);
         }
@@ -294,7 +294,7 @@ void Schedule::start()
             thread.join();
     }
 
-    std::cout << "done" << std::endl;
+    std::cout << "done" << "\n";
 }
 
 Schedule::~Schedule() {}

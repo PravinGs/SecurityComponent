@@ -364,7 +364,7 @@ int LogService::saveToLocal(const vector<string> &logs, const string &appName)
 
     for (string line : logs)
     {
-        file << line << endl;
+        file << line << "\n";
     }
 
     file.close();

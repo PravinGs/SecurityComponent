@@ -108,7 +108,7 @@ public:
         }
         string filePath = BASE_CONFIG_DIR;
         filePath += BASE_CONFIG_TMP + name;
-        fstream file(name, std::ios::in);
+        fstream file(filePath, std::ios::in);
         string lastTime = "";
         if (file.is_open())
         {

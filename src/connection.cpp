@@ -181,7 +181,7 @@ int TlsConnection::start()
             }
             else
             {
-                std::cout << "Received response: " << std::string(buffer, received) << std::endl;
+                std::cout << "Received response: " << std::string(buffer, received) << "\n";
             }
             std::string message = "Hello, client!";
             if (SSL_write(ssl, message.c_str(), message.length()) <= 0)
