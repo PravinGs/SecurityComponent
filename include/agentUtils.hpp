@@ -137,7 +137,7 @@ struct AConfig
     string group;
     string decoded_as;
     string description;
-    string pcre2;
+    vector<string> pcre2;
     string info;
     string type;
     string status_pcre2;
@@ -182,6 +182,7 @@ struct log_event
     string timestamp;       /**< The timestamp associated with the log event. */
     string program;         /**< The program or source of the log event. */
     string user;            /**< The user associated with the log event. */
+    string message;
     string src_ip;          /**< The source IP address in the log event. */
     string dest_ip;         /**< The destination IP address in the log event. */
     string proto;           /**< The protocol used in the log event. */
@@ -207,7 +208,8 @@ struct decoder
     string order;
     string prematch_pcre2;
     string fts;
-    string offset;
+    string prematch_offset;
+    string pcre2_offset;
 };
 
 /**

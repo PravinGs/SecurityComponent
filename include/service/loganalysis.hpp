@@ -61,7 +61,7 @@ private:
     bool isValidConfig = true;
     int isRuleFound(const int ruleId);
     void addMatchedRule(const int ruleId, const string& log);
-    string decodeGroup(const string& log, const string& program);
+    string decodeGroup(log_event & logEvent);
 
 public:
     /**
@@ -139,7 +139,7 @@ public:
      *         - 0 if the log entry does not match the pattern.
      *         - (-1) if an error occurred during the matching process.
      */
-    int regexMatch(const string& log, const string& pattern);
+    int regexMatch(const string& log, const string& pattern, string & match);
     
     /**
      * @brief Match a PCRE2 regular expression pattern against an input string.
@@ -155,7 +155,7 @@ public:
      *         - 0 if the input string does not match the pattern.
      *         - (-1) if an error occurred during the matching process.
      */
-    int pcreMatch(const string& input, const string& pattern);
+    int pcreMatch(const string& input, const string& pattern, string & match, size_t & position);
     
     /*
         read the rules one by one

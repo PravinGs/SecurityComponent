@@ -73,12 +73,14 @@ public:
             for (const auto& d: decoders)
             {
                 decoder s = d.second;
-                cout << "<decoder name=" << d.first << " </decoder>\n";
+                cout << "<decoder name=" << d.first << " >\n";
                 cout << "    <parent> " << s.parent << " </parent>\n";
                 cout << "    <program_name_pcre2> " << s.program_name_pcre2 << " </program_name_pcre2>\n";
                 cout << "    <pcre2> " << s.pcre2 << " </pcre2>\n";
                 cout << "    <prematch_pcre2> " << s.prematch_pcre2 << " </prematch_pcre2>\n";
                 cout << "    <order> " << s.order << " </order>\n";
+                cout << "   <prematch_offset> " << s.prematch_offset << " </prematch_offset>\n";
+                cout << "   <pcre2_offset> " << s.pcre2_offset << " </pcre2_offset>\n";
             }
         */     
         pugi::xml_parse_result result = doc.load_file(fileName.c_str());
@@ -113,25 +115,30 @@ public:
             {
                 d.pcre2=currentSection;
             }
-            currentSection = groupNode.child_value("order");
+            currentSection = groupNode.child("pcre2").attribute("offset").value();
             if (!currentSection.empty())
             {
-                d.order=currentSection;
+                d.pcre2_offset=currentSection;
             }
             currentSection = groupNode.child_value("prematch_pcre2");
             if (!currentSection.empty())
             {
                 d.prematch_pcre2=currentSection;
             }
+            currentSection = groupNode.child("prematch_pcre2").attribute("offset").value();
+            if (!currentSection.empty())
+            {
+                d.prematch_offset=currentSection;
+            }
+            currentSection = groupNode.child_value("order");
+            if (!currentSection.empty())
+            {
+                d.order=currentSection;
+            }
             currentSection = groupNode.child_value("fts");
             if (!currentSection.empty())
             {
                 d.fts=currentSection;
-            }
-            currentSection = groupNode.child_value("offset");
-            if (!currentSection.empty())
-            {
-                d.offset=currentSection;
             }
             table[d.decoder] = d;
         }
@@ -143,18 +150,17 @@ public:
     {
         for (pugi::xml_node groupNode = root; groupNode; groupNode = groupNode.next_sibling("group"))
         {
-            AConfig rule;
-
             std::string currentSection = root.attribute("name").value();
 
-            if (!currentSection.empty())
-            {
-                rule.group = currentSection;
-            }
             for (pugi::xml_node ruleNode = groupNode.child("rule"); ruleNode; ruleNode = ruleNode.next_sibling("rule"))
             {
                 int digit;
                 string str;
+                AConfig rule;
+                if (!currentSection.empty())
+                {
+                    rule.group = currentSection; /*Need clarity about this group assignation*/
+                }
                 digit = isDigit(ruleNode.attribute("id").value());
                 if (digit != -1)
                 {
@@ -215,11 +221,20 @@ public:
                     rule.extra_data_pcre2 = str;
                 }
 
-                str = ruleNode.child_value("pcre2");
+                // Iterate through the child nodes of <rule> to find <pcre2> elements
+                for (pugi::xml_node pcre2_node = ruleNode.child("pcre2"); pcre2_node; pcre2_node = pcre2_node.next_sibling("pcre2")) 
+                {
+                    string s = pcre2_node.text().as_string();
+                    if (!s.empty()) {
+                        rule.pcre2.push_back(s); // Store each <pcre2> value in the vector
+                    }
+                }
+
+                /*str = ruleNode.child_value("pcre2");
                 if (!str.empty())
                 {
                     rule.pcre2 = str;
-                }
+                }*/
 
                 str = ruleNode.child_value("program_name_pcre2");
                 if (!str.empty())

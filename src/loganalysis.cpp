@@ -1,17 +1,22 @@
 #include "service/loganalysis.hpp"
 
+
+const string AFTER_PARENT = "after_parent";
+const string AFTER_PREMATCH = "after_prematch";
+const string AFTER_PCRE2 = "after_pcre2";
+
 LogAnalysis::LogAnalysis() {}
 
 void LogAnalysis::setConfigFile(const string &decoderPath, const string &ruledDir)
 {
 
-    int result = _configService.readDecoderConfig(decoderPath, this->_decoder_list);
+    int result = _configService.readDecoderConfig(decoderPath, _decoder_list);
     if (result == FAILED)
     {
         isValidConfig = false;
     }
     this->_rulesFile = ruledDir;
-    result = _configService.readXmlRuleConfig(_rulesFile, this->_rules);
+    result = _configService.readXmlRuleConfig(ruledDir, _rules);
     if (result == FAILED)
     {
         isValidConfig = false;
@@ -43,22 +48,37 @@ int LogAnalysis::isValidSysLog(size_t size)
     return (size <= OS_SIZE_1024) ? SUCCESS : FAILED;
 }
 
-string LogAnalysis::decodeGroup(const string &log, const string& program)
+string LogAnalysis::decodeGroup(log_event & logEvent)
 {
     string group;
+    
     for (const auto &d: this->_decoder_list)
     {
         decoder p = d.second;
         int match = 0;
+        string match_data;
+        string after_match;
+        size_t position = 0;
 
         if (!p.program_name_pcre2.empty())
-        {   
-            
-            match = pcreMatch(program, p.program_name_pcre2);
-            cout << p.program_name_pcre2 << "&" << program << "&[match]="<< match << "\n";
+        {               
+            match = pcreMatch(logEvent.program, p.program_name_pcre2, match_data, position);
+            after_match = logEvent.program.substr(position);
             if (match == 1)
             {
-                cout << "Entered\n";
+                group = (!p.parent.empty()) ? p.parent : p.decoder;
+                break;
+            }
+        }
+        
+        if (!p.prematch_pcre2.empty())   
+        {
+            string input = (!p.prematch_offset.empty() && p.prematch_offset == AFTER_PARENT) ? logEvent.message : logEvent.log;  
+
+            match = pcreMatch(input, p.prematch_pcre2, match_data, position);
+            after_match = input.substr(position);
+            if (match == 1)
+            {
                 group = (!p.parent.empty()) ? p.parent : p.decoder;
                 break;
             }
@@ -66,23 +86,29 @@ string LogAnalysis::decodeGroup(const string &log, const string& program)
 
         if (!p.pcre2.empty())   
         {
-            match = pcreMatch(log, p.pcre2);
+            string input;
+            
+            if (p.pcre2_offset == AFTER_PARENT)
+            {
+                input = logEvent.message;
+            }
+            else if (p.pcre2_offset == AFTER_PREMATCH)
+            {
+                input = (match_data.empty()) ? logEvent.log : match_data; /*Need to update*/
+            } 
+            else
+            {
+                input = logEvent.log;
+            }
+            match = pcreMatch(input, p.pcre2, match_data, position);
+            after_match = input.substr(position);
             if (match == 1)
             {
                 group = (!p.parent.empty()) ? p.parent : p.decoder;
                 break;
             }
         }
-
-        if (!p.prematch_pcre2.empty())   
-        {
-            match = pcreMatch(log, p.prematch_pcre2);
-            if (match == 1)
-            {
-                group = (!p.parent.empty()) ? p.parent : p.decoder;
-                break;
-            }
-        }
+        
     }
     return group;
 }
@@ -90,7 +116,7 @@ string LogAnalysis::decodeGroup(const string &log, const string& program)
 log_event LogAnalysis::decodeLog(const string &log, const string &format)
 {
     log_event logInfo;
-    string timestamp, user, program, message;
+    string timestamp, user, program, message, group;
 
     const string &logToParse = (std::count(log.begin(), log.end(), '|') >= 2) ? log : formatSysLog(log, format);
 
@@ -103,13 +129,14 @@ log_event LogAnalysis::decodeLog(const string &log, const string &format)
     std::getline(ss, user, '|');
     std::getline(ss, program, '|');
     std::getline(ss, message, '|');
+    logInfo.log = log;
     logInfo.format = (strcmp(format.c_str(), "auth") == 0) ? "pam" : format;
     logInfo.size = log.size();
     logInfo.timestamp = timestamp;
     logInfo.user = user;
     logInfo.program = program;
-    logInfo.log = AgentUtils::trim(logToParse);
-    logInfo.group = decodeGroup(message, program); // Need to invoke the decoder group function
+    logInfo.message = message;
+    decodeGroup(logInfo); // Need to invoke the decoder group function
 
     if (logInfo.log.find("SRC=") != string::npos)
     {
@@ -165,18 +192,23 @@ string LogAnalysis::formatSysLog(const string &log, const string &format)
     return fLog;
 }
 
-int LogAnalysis::regexMatch(const string &log, const string &pattern)
+int LogAnalysis::regexMatch(const string &log, const string &pattern, string & match)
 {
     std::regex r(pattern);
     std::smatch matches;
-    return ((regex_search(log, matches, r) && matches.size() > 0)) ? 1 : 0;
+    int result = regex_search(log, matches, r);
+    for (const auto& s: matches)
+    {
+        match += s.str();
+    }
+    return (result && matches.size() > 0) ? 1 : 0;
 }
 
-int LogAnalysis::pcreMatch(const string &input, const string &pattern)
+int LogAnalysis::pcreMatch(const string &input, const string &pattern, string& match, size_t & position)
 {
     int errorcode = -1;
     PCRE2_SIZE erroroffset;
-
+    
     // Compile the pattern
     pcre2_code *re = pcre2_compile(
         reinterpret_cast<PCRE2_SPTR8>(pattern.c_str()), // Pattern string
@@ -204,7 +236,30 @@ int LogAnalysis::pcreMatch(const string &input, const string &pattern)
         0,                                            // Match options
         match_data,                                   // Match data
         nullptr);                                     // Match context
+    
+    if (rc >= 0) {
+         PCRE2_SIZE *ovector = pcre2_get_ovector_pointer(match_data);
 
+        // Extract the matched substring
+        const char *matched_string_start = reinterpret_cast<const char*>(input.c_str()) + ovector[0];
+        PCRE2_SIZE matched_string_length = ovector[1] - ovector[0];
+
+        std::string matched_str(matched_string_start, matched_string_length);
+        
+        match = matched_str;
+
+        // Calculate the position of the last matched value
+        PCRE2_SIZE last_match_start = ovector[2 * (rc - 1)]; // Start offset of the last match
+        PCRE2_SIZE last_match_length = ovector[2 * (rc - 1) + 1] - ovector[2 * (rc - 1)]; // Length of the last match
+
+        // Calculate the end position of the last matched value
+        PCRE2_SIZE last_match_end = last_match_start + last_match_length;
+        position = reinterpret_cast<size_t>(last_match_end);
+        //match = input.substr(position);
+        // Now, 'matched_str' contains the matched substring as a C++ std::string
+    }
+    
+    
     pcre2_code_free(re);
     pcre2_match_data_free(match_data);
 
@@ -241,6 +296,8 @@ int LogAnalysis::match(log_event &logInfo, std::unordered_map<int, AConfig>& rul
     for (const auto &r : ruleSet)
     {
         bool isParentRuleMatching = false;
+        string match_data;
+        size_t position;
         AConfig ruleInfo = r.second;
         p_rule pRule;
         {
@@ -263,7 +320,7 @@ int LogAnalysis::match(log_event &logInfo, std::unordered_map<int, AConfig>& rul
 
         if (!ruleInfo.regex.empty()) /* Checking the regex patterns if exists in the rule */
         {
-            int result = regexMatch(logInfo.log, ruleInfo.regex);
+            int result = regexMatch(logInfo.log, ruleInfo.regex, match_data);
             if (result == 1)
             {
                 logInfo.is_matched = 1;
@@ -275,24 +332,33 @@ int LogAnalysis::match(log_event &logInfo, std::unordered_map<int, AConfig>& rul
             }
         }
 
-        if (!ruleInfo.pcre2.empty())
+        if (ruleInfo.pcre2.size() > 0)
         {
-            int result = pcreMatch(logInfo.log, ruleInfo.pcre2);
-            if (result > 0)
+            int result;
+            for (const string& pattern: ruleInfo.pcre2)
             {
-                logInfo.is_matched = 1;
-                logInfo.rule_id = ruleInfo.id;
-                logInfo.group = ruleInfo.group;
-                isParentRuleMatching = true;
-                addMatchedRule(ruleInfo.id, logInfo.log);
-                break;
+                result = pcreMatch(logInfo.log, pattern, match_data, position);
+                if (result > 0 && !match_data.empty())
+                {
+                    logInfo.is_matched = 1;
+                    logInfo.rule_id = ruleInfo.id;
+                    logInfo.group = ruleInfo.group;
+                    isParentRuleMatching = true;
+                    addMatchedRule(ruleInfo.id, logInfo.log);
+                    break;
+                }
             }
+            if (result > 0 && result > 0 && !match_data.empty())
+            {
+                break;   
+            }
+            
         }
 
         if (!ruleInfo.program_name_pcre2.empty())
         {
-            int result = pcreMatch(logInfo.log, ruleInfo.pcre2);
-            if (result > 0)
+            int result = pcreMatch(logInfo.program, ruleInfo.program_name_pcre2, match_data, position);
+            if (result > 0 && !match_data.empty())
             {
                 logInfo.is_matched = 1;
                 logInfo.rule_id = ruleInfo.id;
@@ -322,7 +388,7 @@ int LogAnalysis::match(log_event &logInfo, std::unordered_map<int, AConfig>& rul
             pRule.start = AgentUtils::convertStrToTime(logInfo.timestamp);
             pRule.end = pRule.start + ruleInfo.timeframe;
             pRule.frequency = ruleInfo.frequency;
-            pRule.d_frequency = 1;
+            // pRule.d_frequency = 1;
             pRule.time = ruleInfo.timeframe;
             if (ruleInfo.same_source_ip == 1) /* Check at the XML pasing. */
             {

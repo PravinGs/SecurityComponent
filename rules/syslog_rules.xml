@@ -637,7 +637,7 @@
       <program_name_pcre2>^NetworkManager</program_name_pcre2>
       <description>NetworkManager grouping.</description>
     </rule>
-
+    
     <rule id="2941" level="3">
       <if_sid>2940</if_sid>
       <pcre2> No chain/target/match by that name\.$</pcre2>
