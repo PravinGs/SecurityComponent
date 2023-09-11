@@ -9,18 +9,12 @@ LogAnalysis::LogAnalysis() {}
 
 void LogAnalysis::setConfigFile(const string &decoderPath, const string &ruledDir)
 {
-
     int result = _configService.readDecoderConfig(decoderPath, _decoder_list);
     if (result == FAILED)
     {
         isValidConfig = false;
     }
-    this->_rulesFile = ruledDir;
-<<<<<<< HEAD
-    result = _configService.readXmlRuleConfig(_rulesFile, this->_rules);
-=======
     result = _configService.readXmlRuleConfig(ruledDir, _rules);
->>>>>>> 5388b1a03624259f343c54334a131a2469982a04
     if (result == FAILED)
     {
         isValidConfig = false;
@@ -55,10 +49,11 @@ int LogAnalysis::isValidSysLog(size_t size)
 string LogAnalysis::decodeGroup(log_event & logEvent)
 {
     string group;
-    
-    for (const auto &d: this->_decoder_list)
+    cout << "size : " << _decoder_list.size() << "\n";
+    for (const auto &d: _decoder_list)
     {
         decoder p = d.second;
+        cout << logEvent.program << " = " << p.decode << "\n";
         int match = 0;
         string match_data;
         string after_match;
@@ -68,10 +63,13 @@ string LogAnalysis::decodeGroup(log_event & logEvent)
         {               
             match = pcreMatch(logEvent.program, p.program_name_pcre2, match_data, position);
             after_match = logEvent.program.substr(position);
-            if (match == 1)
+            if (match == 1 && position > 0)
             {
-                group = (!p.parent.empty()) ? p.parent : p.decoder;
+                group = (!p.parent.empty()) ? p.parent : p.decode;
+                cout << group << " (program name pcre2)\n";
+                cout << p.decode << " (program name pcre2)\n";
                 break;
+
             }
         }
         
@@ -81,9 +79,11 @@ string LogAnalysis::decodeGroup(log_event & logEvent)
 
             match = pcreMatch(input, p.prematch_pcre2, match_data, position);
             after_match = input.substr(position);
-            if (match == 1)
+            if (match == 1 && position > 0)
             {
-                group = (!p.parent.empty()) ? p.parent : p.decoder;
+                group = (!p.parent.empty()) ? p.parent : p.decode;
+                cout << group << " (prematch)\n";
+                cout << p.decode << " (prematch)\n";
                 break;
             }
         }
@@ -106,13 +106,13 @@ string LogAnalysis::decodeGroup(log_event & logEvent)
             }
             match = pcreMatch(input, p.pcre2, match_data, position);
             after_match = input.substr(position);
-            if (match == 1)
+            if (match == 1 && position > 0)
             {
-                group = (!p.parent.empty()) ? p.parent : p.decoder;
+                group = (!p.parent.empty()) ? p.parent : p.decode;
+                cout << group << " (pcre2)\n";
                 break;
             }
-        }
-        
+        } 
     }
     return group;
 }
@@ -140,7 +140,7 @@ log_event LogAnalysis::decodeLog(const string &log, const string &format)
     logInfo.user = user;
     logInfo.program = program;
     logInfo.message = message;
-    decodeGroup(logInfo); // Need to invoke the decoder group function
+    logInfo.group = decodeGroup(logInfo); // Need to invoke the decoder group function
 
     if (logInfo.log.find("SRC=") != string::npos)
     {
@@ -543,7 +543,9 @@ int LogAnalysis::analyseFile(const string &file)
             continue;
         }
         log_event logInfo = decodeLog(line, format);
-        match(logInfo);
+        cout << "Program : " << logInfo.program << "\n";
+        cout << "decoded : " << logInfo.group << "\n";
+        // match(logInfo);
         if (logInfo.is_matched == 1)
         {
             alertLogs.push_back(logInfo);
@@ -624,7 +626,7 @@ int LogAnalysis::printLogDetails(const AConfig &ruleInfo, const log_event &logIn
     cout << "Timestamp : " << logInfo.timestamp << "\n";
     cout << "user      : " << logInfo.user << "\n";
     cout << "program   : " << logInfo.program << "\n";
-    cout << "log       : " << logInfo.log << "\n";
+    cout << "log       : " << logInfo.message << "\n";
     cout << "rule      : " << child.id << "\n";
     while (child.if_sid > 0)
     {

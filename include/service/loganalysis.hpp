@@ -49,7 +49,6 @@ struct p_rule
 class LogAnalysis
 {
 public:
-    string _rulesFile;
     Config _configService;
     vector<p_rule> _processingRules;
     vector<int> _processedRules;

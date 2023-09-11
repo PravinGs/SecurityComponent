@@ -84,7 +84,7 @@ public:
             }
         */     
         pugi::xml_parse_result result = doc.load_file(fileName.c_str());
-
+        int index = 0;
         if (!result)
         {
             string error = result.description();
@@ -94,11 +94,12 @@ public:
         pugi::xml_node root = doc.child("root");
         for (pugi::xml_node groupNode = root.child("decoder"); groupNode; groupNode = groupNode.next_sibling("decoder"))
         {
+            index++;
             decoder d;
             std::string currentSection = groupNode.attribute("name").value();
             if (!currentSection.empty())
             {
-                d.decoder=currentSection;
+                d.decode=currentSection;
             }
             currentSection = groupNode.child_value("parent");
             if (!currentSection.empty())
@@ -110,6 +111,7 @@ public:
             {
                 d.program_name_pcre2=currentSection;
             }
+            if (currentSection == "^kernel") { cout << d.decode << "\n";}
             currentSection = groupNode.child_value("pcre2");
             if (!currentSection.empty())
             {
@@ -140,7 +142,17 @@ public:
             {
                 d.fts=currentSection;
             }
-            table[d.decoder] = d;
+            if (table.find(d.decode) != table.end())
+            {
+                table.at(d.decode).update(d);
+            }
+            else 
+            {
+                table[d.decode] = d;
+            }
+            
+            // cout << "Index [" << sec << "] : " << index << "  size : " << table.size() << "\n";
+            
         }
         AgentUtils::writeLog("XML parsing success for " + fileName, DEBUG);
         return SUCCESS;

@@ -92,6 +92,10 @@
     <order>user, srcip</order>
   </decoder>
 
+  <decoder name="iptables">
+    <program_name_pcre2>^kernel</program_name_pcre2>
+  </decoder>
+
   <decoder name="ssh-error">
     <parent>sshd</parent>
     <prematch_pcre2>^error: PAM: Authentication \w+ </prematch_pcre2>
@@ -760,10 +764,6 @@
     <parent>smtpd</parent>
     <pcre2> => (\d+) </pcre2>
     <order>action</order>
-  </decoder>
-
-  <decoder name="iptables">
-    <program_name_pcre2>^kernel</program_name_pcre2>
   </decoder>
 
   <decoder name="iptables-1">

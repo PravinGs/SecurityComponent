@@ -1,0 +1,10 @@
+<root name="decoder-parent"> 
+ <decoder name="pix-attacks">
+    <parent>pix</parent>
+    <prematch_pcre2 offset="after_parent">^2-106012: |^2-106017: |</prematch_pcre2>
+    <prematch_pcre2>^2-106020|^1-106021|^1-106022|</prematch_pcre2>
+    <prematch_pcre2>^4-4000</prematch_pcre2>
+    <pcre2 offset="after_parent">^(\S+): .+ from (\S+) </pcre2>
+    <order>id, srcip</order>
+  </decoder>
+</root>

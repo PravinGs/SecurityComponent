@@ -201,7 +201,7 @@ struct log_event
 
 struct decoder
 {
-    string decoder;
+    string decode;
     string parent;
     string program_name_pcre2;
     string pcre2;
@@ -210,6 +210,19 @@ struct decoder
     string fts;
     string prematch_offset;
     string pcre2_offset;
+
+    void update(const decoder& other)
+    {
+        if (decode.empty()) decode = other.decode;
+        if (parent.empty()) parent = other.parent;
+        if (program_name_pcre2.empty()) program_name_pcre2 = other.program_name_pcre2;
+        if (pcre2.empty()) pcre2 = other.pcre2;
+        if (order.empty()) order = other.order;
+        if (prematch_pcre2.empty()) prematch_pcre2 = other.prematch_pcre2;
+        if (fts.empty()) fts = other.fts;
+        if (prematch_offset.empty()) prematch_offset = other.prematch_offset;
+        if (pcre2_offset.empty()) pcre2_offset = other.pcre2_offset;
+    }
 };
 
 /**
