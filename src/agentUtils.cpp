@@ -3,9 +3,33 @@
 int OS::CurrentDay = 0;
 int OS::CurrentMonth = 0;
 int OS::CurrentYear = 0;
+bool AgentUtils::syslog_enabled = true;
 fstream AgentUtils::logfp;
 
 std::mutex logMutex;
+
+void AgentUtils::setupLogger()
+{
+    fstream file("/var/log/agent.log", std::ios::in | std::ios::binary);
+    long size = 0L;
+    if (!file.is_open())
+    {
+        file.seekg(0, std::ios::end);
+        size = file.tellg();
+        syslog(LOG_INFO, "Syslog testing");
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        file.seekg(0, std::ios::end);
+        long updateSize = file.tellg();
+        if (updateSize == size || updateSize == 0L)
+        {
+            AgentUtils::syslog_enabled = false;
+        }
+    } 
+    else
+    {
+        AgentUtils::syslog_enabled = false;
+    }
+}
 
 string AgentUtils::trim(string line)
 {
@@ -166,12 +190,17 @@ void AgentUtils::writeLog(const string& log, int logLevel)
     }
     line += "\n";
     std::lock_guard<std::mutex> lm(logMutex);
-    if (AgentUtils::logfp.is_open()) //safety check 
+    if (syslog_enabled)
     {
-        AgentUtils::logfp.write(line.c_str(), line.size());
+        syslog(LOG_INFO, " %s", line.c_str());
     }
-        
-    // file.close();
+    else
+    {
+        if (AgentUtils::logfp.is_open()) //safety check 
+        {
+            AgentUtils::logfp.write(line.c_str(), line.size());
+        }
+    }
     return;
 }
 

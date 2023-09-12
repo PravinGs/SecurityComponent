@@ -75,6 +75,9 @@ const string FDELETE_SUCCESS = "Successfully deleted file: Deleted ";
 const string INVALID_PATH = "Path not found: ";
 const string NPATH = "Successfully created: ";
 
+const string APP = "agent";
+const string LOG_PATH = "/etc/scl/log/agent.log";
+
 #define OS_SIZE_1024 1024
 #define PATH_MAX 4096
 #define MAX_PID 32768
@@ -92,7 +95,6 @@ const string NPATH = "Successfully created: ";
 
 
 const vector<string> MONTHS = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-const string LOG_PATH = "/etc/scl/log/agent.log";
 const int BUFFER_SIZE = 1024;
 const int UDP_PORT = 8080;
 
@@ -100,8 +102,6 @@ typedef struct AConfig AConfig;
 typedef struct log_event log_event;
 typedef struct Timer Timer;
 typedef struct decoder decoder;
-
-
 
 struct Timer
 {
@@ -377,7 +377,11 @@ private:
 public:
     static fstream logfp;
 
+    static bool syslog_enabled;
+
     static string trim(string line);
+
+    static void setupLogger();
 
     /**
      * @brief Validate a syslog time string.

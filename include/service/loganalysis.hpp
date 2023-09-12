@@ -2,6 +2,7 @@
 #define LOG_ANALYSIS_HPP
 
 #define STANDARD_TIMESTAMP_SIZE 19
+#define MAX_CACHE_SIZE 5
 #define RULES_DIR "/home/krishna/security/Agent/rules"
 
 #include "service/configservice.hpp"
@@ -39,6 +40,23 @@ struct p_rule
                same_id(0), time(0), frequency(0), d_frequency(0) {}
 };
 
+struct id_rule
+{
+    string group;
+    int id;
+
+    id_rule(const string& group, const int id) : group(group), id (id){}
+    id_rule(){}
+};
+
+struct id_decoder
+{
+    string pcre2;
+    string decoder;
+    id_decoder(const string & pcre2, const string & decoder) : pcre2(pcre2), decoder(decoder){}
+    id_decoder(){}
+};
+
 /**
  * @brief A class for handling various log analysis operations.
  *
@@ -46,20 +64,22 @@ struct p_rule
  * performing various log analysis tasks, such as parsing, filtering, and
  * extracting insights from log data.
  */
+
 class LogAnalysis
 {
 public:
     Config _configService;
     vector<p_rule> _processingRules;
     vector<int> _processedRules;
-    vector<int> _idRules;
+    vector<id_rule> _idRules;
+    vector<string> decoder_cache;
     std::unordered_map<string, std::unordered_map<int, AConfig>> _rules;
     std::unordered_map<string, decoder> _decoder_list;
 
 private:
     bool isValidConfig = true;
     int isRuleFound(const int ruleId);
-    void addMatchedRule(const int ruleId, const string& log);
+    void addMatchedRule(const id_rule & rule, const string& log);
     string decodeGroup(log_event & logEvent);
 
 public:
@@ -110,6 +130,8 @@ public:
      * @return A log_event structure containing extracted log attributes.
      */
     log_event decodeLog(const string& log, const string& format);
+
+    void addDecoderToCache(const string & decoder);
 
     /**
      * @brief Format a raw syslog line into a standardized format.
@@ -181,9 +203,11 @@ public:
      *         - 0 if the log event does not match any XML-based rules.
      *         - (-1) if an error occurred during the matching process.
      */
-    int match(log_event &logInfo);
+    void match(log_event &logInfo);
 
-    int match(log_event &logInfo, std::unordered_map<int, AConfig>& ruleSet);
+    void match(log_event & logInfo, AConfig & ruleInfo);
+
+    void match(log_event &logInfo, std::unordered_map<int, AConfig>& ruleSet);
 
     /**
      * @brief Analyze a log file by initiating log matching and managing the log matcher.
