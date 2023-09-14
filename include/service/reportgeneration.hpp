@@ -1,12 +1,10 @@
 #ifndef REPORT_GEN_HPP
 #define REPORT_GEN_HPP
-#pragma once 
+#pragma once
 #include "agentUtils.hpp"
 
 class Report
 {
-    private:
-
     public:
         int generateFromFile(string path);
         int generate(vector<LOG_EVENT> alerts);
@@ -45,9 +43,8 @@ int Report::generateFromFile(string path)
         jsonValue["timestamp"] = timestamp;
         jsonValue["user"] = user;
         jsonValue["program"] = program;
-        jsonValue["lruleIdog"] = log;
+        jsonValue["log"] = log;
         jsonValue["ruleId"] = ruleId;
-
         /*Read stoi()
         getAConfigById(ruleId) 
         Aconfig and add decoded_as, description, level, group,*/

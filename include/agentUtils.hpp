@@ -188,6 +188,7 @@ struct log_event
     string proto;           /**< The protocol used in the log event. */
     int is_matched;         /**< A flag indicating if the log event matched a rule (0 or 1). */
     string group;           /**< The group associated with the matched rule. */
+    string decoded;
     int rule_id;            /**< The ID of the rule that matched the log event. */
 
     /**
@@ -361,6 +362,9 @@ public:
     static string getCurretDayFileByName(const string& appName);
 
     static int getRegularFiles(const string& directory, vector<string> &files);
+
+    static string getJsonWritePath(const string & type);
+
 };
 
 /**

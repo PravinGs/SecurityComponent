@@ -1,6 +1,13 @@
-Sep 12 19:37:29 ubuntu-20 kernel: [28679.113051] audit: type=1400 audit(1694527649.586:4842): avc:  denied  { execmem } for  pid=2116 comm="gnome-shell" scontext=system_u:system_r:init_t:s0 tcontext=system_u:system_r:init_t:s0 tclass=process permissive=1
-Sep 12 19:37:35 ubuntu-20 kernel: [28684.993253] audit: type=1400 audit(1694527655.466:4843): avc:  denied  { read } for  pid=51209 comm="df" name="coreutils.mo" dev="sda2" ino=31067272 scontext=system_u:system_r:rabbitmq_beam_t:s0 tcontext=system_u:object_r:usr_t:s0 tclass=file permissive=1
-Sep 12 19:37:35 ubuntu-20 kernel: [28684.993270] audit: type=1400 audit(1694527655.466:4844): avc:  denied  { open } for  pid=51209 comm="df" path="/usr/share/locale-langpack/en/LC_MESSAGES/coreutils.mo" dev="sda2" ino=31067272 scontext=system_u:system_r:rabbitmq_beam_t:s0 tcontext=system_u:object_r:usr_t:s0 tclass=file permissive=1
-Sep 12 19:37:35 ubuntu-20 kernel: [28684.993279] audit: type=1400 audit(1694527655.466:4845): avc:  denied  { getattr } for  pid=51209 comm="df" path="/usr/share/locale-langpack/en/LC_MESSAGES/coreutils.mo" dev="sda2" ino=31067272 scontext=system_u:system_r:rabbitmq_beam_t:s0 tcontext=system_u:object_r:usr_t:s0 tclass=file permissive=1
-Sep 12 19:37:35 ubuntu-20 kernel: [28684.993288] audit: type=1400 audit(1694527655.466:4846): avc:  denied  { map } for  pid=51209 comm="df" path="/usr/share/locale-langpack/en/LC_MESSAGES/coreutils.mo" dev="sda2" ino=31067272 scontext=system_u:system_r:rabbitmq_beam_t:s0 tcontext=system_u:object_r:usr_t:s0 tclass=file permissive=1
-Sep 12 19:37:37 ubuntu-20 kernel: [28687.444864] audit: type=1400 audit(1694527657.918:4847): avc:  denied  { use } for  pid=27749 comm="threaded-ml" path="anon_inode:[eventfd]" dev="anon_inodefs" ino=12479 scontext=system_u:system_r:system_dbusd_t:s0-s0:c0.c1023 tcontext=system_u:system_r:pulseaudio_t:s0 tclass=fd permissive=1
+Sep  4 09:56:03 kali gpg-agent[1203]: gpg-agent (GnuPG) 2.2.35 starting in supervised mode.
+Sep  4 09:56:03 kali gpg-agent[1203]: using fd 3 for browser socket (/run/user/1000/gnupg/S.gpg-agent.browser)
+Sep  4 09:56:03 kali gpg-agent[1203]: using fd 4 for ssh socket (/run/user/1000/gnupg/S.gpg-agent.ssh)
+Sep  4 09:56:03 kali gpg-agent[1203]: using fd 5 for extra socket (/run/user/1000/gnupg/S.gpg-agent.extra)
+Sep  4 09:56:03 kali gpg-agent[1203]: using fd 6 for std socket (/run/user/1000/gnupg/S.gpg-agent)
+Sep  4 09:56:03 kali gpg-agent[1203]: listening on: std=6 extra=5 browser=3 ssh=4
+Sep  4 09:56:03 kali systemd[1092]: Started GnuPG cryptographic agent and passphrase cache.
+Sep  4 09:56:03 kali gpg-agent[1206]: gpg-agent (GnuPG) 2.2.35 starting in supervised mode.
+Sep  4 09:56:03 kali gpg-agent[1206]: using fd 3 for browser socket (/run/user/1000/gnupg/S.gpg-agent.browser)
+Sep  4 09:56:03 kali gpg-agent[1206]: using fd 4 for ssh socket (/run/user/1000/gnupg/S.gpg-agent.ssh)
+Sep  4 09:56:03 kali gpg-agent[1206]: using fd 5 for extra socket (/run/user/1000/gnupg/S.gpg-agent.extra)
+Sep  4 09:56:03 kali gpg-agent[1206]: using fd 6 for std socket (/run/user/1000/gnupg/S.gpg-agent)
+Sep  4 09:56:03 kali gpg-agent[1206]: listening on: std=6 extra=5 browser=3 ssh=4

@@ -1,0 +1,50 @@
+2023-09-09 16:49:58 startup packages configure
+2023-09-09 16:49:58 configure libgstreamer-gl1.0-0:amd64 1.16.3-0ubuntu1.2 <none>
+2023-09-09 16:49:58 status unpacked libgstreamer-gl1.0-0:amd64 1.16.3-0ubuntu1.2
+2023-09-09 16:49:58 status half-configured libgstreamer-gl1.0-0:amd64 1.16.3-0ubuntu1.2
+2023-09-09 16:49:58 status installed libgstreamer-gl1.0-0:amd64 1.16.3-0ubuntu1.2
+2023-09-09 16:49:58 trigproc libc-bin:amd64 2.31-0ubuntu9.9 <none>
+2023-09-09 16:49:58 status half-configured libc-bin:amd64 2.31-0ubuntu9.9
+2023-09-09 16:49:58 status installed libc-bin:amd64 2.31-0ubuntu9.9
+2023-09-09 16:50:06 startup archives unpack
+2023-09-09 16:50:06 upgrade gir1.2-rsvg-2.0:amd64 2.48.9-1ubuntu0.20.04.1 2.48.9-1ubuntu0.20.04.4
+2023-09-09 16:50:06 status half-configured gir1.2-rsvg-2.0:amd64 2.48.9-1ubuntu0.20.04.1
+2023-09-09 16:50:06 status unpacked gir1.2-rsvg-2.0:amd64 2.48.9-1ubuntu0.20.04.1
+2023-09-09 16:50:06 status half-installed gir1.2-rsvg-2.0:amd64 2.48.9-1ubuntu0.20.04.1
+2023-09-09 16:50:06 status unpacked gir1.2-rsvg-2.0:amd64 2.48.9-1ubuntu0.20.04.4
+2023-09-09 16:50:06 startup packages configure
+2023-09-09 16:50:06 configure gir1.2-rsvg-2.0:amd64 2.48.9-1ubuntu0.20.04.4 <none>
+2023-09-09 16:50:06 status unpacked gir1.2-rsvg-2.0:amd64 2.48.9-1ubuntu0.20.04.4
+2023-09-09 16:50:06 status half-configured gir1.2-rsvg-2.0:amd64 2.48.9-1ubuntu0.20.04.4
+2023-09-09 16:50:06 status installed gir1.2-rsvg-2.0:amd64 2.48.9-1ubuntu0.20.04.4
+2023-09-09 16:50:14 startup packages remove
+2023-09-09 16:50:14 status installed linux-modules-extra-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1
+2023-09-09 16:50:14 remove linux-modules-extra-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1 <none>
+2023-09-09 16:50:14 status half-configured linux-modules-extra-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1
+2023-09-09 16:50:14 status half-installed linux-modules-extra-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1
+2023-09-09 16:50:15 status config-files linux-modules-extra-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1
+2023-09-09 16:50:15 status installed linux-modules-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1
+2023-09-09 16:50:15 status installed linux-image-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1
+2023-09-09 16:50:15 remove linux-image-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1 <none>
+2023-09-09 16:50:15 status half-configured linux-image-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1
+2023-09-09 16:50:16 status half-installed linux-image-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1
+2023-09-09 16:50:20 status config-files linux-image-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1
+2023-09-09 16:50:20 remove linux-modules-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1 <none>
+2023-09-09 16:50:20 status half-configured linux-modules-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1
+2023-09-09 16:50:20 status half-installed linux-modules-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1
+2023-09-09 16:50:20 status config-files linux-modules-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1
+2023-09-09 16:50:20 startup packages configure
+2023-09-09 16:50:28 startup packages remove
+2023-09-09 16:50:28 status installed linux-headers-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1
+2023-09-09 16:50:28 remove linux-headers-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1 <none>
+2023-09-09 16:50:28 status half-configured linux-headers-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1
+2023-09-09 16:50:28 status half-installed linux-headers-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1
+2023-09-09 16:50:28 status config-files linux-headers-5.15.0-73-generic:amd64 5.15.0-73.80~20.04.1
+2023-09-09 16:50:28 status not-installed linux-headers-5.15.0-73-generic:amd64 <none>
+2023-09-09 16:50:28 status installed linux-hwe-5.15-headers-5.15.0-73:all 5.15.0-73.80~20.04.1
+2023-09-09 16:50:28 remove linux-hwe-5.15-headers-5.15.0-73:all 5.15.0-73.80~20.04.1 <none>
+2023-09-09 16:50:28 status half-configured linux-hwe-5.15-headers-5.15.0-73:all 5.15.0-73.80~20.04.1
+2023-09-09 16:50:28 status half-installed linux-hwe-5.15-headers-5.15.0-73:all 5.15.0-73.80~20.04.1
+2023-09-09 16:50:29 status config-files linux-hwe-5.15-headers-5.15.0-73:all 5.15.0-73.80~20.04.1
+2023-09-09 16:50:30 status not-installed linux-hwe-5.15-headers-5.15.0-73:all <none>
+2023-09-09 16:50:30 startup packages configure

@@ -156,7 +156,7 @@ log_event LogAnalysis::decodeLog(const string &log, const string &format)
     logInfo.user = user;
     logInfo.program = program;
     logInfo.message = message;
-    logInfo.group = decodeGroup(logInfo); // Need to invoke the decoder group function
+    logInfo.decoded = decodeGroup(logInfo); // Need to invoke the decoder group function
 
     if (logInfo.log.find("SRC=") != string::npos)
     {
@@ -319,10 +319,12 @@ void LogAnalysis::match(log_event &logInfo, std::unordered_map<int, AConfig>& ru
     {
         AConfig rule = getRule(r.group, r.id);
         match(logInfo, rule);
+        if (logInfo.is_matched == 1) break;
     }
     for (auto &r : ruleSet)
     {
         match(logInfo, r.second);
+        if (logInfo.is_matched == 1) break;
     }
     return;
 }
@@ -528,6 +530,7 @@ void LogAnalysis::match(log_event &logInfo)
         for (auto &r : this->_rules)
         {
             match(logInfo, r.second);
+            if (logInfo.is_matched == 1) break;
         }
     }
     else
@@ -573,7 +576,7 @@ int LogAnalysis::analyseFile(const string &file)
         }
         log_event logInfo = decodeLog(line, format);
         cout << "Program : " << logInfo.program << "\n";
-        cout << "decoded : " << logInfo.group << "\n";
+        cout << "decoded : " << logInfo.decoded << "\n";
         match(logInfo);
         if (logInfo.is_matched == 1)
         {
@@ -634,6 +637,17 @@ int LogAnalysis::start(const string &decoderPath, const string &rulesDir, const 
 
 int LogAnalysis::postAnalysis(const vector<log_event> &alerts)
 {
+    if (alerts.size() == 0) 
+    {
+        AgentUtils::writeLog("No decoder matched", INFO);
+        return SUCCESS;
+    }
+    string filePath = OS::getJsonWritePath("log-analysis-report");
+    Json::Value json;
+    json["Alerts"] = Json::Value(Json::arrayValue);
+    Json::Value alert;
+    Json::StreamWriterBuilder writerBuilder;
+
     for (const auto &log : alerts)
     {
         AConfig config = getRule(log.group, log.rule_id);
@@ -643,9 +657,38 @@ int LogAnalysis::postAnalysis(const vector<log_event> &alerts)
         }
         else
         {
-            printLogDetails(config, log);
+            // printLogDetails(config, log);
+            AConfig child = config;
+            string group;
+            alert["TimeStamp"]   = log.timestamp;
+            alert["User"]        = log.user;
+            alert["Program"]     = log.program;
+            alert["Message"]     = log.message;
+            alert["Category"]    = log.decoded;
+            alert["MatchedRule"] = config.id;
+            alert["LogLevel"]    = config.level;
+            while (child.if_sid > 0)
+            {
+                child = getRule(log.group, child.if_sid);
+            }
+            if (config.description.empty())
+            {
+                group = child.decoded_as.empty() ? log.group : child.decoded_as;
+            }
+            else
+            {
+                group = config.decoded_as.empty() ? log.group : config.decoded_as;
+            }
+            alert["Section"]     = group;
+            alert["Description"] = (config.description.empty()) ? child.description : config.description;
+            json["Alerts"].append(alert);
         }
     }
+    std::ofstream ofile(filePath); /*need update*/
+    std::unique_ptr<Json::StreamWriter> writer(writerBuilder.newStreamWriter());
+    writer->write(json, &ofile);
+    ofile.close();
+    AgentUtils::writeLog("Log written to " + filePath, SUCCESS);
     return SUCCESS;
 }
 
@@ -657,7 +700,9 @@ int LogAnalysis::printLogDetails(const AConfig &ruleInfo, const log_event &logIn
     cout << "user      : " << logInfo.user << "\n";
     cout << "program   : " << logInfo.program << "\n";
     cout << "log       : " << logInfo.message << "\n";
+    cout << "category  : " << logInfo.decoded << "\n";
     cout << "rule      : " << child.id << "\n";
+    cout << "level     : " << child.level << "\n";
     while (child.if_sid > 0)
     {
         child = getRule(logInfo.group, child.if_sid);
@@ -670,7 +715,7 @@ int LogAnalysis::printLogDetails(const AConfig &ruleInfo, const log_event &logIn
     {
         group = ruleInfo.decoded_as.empty() ? logInfo.group : ruleInfo.decoded_as;
     }
-    cout << "category  : " << group <<"\n";
+    cout << "group  : " << group <<"\n";
     if (ruleInfo.description.empty())
     {
         cout << "Description: " << child.description << "\n";

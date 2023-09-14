@@ -2,42 +2,12 @@
 
 static std::mutex p_mutex;
 
-const string PROC = "/proc/";
-const string CPUDATA = "/stat";
+const string PROC       = "/proc/";
+const string CPUDATA    = "/stat";
 const string MEMORYDATA = "/statm";
-const string BOOTTIME = "uptime";
-const string COMM = "/comm";
-const string IO = "/io";
-
-string MonitorService::_getWritePath()
-{
-    string time = AgentUtils::getCurrentTime();
-    string filePath = BASE_LOG_DIR;
-
-    if (OS::isDirExist(filePath) == FAILED)
-    {
-        OS::createDir(filePath);
-    }
-    filePath += "json";
-    if (OS::isDirExist(filePath) == FAILED)
-    {
-        OS::createDir(filePath);
-    }
-    filePath += "/process";
-    if (OS::isDirExist(filePath) == FAILED)
-    {
-        OS::createDir(filePath);
-    }
-    filePath += "/" + time + ".json";
-    std::ofstream file(filePath);
-    if (!file)
-    {
-        AgentUtils::writeLog(FILE_ERROR + filePath, FAILED);
-        return "";
-    }
-    file.close();
-    return filePath;
-}
+const string BOOTTIME   = "uptime";
+const string COMM       = "/comm";
+const string IO         = "/io";
 
 int CpuTable::_getUpTime()
 {
@@ -112,7 +82,7 @@ string MonitorService::_getProcesNameById(const unsigned int &processId)
 int MonitorService::_saveLog(const vector<process_data> &logs, const vector<string> &columns)
 {
     string hostName;
-    string path = _getWritePath();
+    string path = OS::getJsonWritePath("processS");
     AgentUtils::getHostName(hostName);
     sys_properties properties = getSystemProperties();
     Json::Value props;

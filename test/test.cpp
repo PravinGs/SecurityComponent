@@ -18,7 +18,7 @@ int main()
     LogAnalysis logAnalysis;
     std::unordered_map<string, std::unordered_map<int, AConfig>> table;
     std::unordered_map<string, decoder> dTable;
-    logAnalysis.start("/home/krishna/security/Agent/decoder.xml", "/home/krishna/security/Agent/rules", "/home/krishna/security/Agent/config/syslog");
+    logAnalysis.start("/home/pravin/Desktop/SecurityComponent/decoder.xml", "/home/pravin/Desktop/SecurityComponent/rules", "/home/pravin/Desktop/SecurityComponent/config/syslog");
 
     if (AgentUtils::logfp.is_open())
     {

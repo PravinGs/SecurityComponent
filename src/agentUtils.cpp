@@ -473,3 +473,33 @@ std::time_t AgentUtils::convertStrToTime(const string &datetime)
     ss >> std::get_time(&tm, STANDARD_TIME_FORMAT);
     return std::mktime(&tm);
 }
+
+string OS::getJsonWritePath(const string & type)
+{
+    string time = AgentUtils::getCurrentTime();
+    string filePath = BASE_LOG_DIR;
+
+    if (OS::isDirExist(filePath) == FAILED)
+    {
+        OS::createDir(filePath);
+    }
+    filePath += "json";
+    if (OS::isDirExist(filePath) == FAILED)
+    {
+        OS::createDir(filePath);
+    }
+    filePath += "/" + type;
+    if (OS::isDirExist(filePath) == FAILED)
+    {
+        OS::createDir(filePath);
+    }
+    filePath += "/" + time + ".json";
+    std::ofstream file(filePath);
+    if (!file)
+    {
+        AgentUtils::writeLog(FILE_ERROR + filePath, FAILED);
+        return "";
+    }
+    file.close();
+    return filePath;
+}
