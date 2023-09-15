@@ -163,7 +163,35 @@ struct AConfig
     string compiled_rule;
 
     AConfig() : id(0), level(0), if_sid(0), if_matched_id(0), same_source_ip(0), frequency(0), 
-                timeframe(0), same_id(0), noalert(0), different_url(0), max_log_size(0) {}
+                timeframe(0), same_id(0), noalert(0), different_url(0), max_log_size(0) 
+                {
+                    group = "";
+                    decoded_as ="";
+                    pcre2.clear();
+                    description = "";
+                    info = "";
+                    type = "";
+                    status_pcre2 = "";
+                    program_name_pcre2="";
+                    regex="";
+                    user_pcre2="";
+                    compiled_rule="";
+                    match="";
+                    hostname_pcre2="";
+                    if_fts="";
+                    time="";
+                    weekday="";
+                    script="";
+                    check_if_ignored="";
+                    categories="";
+                    if_group="";
+                    action="";
+                    id_pcre2="";
+                    if_matched_group="";
+                    options="";
+                    extra_data_pcre2="";
+
+                }
 };
 
 /**

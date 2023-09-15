@@ -415,18 +415,20 @@ int LogService::readDpkgLog(const string &path, vector<string> &logs, string &pr
 
     while (std::getline(file, line))
     {
-        string log, temp;
+        string log, temp, host;
+        AgentUtils::getHostName(host);
         string currentTime = line.substr(0, 19);
         std::time_t cTime = AgentUtils::convertStrToTime(currentTime); /* Convert string time to time_t format for comparision between time_t objects */
         if (cTime < lastWrittenTime)
         {
             continue;
         }
+
         log += currentTime;
+        log += "|"+host;
+        fLog += "|" + "dpkg";
         temp = line.substr(20);
-        log += "|" + temp.substr(0, temp.find(' '));
-        temp = temp.substr(temp.find(' ') + 1);
-        log += "|" + temp;
+        log += "|"+temp;
         logs.push_back(log);
 
         std::time_t tempTime = AgentUtils::convertStrToTime(nextReadingTime);

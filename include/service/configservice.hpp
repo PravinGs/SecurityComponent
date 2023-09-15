@@ -162,7 +162,7 @@ public:
     {
         for (pugi::xml_node groupNode = root; groupNode; groupNode = groupNode.next_sibling("group"))
         {
-            std::string currentSection = root.attribute("name").value();
+            std::string currentSection = groupNode.attribute("name").value();
 
             for (pugi::xml_node ruleNode = groupNode.child("rule"); ruleNode; ruleNode = ruleNode.next_sibling("rule"))
             {
@@ -204,6 +204,15 @@ public:
                     rule.ignore = digit;
                 }
                 digit = -1;
+
+                digit = isDigit(ruleNode.child_value("if_matched_sid"));
+                // cout << "Match Id: " << digit;
+                if (digit != -1)
+                {
+                    rule.if_matched_id = digit;
+                }
+                digit = -1;
+
                 digit = isDigit(ruleNode.child_value("if_sid"));
                 if (digit != -1)
                 {
@@ -234,13 +243,6 @@ public:
                 }
 
                 // Iterate through the child nodes of <rule> to find <pcre2> elements
-                for (pugi::xml_node pcre2_node = ruleNode.child("pcre2"); pcre2_node; pcre2_node = pcre2_node.next_sibling("pcre2")) 
-                {
-                    string s = pcre2_node.text().as_string();
-                    if (!s.empty()) {
-                        rule.pcre2.push_back(s); // Store each <pcre2> value in the vector
-                    }
-                }
 
                 /*str = ruleNode.child_value("pcre2");
                 if (!str.empty())
@@ -296,12 +298,6 @@ public:
                     rule.options = str;
                 }
 
-                digit = isDigit(ruleNode.child_value("if_matched_sid"));
-                if (digit != -1)
-                {
-                    rule.if_matched_id = digit;
-                }
-                digit = -1;
                 str = ruleNode.child_value("url_pcre2");
                 if (!str.empty())
                 {
@@ -320,6 +316,14 @@ public:
 
                     rule.hostname_pcre2 = str;
                 }
+                for (pugi::xml_node pcre2_node = ruleNode.child("pcre2"); pcre2_node; pcre2_node = pcre2_node.next_sibling("pcre2")) 
+                {
+                    string s = pcre2_node.text().as_string();
+                    if (!s.empty()) {
+                        rule.pcre2.push_back(s); // Store each <pcre2> value in the vector
+                    }
+                }
+
                 table[currentSection][rule.id] = rule;
             }
         }

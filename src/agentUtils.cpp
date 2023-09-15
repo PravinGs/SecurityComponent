@@ -5,8 +5,8 @@ int OS::CurrentMonth = 0;
 int OS::CurrentYear = 0;
 bool AgentUtils::syslog_enabled = true;
 fstream AgentUtils::logfp;
-
 std::mutex logMutex;
+
 
 void AgentUtils::setupLogger()
 {
@@ -146,7 +146,7 @@ void AgentUtils::writeLog(const string& log)
     string time = getCurrentTime();
     string line = time + " " + log + "\n";
     std::lock_guard<std::mutex> lm(logMutex);
-    if (AgentUtils::logfp.is_open()) //safety check 
+    if (AgentUtils::logfp.is_open())
     {
         AgentUtils::logfp.write(line.c_str(), line.size());
     }
@@ -161,30 +161,21 @@ void AgentUtils::writeLog(const string& log, int logLevel)
     {
     case SUCCESS:
         line =  time + " : [SUCCESS] " + log;
-        // syslog(LOG_INFO, "SUCCESS : %s",log.c_str());
         break;
     case INFO:
         line =  time + " : [INFO] " + log;
-        // file << time << " : [INFO] " << log << "\n";
-        // syslog(LOG_INFO, "SUCCESS : %s",log.c_str());
         break;
     case FAILED:
         line =  time + " : [ERROR] " + log;
-        // file << time << " : [ERROR] " << log << "\n";
-        // syslog(LOG_INFO, "FAILED : %s", log.c_str());
         break;
     case WARNING:
         line =  time + " : [WARNING] " + log;
-        // file << time << " : [WARNING] " << log << "\n";
-        // syslog(LOG_USER, "WARNING: %s", log.c_str());
         break;
     case CRITICAL:
         line =  time + " : [CRITICAL] " + log;
-        // file << time << " : [CRITICAL] " << log << "\n";
         break;
     case DEBUG:
         line =  time + " : [DEBUG] " + log;
-        // file << time << " : [DEBUG] " << log << "\n";
     default:
         break;
     }
@@ -196,7 +187,7 @@ void AgentUtils::writeLog(const string& log, int logLevel)
     }
     else
     {
-        if (AgentUtils::logfp.is_open()) //safety check 
+        if (AgentUtils::logfp.is_open())
         {
             AgentUtils::logfp.write(line.c_str(), line.size());
         }

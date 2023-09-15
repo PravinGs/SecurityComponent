@@ -51,8 +51,8 @@ public:
         string writePath = configTable[monitor]["write_path"];
         string postUrl = configTable["cloud"]["monitor_url"];
         string attributeName = configTable["cloud"]["form_name"];
-        vector<string> columns = _configService.toVector(configTable[monitor]["columns"], ',');
-        if (_monitorService->getData(columns) == FAILED)
+
+        if (_monitorService->getData() == FAILED)
             return FAILED;
 
         // result = CurlHandler::post(postUrl, formName, jsonFile);

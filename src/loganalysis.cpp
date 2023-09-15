@@ -154,7 +154,7 @@ log_event LogAnalysis::decodeLog(const string &log, const string &format)
     logInfo.size = log.size();
     logInfo.timestamp = timestamp;
     logInfo.user = user;
-    logInfo.program = program;
+    logInfo.program = (format == "dpkg") ? format : program;
     logInfo.message = message;
     logInfo.decoded = decodeGroup(logInfo); // Need to invoke the decoder group function
 
@@ -177,10 +177,9 @@ string LogAnalysis::formatSysLog(const string &log, const string &format)
         AgentUtils::getHostName(host);
         fLog += log.substr(0, 19);
         fLog += "|" + host;
+        fLog += "|" + format;
         temp = log.substr(20);
-        fLog += "|" + temp.substr(0, temp.find(' '));
-        temp = temp.substr(temp.find(' ') + 1);
-        fLog += "|" + temp;
+        fLog += "|"+temp;
         return fLog;
     }
     else
@@ -298,6 +297,7 @@ int LogAnalysis::isRuleFound(const int ruleId)
 
 void LogAnalysis::addMatchedRule(const id_rule & rule, const string &log)
 {
+    // cout << "group: " << rule.group << "\tId: " << rule.id << "\n";
     int result = isRuleFound(rule.id);
     if (result == SUCCESS) return;
 
@@ -323,7 +323,8 @@ void LogAnalysis::match(log_event &logInfo, std::unordered_map<int, AConfig>& ru
     }
     for (auto &r : ruleSet)
     {
-        match(logInfo, r.second);
+        AConfig rule = r.second;
+        match(logInfo, rule);
         if (logInfo.is_matched == 1) break;
     }
     return;
@@ -335,6 +336,7 @@ void LogAnalysis::match(log_event & logInfo, AConfig & ruleInfo)
     string match_data;
     size_t position;
     id_rule matched_rule = { ruleInfo.group, ruleInfo.id };
+    // cout << matched_rule.group << "\t" << matched_rule.id << "\n";
     p_rule pRule;
     {
         std::set<int> processedRuleIDs;
@@ -352,6 +354,16 @@ void LogAnalysis::match(log_event & logInfo, AConfig & ruleInfo)
                     return processedRuleIDs.find(s.id) != processedRuleIDs.end();
                 }),
             _processingRules.end());
+    }
+
+    if (!ruleInfo.decoded_as.empty() && ruleInfo.decoded_as == logInfo.decoded )
+    {
+        logInfo.is_matched = 1;
+        logInfo.rule_id = ruleInfo.id;
+        logInfo.group = ruleInfo.group;
+        isParentRuleMatching = true;
+        addMatchedRule(matched_rule, logInfo.log);
+        return;
     }
 
     if (!ruleInfo.regex.empty()) /* Checking the regex patterns if exists in the rule */
@@ -575,8 +587,8 @@ int LogAnalysis::analyseFile(const string &file)
             continue;
         }
         log_event logInfo = decodeLog(line, format);
-        cout << "Program : " << logInfo.program << "\n";
-        cout << "decoded : " << logInfo.decoded << "\n";
+        // cout << "Program : " << logInfo.program << "\n";
+        // cout << "decoded : " << logInfo.decoded << "\n";
         match(logInfo);
         if (logInfo.is_matched == 1)
         {
@@ -637,6 +649,8 @@ int LogAnalysis::start(const string &decoderPath, const string &rulesDir, const 
 
 int LogAnalysis::postAnalysis(const vector<log_event> &alerts)
 {
+    string host;
+    AgentUtils::getHostName(host);
     if (alerts.size() == 0) 
     {
         AgentUtils::writeLog("No decoder matched", INFO);
@@ -644,6 +658,9 @@ int LogAnalysis::postAnalysis(const vector<log_event> &alerts)
     }
     string filePath = OS::getJsonWritePath("log-analysis-report");
     Json::Value json;
+    json["OrgId"] = 5268;
+    json["Source"] = host;
+    json["AppName"] = "system_events";
     json["Alerts"] = Json::Value(Json::arrayValue);
     Json::Value alert;
     Json::StreamWriterBuilder writerBuilder;
@@ -659,7 +676,7 @@ int LogAnalysis::postAnalysis(const vector<log_event> &alerts)
         {
             // printLogDetails(config, log);
             AConfig child = config;
-            string group;
+            // string group;
             alert["TimeStamp"]   = log.timestamp;
             alert["User"]        = log.user;
             alert["Program"]     = log.program;
@@ -671,15 +688,10 @@ int LogAnalysis::postAnalysis(const vector<log_event> &alerts)
             {
                 child = getRule(log.group, child.if_sid);
             }
-            if (config.description.empty())
-            {
-                group = child.decoded_as.empty() ? log.group : child.decoded_as;
-            }
-            else
-            {
-                group = config.decoded_as.empty() ? log.group : config.decoded_as;
-            }
-            alert["Section"]     = group;
+
+            // group = (config.group.empty()) ? child.group : config.group;
+
+            alert["Section"]  = log.group;
             alert["Description"] = (config.description.empty()) ? child.description : config.description;
             json["Alerts"].append(alert);
         }
