@@ -404,6 +404,7 @@ int LogService::verifyJsonPath(string &timestamp)
 int LogService::readDpkgLog(const string &path, vector<string> &logs, string &previousTime, string &nextReadingTime, bool &flag)
 {
     string formattedTime, line;
+    const string format = "dpkg";
     std::time_t lastWrittenTime = AgentUtils::convertStrToTime(previousTime);
 
     fstream file(path, std::ios::in);
@@ -426,7 +427,7 @@ int LogService::readDpkgLog(const string &path, vector<string> &logs, string &pr
 
         log += currentTime;
         log += "|"+host;
-        fLog += "|" + "dpkg";
+        log += "|" + format;
         temp = line.substr(20);
         log += "|"+temp;
         logs.push_back(log);
