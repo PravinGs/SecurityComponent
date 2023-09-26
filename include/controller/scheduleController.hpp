@@ -92,7 +92,7 @@ public:
 
 Schedule::Schedule(const string &file)
 {
-    if (_configService.readConfigFile(file, _configTable) != SUCCESS)
+    if (_configService.readIniConfigFile(file, _configTable) != SUCCESS)
     {
         _isReadyToSchedule = false;
     }
@@ -141,7 +141,7 @@ void Schedule::run(const string &processName, const string &timePattern, int ind
                 }
                 else if (strcmp(processName.c_str(), "syslog") == 0)
                 {
-                    if (_logController.getSysLog(_configTable) == SUCCESS)
+                    if (_logController.sysLogManager(_configTable) == SUCCESS)
                     {
                         std::cout << "Syslog operation done" << "\n";
                     }

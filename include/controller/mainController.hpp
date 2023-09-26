@@ -42,7 +42,13 @@ public:
         auto timeInfo = std::chrono::system_clock::to_time_t(today);
         std::tm *tm_info = std::localtime(&timeInfo);
         int day = tm_info->tm_mday;
-        OS::GlobalDay = day; /* Current day at the application starting date. */
+        OS::CurrentDay = day; /* Current day at the application starting date. */
+        OS::CurrentMonth = tm_info->tm_mon;
+        OS::CurrentYear = tm_info->tm_year+1900;
+        cout<< OS::CurrentDay<<"\n";
+        cout<< OS::CurrentMonth<<"\n";
+        cout<< OS::CurrentYear<<"\n";
+    
     }
 
     /**
@@ -58,6 +64,7 @@ public:
      */
     void start()
     {
+        return ;
         if (!isReady)
             return;
         vector<std::thread> threads(3);

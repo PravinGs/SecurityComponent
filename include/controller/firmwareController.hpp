@@ -60,7 +60,7 @@ public:
             std::chrono::system_clock::duration duration = executionTime - currentTime;
             int waitingTime = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
             std::this_thread::sleep_for(std::chrono::seconds(waitingTime));
-            result = _fservice->download(configTable);
+            result = _fservice->start(configTable);
         }
 
         return result;
