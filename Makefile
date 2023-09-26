@@ -18,7 +18,7 @@ TEST_OBJS = $(TEST_SRCS:$(TEST_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 # Executable file and directories
 BIN_DIR = bin
-TARGET = $(BIN_DIR)/out
+TARGET = $(BIN_DIR)/agent
 TEST_TARGET = $(BIN_DIR)/test
 
 # Build rules
