@@ -92,6 +92,7 @@ const string LOG_PATH = "/etc/scl/log/agent.log";
 #define BASE_LOG_ARCHIVE "archives/"
 #define BASE_CONFIG_TMP "tmp/"
 #define BASE_CONFIG_DIR "/etc/scl/config/"
+#define AGENT_CONFIG_DIRECTORY "/etc/scl/config/agent.config"
 
 
 const vector<string> MONTHS = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
@@ -412,6 +413,8 @@ public:
     static bool syslog_enabled;
 
     static string trim(string line);
+
+    static bool debug;
 
     static void setupLogger();
 
