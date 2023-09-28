@@ -44,3 +44,17 @@ $(OBJ_DIR)/%.o: $(TEST_DIR)/%.cpp
 
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
+
+deploy: stop_service copy_binary start_service
+
+stop_service:
+	@echo "Stopping agent service..."
+	@sudo systemctl stop agent.service
+
+copy_binary:
+	@echo "Copying binary to root directory"
+	@sudo cp $(TARGET) /etc/scl/bin/
+
+start_service:
+	@echo "Starting agent service..."
+	@sudo systemctl start agent.service
