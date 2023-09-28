@@ -18,7 +18,7 @@ public:
     {
         if (watcher->start(_watchDirectory, _backupDirectory) == SUCCESS)
         {
-            cout << "Watching files in the source directory successfully completed." << endl;
+            cout << "Watching files in the source directory successfully completed." << "\n";
         }
     }
 

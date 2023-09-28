@@ -1,0 +1,13 @@
+Sep  4 09:56:03 kali gpg-agent[1203]: gpg-agent (GnuPG) 2.2.35 starting in supervised mode.
+Sep  4 09:56:03 kali gpg-agent[1203]: using fd 3 for browser socket (/run/user/1000/gnupg/S.gpg-agent.browser)
+Sep  4 09:56:03 kali gpg-agent[1203]: using fd 4 for ssh socket (/run/user/1000/gnupg/S.gpg-agent.ssh)
+Sep  4 09:56:03 kali gpg-agent[1203]: using fd 5 for extra socket (/run/user/1000/gnupg/S.gpg-agent.extra)
+Sep  4 09:56:03 kali gpg-agent[1203]: using fd 6 for std socket (/run/user/1000/gnupg/S.gpg-agent)
+Sep  4 09:56:03 kali gpg-agent[1203]: listening on: std=6 extra=5 browser=3 ssh=4
+Sep  4 09:56:03 kali systemd[1092]: Started GnuPG cryptographic agent and passphrase cache.
+Sep  4 09:56:03 kali gpg-agent[1206]: gpg-agent (GnuPG) 2.2.35 starting in supervised mode.
+Sep  4 09:56:03 kali gpg-agent[1206]: using fd 3 for browser socket (/run/user/1000/gnupg/S.gpg-agent.browser)
+Sep  4 09:56:03 kali gpg-agent[1206]: using fd 4 for ssh socket (/run/user/1000/gnupg/S.gpg-agent.ssh)
+Sep  4 09:56:03 kali gpg-agent[1206]: using fd 5 for extra socket (/run/user/1000/gnupg/S.gpg-agent.extra)
+Sep  4 09:56:03 kali gpg-agent[1206]: using fd 6 for std socket (/run/user/1000/gnupg/S.gpg-agent)
+Sep  4 09:56:03 kali gpg-agent[1206]: listening on: std=6 extra=5 browser=3 ssh=4

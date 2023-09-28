@@ -19,7 +19,7 @@ private:
     bool isReady = true; /**< A private variable for configuration file status*/
     Config _config; /**< A private instance of IniConfig for configuration management. */
     map<string, map<string, string>> _table; /**< A private map<string, map<string, string>> to store configuration data. */
-    Schedule schedule; /**< A private instance of the Schedule class. */
+    Schedule *schedule; /**< A private instance of the Schedule class. */
 
 public:
 
@@ -38,11 +38,18 @@ public:
         {
             isReady = false;
         }
+        if (isReady){
+            const string scheduar_config_file = _table["schedule"]["config_file"];
+            schedule = new Schedule(scheduar_config_file);
+        }
         auto today = std::chrono::system_clock::now();
         auto timeInfo = std::chrono::system_clock::to_time_t(today);
         std::tm *tm_info = std::localtime(&timeInfo);
         int day = tm_info->tm_mday;
-        OS::GlobalDay = day; /* Current day at the application starting date. */
+        OS::CurrentDay = day; /* Current day at the application starting date. */
+        OS::CurrentMonth = tm_info->tm_mon;
+        OS::CurrentYear = tm_info->tm_year+1900;
+    
     }
 
     /**
@@ -58,10 +65,11 @@ public:
      */
     void start()
     {
+        // return ;
         if (!isReady)
             return;
         vector<std::thread> threads(3);
-        vector<string> processes = {"schedule", "watcher", "tls"};
+        vector<string> processes = {"schedule"};
         for (int i = 0; i < (int)processes.size(); i++)
         {
             try
@@ -69,10 +77,13 @@ public:
                 string processName = processes[i];
                 threads[i] = std::thread([&, processName]()
                                          { run(processName); });
+
+                AgentUtils::writeLog("[Agent] New thread creation for " + processName, DEBUG);
             }
             catch (const std::exception &e)
             {
-                cerr << e.what() << endl;
+                string error = e.what();
+                AgentUtils::writeLog(error, ERROR);
             }
         }
 
@@ -93,10 +104,11 @@ public:
      */
     void run(const string& processName)
     {
+       
         if (processName == "schedule")
         {
             //Schedule schedule(_table[processName]["config_file"]);
-            schedule.start();
+            schedule->start();
         }
         /*else if (processName == "watcher")
         {
@@ -123,8 +135,7 @@ public:
      */
     ~MainController()
     {
-        
+        delete schedule;
     }
 };
-
 #endif

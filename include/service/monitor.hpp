@@ -169,7 +169,7 @@ public:
      *         - SUCCESS: The monitor data was successfully retrieved and parsed.
      *         - FAILED: The operation encountered errors and failed to retrieve or parse the monitor data.
      */
-    virtual int getData(const vector<string>& columns) = 0;
+    virtual int getData() = 0;
 
     /**
      * @brief Get System Properties
@@ -228,7 +228,7 @@ private:
      *         - SUCCESS: The process data was successfully stored.
      *         - FAILED: The operation encountered errors and failed to store the process data.
      */
-    int _saveLog(const vector<process_data>& logs, const vector<string>& columns);
+    int _saveLog(const vector<process_data>& logs);
 
     /**
      * @brief Get Process Name by Process ID
@@ -344,7 +344,7 @@ public:
      *         - SUCCESS: The monitor data was successfully retrieved and parsed.
      *         - FAILED: The operation encountered errors and failed to retrieve or parse the monitor data.
      */
-    int getData(const vector<string>& columns);
+    int getData();
 
     /**
      * @brief Get System Properties

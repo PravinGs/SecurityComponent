@@ -92,10 +92,29 @@ public:
 
 Schedule::Schedule(const string &file)
 {
-    if (_configService.readConfigFile(file, _configTable) != SUCCESS)
+    cout << "Schedular configuration file : " << file << "\n";
+    if (_configService.readIniConfigFile(file, _configTable) != SUCCESS)
     {
         _isReadyToSchedule = false;
     }
+}
+
+void printNextExecutionTime(std::tm *nextTimeInfo)
+{
+    char buffer[80];
+    std::strftime(buffer, 80, "%Y-%m-%d %H:%M:%S", nextTimeInfo);
+    std::string nextTimeStr(buffer);
+    AgentUtils::writeLog("Next execution time: " + nextTimeStr, DEBUG);
+}
+
+void printDuration(const std::chrono::duration<double> &duration)
+{
+    int hours = std::chrono::duration_cast<std::chrono::hours>(duration).count();
+    auto remainingDuration = duration - std::chrono::hours(hours);
+    int minutes = std::chrono::duration_cast<std::chrono::minutes>(remainingDuration).count();
+    remainingDuration -= std::chrono::minutes(minutes);
+    int seconds = std::chrono::duration_cast<std::chrono::seconds>(remainingDuration).count();
+    AgentUtils::writeLog("Duration until next execution: " + std::to_string(hours) + " hours, " + std::to_string(minutes) + " minutes, " + std::to_string(seconds) + " seconds.", DEBUG);
 }
 
 void Schedule::run(const string &processName, const string &timePattern, int index, vector<bool> &processStatus)
@@ -109,7 +128,18 @@ void Schedule::run(const string &processName, const string &timePattern, int ind
             std::time_t time = std::chrono::system_clock::to_time_t(currentTime);
             std::time_t next = cron::cron_next(cron, time);
             std::chrono::system_clock::time_point targetPoint = std::chrono::system_clock::from_time_t(next);
+            std::tm *nextTimeInfo = std::localtime(&next);
+            if (AgentUtils::debug)
+            {
+                printNextExecutionTime(nextTimeInfo);
+            }
+                
             std::chrono::duration<double> duration = targetPoint - currentTime;
+            
+            if (AgentUtils::debug){
+                printDuration(duration);
+            }
+
             std::this_thread::sleep_for(duration);
             if (processStatus[index])
             {
@@ -117,11 +147,16 @@ void Schedule::run(const string &processName, const string &timePattern, int ind
                 {
                     if (_monitorController.getMonitorLog(_configTable) == SUCCESS)
                     {
-                        std::cout << "Monitor Log collected successfully." << std::endl;
+                        if (AgentUtils::debug){
+                            AgentUtils::writeLog("Monitor Log collected successfully.", DEBUG);
+                        }  
                     }
                     else
                     {
-                        AgentUtils::writeLog("Reading Process details operation stopped");
+                        if (AgentUtils::debug){
+                            AgentUtils::writeLog("Reading Process details operation stopped", DEBUG);
+                        }
+                        
                         processStatus[index] = false; // Mark the process as failed
                         break;                        // Exit the loop immediately
                     }
@@ -130,24 +165,29 @@ void Schedule::run(const string &processName, const string &timePattern, int ind
                 {
                     if (_logController.appLogManager(_configTable) == SUCCESS)
                     {
-                        std::cout << "Applog operation done" << std::endl;
+                        if (AgentUtils::debug){
+                            AgentUtils::writeLog("Applog operation done.", DEBUG);
+                        }                        
                     }
                     else
                     {
-                        AgentUtils::writeLog("Reading AppLog process stopped");
+                        if(AgentUtils::debug){
+                            AgentUtils::writeLog("Reading AppLog process stopped", DEBUG);
+                        }
                         processStatus[index] = false; // Mark the process as failed
                         break;                        // Exit the loop immediately
                     }
                 }
                 else if (strcmp(processName.c_str(), "syslog") == 0)
                 {
-                    if (_logController.getSysLog(_configTable) == SUCCESS)
+                    if (_logController.sysLogManager(_configTable) == SUCCESS)
                     {
-                        std::cout << "Syslog operation done" << std::endl;
+                        std::cout << "Syslog operation done"
+                                  << "\n";
                     }
                     else
                     {
-                        AgentUtils::writeLog("Reading SysLog process stopped");
+                        AgentUtils::writeLog("Reading SysLog process stopped", DEBUG);
                         processStatus[index] = false; // Mark the process as failed
                         break;                        // Exit the loop immediately
                     }
@@ -157,7 +197,8 @@ void Schedule::run(const string &processName, const string &timePattern, int ind
                     int response = _fController.start(_configTable);
                     if (response == SUCCESS)
                     {
-                        std::cout << "FirmWare operation done" << std::endl;
+                        std::cout << "FirmWare operation done"
+                                  << "\n";
                     }
                     else if (response == SCHEDULAR_WAIT)
                     {
@@ -173,8 +214,7 @@ void Schedule::run(const string &processName, const string &timePattern, int ind
                     }
                 }
             }
-
-            std::cout << processName << " execution done." << std::endl;
+            AgentUtils::writeLog(processName + " execution done.", DEBUG);
 
         } // end of while loop
         // Additional check after the loop to write the log message if the process failed
@@ -196,7 +236,7 @@ void Schedule::printTime(std::chrono::system_clock::time_point &t)
 
     char buffer[80];
     std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", now_tm);
-    cout << buffer << endl;
+    cout << buffer << "\n";
 }
 
 int Schedule::processTimePattern(vector<int> &patternTable, const string &pattern)
@@ -255,6 +295,7 @@ void Schedule::start()
 
     std::vector<std::string> processes;
     std::map<std::string, std::string> schedular = _configTable["schedular"];
+    AgentUtils::writeLog("Schedular started", DEBUG);
     for (const auto &process : schedular)
     {
         processes.push_back(process.first);
@@ -270,17 +311,18 @@ void Schedule::start()
         {
             std::string processName = processes[i];
             std::string processTimePattern = schedular[processes[i]];
-            //            std::cout << processName << " : " << processTimePattern << std::endl;
+            //            std::cout << processName << " : " << processTimePattern << "\n";
             threads[i] = std::thread([&, processName, processTimePattern]()
                                      {
                 if (processStatus[i]) 
                 {
                     run(processName, processTimePattern, i, processStatus); 
                 } });
+            AgentUtils::writeLog("[Schedular] New thread creation for " + processName, DEBUG);
         }
         catch (const std::exception &e)
         {
-            std::cerr << e.what() << std::endl;
+            // std::cerr << e.what() << "\n";
             string error = e.what();
             AgentUtils::writeLog(error, FAILED);
         }
@@ -294,7 +336,7 @@ void Schedule::start()
             thread.join();
     }
 
-    std::cout << "done" << std::endl;
+    AgentUtils::writeLog("Schedular function finished", DEBUG);
 }
 
 Schedule::~Schedule() {}

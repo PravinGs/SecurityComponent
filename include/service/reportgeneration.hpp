@@ -1,12 +1,10 @@
 #ifndef REPORT_GEN_HPP
 #define REPORT_GEN_HPP
-#pragma once 
+#pragma once
 #include "agentUtils.hpp"
 
 class Report
 {
-    private:
-
     public:
         int generateFromFile(string path);
         int generate(vector<LOG_EVENT> alerts);
@@ -23,7 +21,7 @@ int Report::generateFromFile(string path)
     fstream file(path, std::ios::in); 
     if(!file)
     {
-        cout << "File path not valid " << path << endl;
+        cout << "File path not valid " << path << "\n";
         return FAILED;
     }
 
@@ -45,9 +43,8 @@ int Report::generateFromFile(string path)
         jsonValue["timestamp"] = timestamp;
         jsonValue["user"] = user;
         jsonValue["program"] = program;
-        jsonValue["lruleIdog"] = log;
+        jsonValue["log"] = log;
         jsonValue["ruleId"] = ruleId;
-
         /*Read stoi()
         getAConfigById(ruleId) 
         Aconfig and add decoded_as, description, level, group,*/

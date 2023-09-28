@@ -364,7 +364,7 @@ int LogService::saveToLocal(const vector<string> &logs, const string &appName)
 
     for (string line : logs)
     {
-        file << line << endl;
+        file << line << "\n";
     }
 
     file.close();
@@ -404,6 +404,7 @@ int LogService::verifyJsonPath(string &timestamp)
 int LogService::readDpkgLog(const string &path, vector<string> &logs, string &previousTime, string &nextReadingTime, bool &flag)
 {
     string formattedTime, line;
+    const string format = "dpkg";
     std::time_t lastWrittenTime = AgentUtils::convertStrToTime(previousTime);
 
     fstream file(path, std::ios::in);
@@ -415,18 +416,20 @@ int LogService::readDpkgLog(const string &path, vector<string> &logs, string &pr
 
     while (std::getline(file, line))
     {
-        string log, temp;
+        string log, temp, host;
+        AgentUtils::getHostName(host);
         string currentTime = line.substr(0, 19);
         std::time_t cTime = AgentUtils::convertStrToTime(currentTime); /* Convert string time to time_t format for comparision between time_t objects */
         if (cTime < lastWrittenTime)
         {
             continue;
         }
+
         log += currentTime;
+        log += "|"+host;
+        log += "|" + format;
         temp = line.substr(20);
-        log += "|" + temp.substr(0, temp.find(' '));
-        temp = temp.substr(temp.find(' ') + 1);
-        log += "|" + temp;
+        log += "|"+temp;
         logs.push_back(log);
 
         std::time_t tempTime = AgentUtils::convertStrToTime(nextReadingTime);

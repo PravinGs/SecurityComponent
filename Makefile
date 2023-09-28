@@ -18,7 +18,7 @@ TEST_OBJS = $(TEST_SRCS:$(TEST_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 # Executable file and directories
 BIN_DIR = bin
-TARGET = $(BIN_DIR)/out
+TARGET = $(BIN_DIR)/agent
 TEST_TARGET = $(BIN_DIR)/test
 
 # Build rules
@@ -44,3 +44,17 @@ $(OBJ_DIR)/%.o: $(TEST_DIR)/%.cpp
 
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
+
+deploy: stop_service copy_binary start_service
+
+stop_service:
+	@echo "Stopping agent service..."
+	@sudo systemctl stop agent.service
+
+copy_binary:
+	@echo "Copying binary to root directory"
+	@sudo cp $(TARGET) /etc/scl/bin/
+
+start_service:
+	@echo "Starting agent service..."
+	@sudo systemctl start agent.service

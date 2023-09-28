@@ -14,6 +14,10 @@
 #include <string_view>
 #define CRONCPP_IS_CPP17
 #endif
+/**
+ * @cond HIDE_THIS_CLASS
+ * @brief This class is for internal use only and should not be documented.
+ */
 
 namespace cron
 {
@@ -915,3 +919,7 @@ namespace cron
      return std::chrono::system_clock::from_time_t(cron_next<Traits>(cex, std::chrono::system_clock::to_time_t(time_point)));
   }
 }
+
+/**
+ * @endcond
+ */

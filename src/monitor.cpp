@@ -2,42 +2,12 @@
 
 static std::mutex p_mutex;
 
-const string PROC = "/proc/";
-const string CPUDATA = "/stat";
+const string PROC       = "/proc/";
+const string CPUDATA    = "/stat";
 const string MEMORYDATA = "/statm";
-const string BOOTTIME = "uptime";
-const string COMM = "/comm";
-const string IO = "/io";
-
-string MonitorService::_getWritePath()
-{
-    string time = AgentUtils::getCurrentTime();
-    string filePath = BASE_LOG_DIR;
-
-    if (OS::isDirExist(filePath) == FAILED)
-    {
-        OS::createDir(filePath);
-    }
-    filePath += "json";
-    if (OS::isDirExist(filePath) == FAILED)
-    {
-        OS::createDir(filePath);
-    }
-    filePath += "/process";
-    if (OS::isDirExist(filePath) == FAILED)
-    {
-        OS::createDir(filePath);
-    }
-    filePath += "/" + time + ".json";
-    std::ofstream file(filePath);
-    if (!file)
-    {
-        AgentUtils::writeLog(FILE_ERROR + filePath, FAILED);
-        return "";
-    }
-    file.close();
-    return filePath;
-}
+const string BOOTTIME   = "uptime";
+const string COMM       = "/comm";
+const string IO         = "/io";
 
 int CpuTable::_getUpTime()
 {
@@ -109,10 +79,10 @@ string MonitorService::_getProcesNameById(const unsigned int &processId)
     return processName;
 }
 
-int MonitorService::_saveLog(const vector<process_data> &logs, const vector<string> &columns)
+int MonitorService::_saveLog(const vector<process_data> &logs)
 {
     string hostName;
-    string path = _getWritePath();
+    string path = OS::getJsonWritePath("process");
     AgentUtils::getHostName(hostName);
     sys_properties properties = getSystemProperties();
     Json::Value props;
@@ -132,11 +102,7 @@ int MonitorService::_saveLog(const vector<process_data> &logs, const vector<stri
         AgentUtils::writeLog(FWRITE_FAILED + path, FAILED);
         return FAILED;
     }
-    if ((int)columns.size() != 5)
-    {
-        AgentUtils::writeLog("Expect 5 attribute names for monitoring, given " + std::to_string(columns.size()), FAILED);
-        return FAILED;
-    }
+    
     jsonData["DeviceTotalSpace"] = props;
     jsonData["DeviceUsedSpace"] = availedProps;
     jsonData["TimeGenerated"] = AgentUtils::getCurrentTime();
@@ -146,11 +112,11 @@ int MonitorService::_saveLog(const vector<process_data> &logs, const vector<stri
     for (process_data data : logs)
     {
         Json::Value jsonLog;
-        jsonLog[columns[0]] = std::stoi(data.processId);
-        jsonLog[columns[1]] = data.processName;
-        jsonLog[columns[2]] = std::stod(data.cpuTime);
-        jsonLog[columns[3]] = std::stod(data.memUsage);
-        jsonLog[columns[4]] = std::stod(data.diskUsage);
+        jsonLog["processId"] = std::stoi(data.processId);
+        jsonLog["process_name"] = data.processName;
+        jsonLog["cpu_usage"] = std::stod(data.cpuTime);
+        jsonLog["ram_usage"] = std::stod(data.memUsage);
+        jsonLog["disk_usage"] = std::stod(data.diskUsage);
         jsonData["ProcessObjects"].append(jsonLog);
     }
 
@@ -374,7 +340,7 @@ process_data MonitorService::createProcessData(int processId)
     return processData;
 }
 
-int MonitorService::getData(const vector<string> &columns)
+int MonitorService::getData()
 {
     AgentUtils::writeLog("Request for collecting process details", DEBUG);
     vector<process_data> parent;
@@ -399,7 +365,7 @@ int MonitorService::getData(const vector<string> &columns)
         task.wait();
     }
     AgentUtils::writeLog("Process information collected", DEBUG);
-    return _saveLog(parent, columns);
+    return _saveLog(parent);
 }
 
 MonitorService::~MonitorService() {}

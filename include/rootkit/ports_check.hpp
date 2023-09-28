@@ -183,7 +183,7 @@ class PortCheck
             {
                 if (total_ports_tcp[port])
                 {
-                    cout << "port : " << port << " status : " << total_ports_tcp[port]  << endl;
+                    cout << "port : " << port << " status : " << total_ports_tcp[port]  << "\n";
                 }
             }
             return SUCCESS;
