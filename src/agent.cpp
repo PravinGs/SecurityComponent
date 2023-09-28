@@ -3,14 +3,18 @@
 
 int main()
 {
-    openlog("agent", LOG_INFO | LOG_CONS, LOG_USER);
+    AgentUtils::syslog_enabled = true;
+    AgentUtils::setupLogger();
+    if (!AgentUtils::syslog_enabled)
+    {
         AgentUtils::logfp.open(LOG_PATH, std::ios::app);
-    MainController controller(BASE_CONFIG_DIR);
+    }
+
+    MainController controller(AGENT_CONFIG_DIRECTORY);
     controller.start();
-        if (AgentUtils::logfp.is_open())
-        {
-            AgentUtils::logfp.close();
-        }
-    closelog();
+    if (AgentUtils::logfp.is_open())
+    {
+        AgentUtils::logfp.close();
+    }
     return 0;
 }

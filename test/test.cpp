@@ -1,20 +1,20 @@
 // #include "service/fwservice.hpp"
 // #include "service/configservice.hpp"
 // #include "service/rqueue.hpp"
-#include "agentUtils.hpp"
-#include "service/commandservice.hpp"
+// #include "agentUtils.hpp"
+// #include "service/commandservice.hpp"
 // #include "controller/logController.hpp"
 // #include "controller/monitorController.hpp"
 // #include "service/loganalysis.hpp"
 // #include "controller/monitorController.hpp"
 
-// int main()
-// {
-//     Command command;
-//     vector<string> logs;
-//     command.readCommand("aa-status",logs);
-//     for(string line: logs){ cout << line << "\n";}
-// }
+// // int main()
+// // {
+// //     Command command;
+// //     vector<string> logs;
+// //     command.readCommand("aa-status",logs);
+// //     for(string line: logs){ cout << line << "\n";}
+// // }
 // int main()
 // {
 //     AgentUtils::syslog_enabled = true;

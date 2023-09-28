@@ -6,6 +6,7 @@ int OS::CurrentYear = 0;
 bool AgentUtils::syslog_enabled = true;
 fstream AgentUtils::logfp;
 std::mutex logMutex;
+bool AgentUtils::debug = false;
 
 
 void AgentUtils::setupLogger()
@@ -190,6 +191,7 @@ void AgentUtils::writeLog(const string& log, int logLevel)
         if (AgentUtils::logfp.is_open())
         {
             AgentUtils::logfp.write(line.c_str(), line.size());
+            AgentUtils::logfp.flush();
         }
     }
     return;
