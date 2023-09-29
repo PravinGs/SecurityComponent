@@ -1,0 +1,174 @@
+#!/bin/bash
+set -e -o pipefail
+cd `dirname $0`
+
+ROOT="/etc/scl"
+DECORER="$ROOT/decoder"
+IDS="$ROOT/ids"
+CONFIGURATION_DIRECTORY="$ROOT/config/agent"
+LOG_PATH="/etc/scl/log/" 
+echo "Checking Configuration directories.."
+
+#creating root directory
+if [ ! -d "$ROOT" ]; then
+    echo "Root directory not found..."
+    echo "Creating root directory..."
+    mkdir -p "$ROOT"
+else
+    echo "Root directory found..."
+fi
+
+#check and create configuration directory
+if [ ! -d "$CONFIGURATION_DIRECTORY" ]; then
+    echo "Building Configuration directories..."
+    mkdir -p $"CONFIGURATION_DIRECTORY" 
+    echo "Directory created: $CONFIGURATION_DIRECTORY"
+else
+    echo "Directory already exists: $CONFIGURATION_DIRECTORY"
+fi
+
+#check and create configuration files
+if [ ! -f "$CONFIGURATION_DIRECTORY/agent.config" ]; then   
+    echo "Agent configuration not found..."
+    echo "Writing new agent configuration file..."
+    cp config/agent.config "$CONFIGURATION_DIRECTORY"
+else
+    echo "Agent configuration file found..."
+fi
+
+if [ ! -f "$CONFIGURATION_DIRECTORY/agent.config" ]; then 
+    echo "Schedule configuration not found..."
+    echo "Writing new schedule configuration file..."
+    cp config/schedule.config "$CONFIGURATION_DIRECTORY"
+else    
+    echo "Schedule configuration file found..."
+fi
+
+#check and create decoder directory and copy the decoder files
+if [ ! -d "$DECODER" ]; then
+    echo "Decoder directory not found..."
+    echo "Creating decoder directory..."
+    mkdir -p "$DECODER"
+else
+    echo "Decoder directory found..."
+fi
+
+if [ ! -d "$DECODER/decoder.xml" ]; then
+    echo "Decoder file not found writing decoer file..."
+    cp decoder.xml "$DECODER"
+else    
+    echo "Decoder file exists"
+fi
+
+#check and create rules directory and add the ossec rules
+ls -la "$ROOT/rules" > /dev/null 2>&1
+if [ ! $? = 0 ]; then
+    echo "Rules directory is emtpty adding rules..."
+    cp -rf rules "$ROOT"
+else    
+    echo "Rules directory not empty..."
+fi     
+
+if [ ! -d "$LOG_PATH" ]; then
+    echo "Log directory not found..."
+    echo "Creating new directoy:  $LOG_PATH"
+    mkdir -p "$LOG_PATH" 
+else
+    echo "Found log directory: $LOG_PATH"
+fi
+
+if [ ! -f "$LOG_PATH/agent.log" ]; then
+    echo "Log file not found..."
+    echo "Log file created under: $LOG_PATH"
+    touch "$LOG_PATH/agent.log" 
+else   
+    echo "Log file found:  $LOG_PATH/agent.log"
+fi
+
+# Check if necessary tools are available
+command -v g++ >/dev/null 2>&1 || { echo >&2 "g++ is required but not installed. Aborting."; exit 1; }
+
+PUGI_XML_GIT_URL="https://github.com/zeux/pugixml.git"
+# Check if pugixml is installed
+if pkg-config --exists pugixml; then
+    echo "pugixml found."
+else
+    echo "pugixml not found. Downloading and building..."
+    git clone $PUGI_XML_GIT_URL
+    cd pugixml 
+    mkdir build 
+    cd build 
+    cmake .. 
+    make 
+
+    cd ../.. 
+    echo "pugixml downloaded and built successfully"
+fi
+
+if pkg-config --exists libcurl; then
+    echo "libcurl found."
+else 
+    echo "libcurl not found. Installing..."
+    sudo apt update
+    sudo apt install -y libcurl4-openssl-dev 
+    echo "libcurl installed successfully"
+fi
+
+if pkg-config --exists jsoncpp; then
+    echo "JSONCpp found."
+else 
+    echo "JSONCpp not found. Downloading and building..."
+    # Add commands to download and build JSONCpp here
+    # For example, you might download the source code and build it with CMake
+
+    # Example using git and CMake
+    git clone https://github.com/open-source-parsers/jsoncpp.git
+    cd jsoncpp
+    mkdir build
+    cd build
+    cmake ..
+    make
+    sudo make install
+
+    echo "JSONCpp downloaded and built successfully"
+fi
+
+if pkg-config --exists zlib; then
+    echo "zlib found."
+else 
+    echo "zlib not found. Downloading and building..."
+    # Add commands to download and build zlib here
+    sudo apt update
+    sudo apt install -y zlib1g-dev
+
+    echo "zlib downloaded and built successfully"
+fi
+
+# if gcc -Wl,--no-as-needed -ldl -o /tmp/test_dynamic_load -xc /dev/null &> /dev/null; then
+#     echo "-ldl found."
+# else
+#     echo "-ldl not found. Adding the flag."
+#     # Add -ldl to the build flags
+#     sudo apt update
+#     sudo apt-get install -y libdl-dev
+    
+# fi
+
+if pkg-config --exists amqpcpp; then
+    echo "AMQPCPP found."
+    if pkg-config --exists libev; then
+        echo "libev found."
+    else 
+        echo "libev not found. Downloading and building..."
+        # Add commands to download and build libev here
+        # For example, you might download the source code and build it with Make
+
+        # Example using curl and Make
+        sudo apt update
+        sudo apt install -y libev-dev
+
+        echo "libev downloaded and built successfully"
+    fi
+fi
+
+echo "Configuration complete."
