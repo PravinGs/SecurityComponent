@@ -10,10 +10,10 @@
 
 ## **Technologies used**
 * c++17
-* AMQP-CPP 
+* AMQP-CPP (Not in use) 
 * Openssl 
 * jsoncpp
-* eventloop
+* pugixml
 * pcre2
 
 
