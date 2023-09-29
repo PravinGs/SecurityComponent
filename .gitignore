@@ -1,9 +1,8 @@
-/bin
-/build
-/html
-/latex
-/obj
-/reference
+bin/
+build/
+html/
+latex/
+obj/
 /backup
 /tmp
 /downloads
