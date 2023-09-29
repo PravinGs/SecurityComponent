@@ -1,10 +1,10 @@
 /bin
+/build
+/html
+/latex
 /obj
+/reference
 /backup
 /tmp
 /downloads
-/html
-/latex
-/build
-/reference
 .vscode
