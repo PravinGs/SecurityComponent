@@ -151,6 +151,7 @@ void AgentUtils::writeLog(const string& log)
     {
         AgentUtils::logfp.write(line.c_str(), line.size());
     }
+    AgentUtils::backupLogFile();
     return;
 }
 
@@ -182,34 +183,58 @@ void AgentUtils::writeLog(const string& log, int logLevel)
     }
     line += "\n";
     std::lock_guard<std::mutex> lm(logMutex);
-    if (syslog_enabled)
     {
-        syslog(LOG_INFO, " %s", line.c_str());
-    }
-    else
-    {
-        if (AgentUtils::logfp.is_open())
+        if (syslog_enabled)
         {
-            AgentUtils::logfp.write(line.c_str(), line.size());
-            AgentUtils::logfp.flush();
+            syslog(LOG_INFO, " %s", line.c_str());
+        }
+        else
+        {
+            if (AgentUtils::logfp.is_open())
+            {
+                AgentUtils::logfp.write(line.c_str(), line.size());
+                AgentUtils::logfp.flush();
+            }
         }
     }
+    AgentUtils::backupLogFile();
     return;
+}
+
+void AgentUtils::backupLogFile()
+{
+    std::streampos size;
+    if (AgentUtils::logfp.is_open()){
+        AgentUtils::logfp.seekg(0, std::ios::end);
+        size = AgentUtils::logfp.tellg();
+    }
+    if (size > 1024)
+    {
+        OS::compressFile(LOG_PATH);
+        AgentUtils::logfp.close();
+        std::filesystem::remove(LOG_PATH);
+        AgentUtils::logfp.open(LOG_PATH, std::ios::app);
+    }
 }
 
 int OS::compressFile(const string& logFile)
 {
     string currentFile = logFile;
+    if (logFile == LOG_PATH){
+        vector<string> files;
+        OS::getRegularFiles(BASE_LOG_DIR, files);
+        currentFile += std::to_string(files.size());
+    }
     int result = SUCCESS;
     if (currentFile.size() == 0)
     {
         AgentUtils::writeLog("No global log file updated in the code for OS", FAILED);
         return FAILED;
     }
-    fstream file(currentFile, std::ios::in | std::ios::binary);
+    fstream file(logFile, std::ios::in | std::ios::binary);
     if (!file)
     {
-        AgentUtils::writeLog("No file exist for backup ( " + currentFile + " )", FAILED);
+        AgentUtils::writeLog("No file exist for backup ( " + logFile + " )", FAILED);
         return FAILED;
     }
     gzFile zLog;
@@ -441,11 +466,6 @@ int OS::getRegularFiles(const string& directory, vector<string> &files)
             {   
                 string child = entry.path();
                 files.push_back(child);
-            }
-            else if (std::filesystem::is_directory(entry.path()))
-            {
-                string child = entry.path();
-                result = getRegularFiles(parent + child, files);
             }
         }
     }
