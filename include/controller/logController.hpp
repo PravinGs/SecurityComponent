@@ -5,7 +5,6 @@
 #include "service/logservice.hpp"
 #include "service/configservice.hpp"
 #include "proxy/Proxy.hpp"
-#include "service/rqueue.hpp"
 #include "service/curlservice.hpp"
 
 /**
