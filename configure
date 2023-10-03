@@ -3,10 +3,11 @@ set -e -o pipefail
 cd `dirname $0`
 
 ROOT="/etc/scl"
-DECORER="$ROOT/decoder"
+DECODER="$ROOT/decoder"
 IDS="$ROOT/ids"
 CONFIGURATION_DIRECTORY="$ROOT/config/agent"
 LOG_PATH="/etc/scl/log/" 
+BUILD_DIRECTORY="/home/$USER/Builds"
 echo "Checking Configuration directories.."
 
 #creating root directory
@@ -21,7 +22,7 @@ fi
 #check and create configuration directory
 if [ ! -d "$CONFIGURATION_DIRECTORY" ]; then
     echo "Building Configuration directories..."
-    mkdir -p $"CONFIGURATION_DIRECTORY" 
+    mkdir -p "$CONFIGURATION_DIRECTORY" 
     echo "Directory created: $CONFIGURATION_DIRECTORY"
 else
     echo "Directory already exists: $CONFIGURATION_DIRECTORY"
@@ -31,15 +32,15 @@ fi
 if [ ! -f "$CONFIGURATION_DIRECTORY/agent.config" ]; then   
     echo "Agent configuration not found..."
     echo "Writing new agent configuration file..."
-    cp config/agent.config "$CONFIGURATION_DIRECTORY"
+    sudo cp config/agent.config "$CONFIGURATION_DIRECTORY"
 else
     echo "Agent configuration file found..."
 fi
 
-if [ ! -f "$CONFIGURATION_DIRECTORY/agent.config" ]; then 
+if [ ! -f "$CONFIGURATION_DIRECTORY/schedule.config" ]; then 
     echo "Schedule configuration not found..."
     echo "Writing new schedule configuration file..."
-    cp config/schedule.config "$CONFIGURATION_DIRECTORY"
+    sudo cp config/schedule.config "$CONFIGURATION_DIRECTORY"
 else    
     echo "Schedule configuration file found..."
 fi
@@ -55,16 +56,25 @@ fi
 
 if [ ! -d "$DECODER/decoder.xml" ]; then
     echo "Decoder file not found writing decoer file..."
-    cp decoder.xml "$DECODER"
+    sudo cp decoder.xml "$DECODER"
 else    
     echo "Decoder file exists"
+fi
+
+if [ ! -d "$ROOT/rules" ]; then
+    echo "Rules directory not found..."
+    echo "Creating rules directory..."
+    echo "Rules directory is emtpty adding rules..."
+    sudo cp -rf rules "$ROOT"
+else
+    echo "Rules directory found..."
 fi
 
 #check and create rules directory and add the ossec rules
 ls -la "$ROOT/rules" > /dev/null 2>&1
 if [ ! $? = 0 ]; then
     echo "Rules directory is emtpty adding rules..."
-    cp -rf rules "$ROOT"
+    sudo cp -rf rules "$ROOT"
 else    
     echo "Rules directory not empty..."
 fi     
@@ -86,20 +96,33 @@ else
 fi
 
 # Check if necessary tools are available
-command -v g++ >/dev/null 2>&1 || { echo >&2 "g++ is required but not installed. Aborting."; exit 1; }
+command -v g++ >/dev/null 2>&1 || { echo >&2 "g++ is required but not installed. Aborting."; sudo apt install g++ -y; }
 
-PUGI_XML_GIT_URL="https://github.com/zeux/pugixml.git"
+if [ ! -d "$BUILD_DIRECTORY" ]; then
+    echo "Build directory not found..."
+    echo "Creating Build directory..."
+    mkdir -p "$BUILD_DIRECTORY"
+fi
+cd "$BUILD_DIRECTORY" 
+
+sudo apt install -y libssl-dev libboost-all-dev cmake libpcre2-dev
+
 # Check if pugixml is installed
 if pkg-config --exists pugixml; then
     echo "pugixml found."
 else
-    echo "pugixml not found. Downloading and building..."
-    git clone $PUGI_XML_GIT_URL
+    if [ ! -d "pugixml" ]; then 
+        echo "pugixml not found. Downloading and building..."
+    else    
+        sudo rm -rf pugixml
+    fi
+    git clone https://github.com/zeux/pugixml.git
     cd pugixml 
     mkdir build 
     cd build 
     cmake .. 
     make 
+    sudo make install
 
     cd ../.. 
     echo "pugixml downloaded and built successfully"
@@ -129,6 +152,7 @@ else
     cmake ..
     make
     sudo make install
+    cd ../..
 
     echo "JSONCpp downloaded and built successfully"
 fi

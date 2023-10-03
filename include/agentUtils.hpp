@@ -20,14 +20,14 @@
 #include <unistd.h>
 #include <pwd.h>
 #include <syslog.h>
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 #include <filesystem>
 #include <chrono>
 #include <thread>
-#include <amqpcpp.h>
-#include <amqpcpp/libev.h>
-#include <ev.h>
-#include <fcntl.h>
+// #include <amqpcpp.h>
+// #include <amqpcpp/libev.h>
+// #include <ev.h>
+// #include <fcntl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <openssl/bio.h>
