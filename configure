@@ -8,6 +8,8 @@ IDS="$ROOT/ids"
 CONFIGURATION_DIRECTORY="$ROOT/config/agent"
 LOG_PATH="/etc/scl/log/" 
 BUILD_DIRECTORY="/home/$USER/Builds"
+LOG_FILE="/var/log/agent.log"
+LOG_CONFIGURATION_FILE="/etc/rsyslog.d/agent.conf"
 echo "Checking Configuration directories.."
 
 #creating root directory
@@ -55,7 +57,7 @@ else
 fi
 
 if [ ! -d "$DECODER/decoder.xml" ]; then
-    echo "Decoder file not found writing decoer file..."
+    echo "Decoder file not found writing decoder file..."
     sudo cp decoder.xml "$DECODER"
 else    
     echo "Decoder file exists"
@@ -105,6 +107,7 @@ if [ ! -d "$BUILD_DIRECTORY" ]; then
 fi
 cd "$BUILD_DIRECTORY" 
 
+# sudo apt update
 sudo apt install -y libssl-dev libboost-all-dev cmake libpcre2-dev libgtest-dev
 
 # Check if pugixml is installed
@@ -152,6 +155,7 @@ else
     cmake ..
     make
     sudo make install
+    sudo ldconfig
     cd ../..
 
     echo "JSONCpp downloaded and built successfully"
@@ -193,6 +197,47 @@ if pkg-config --exists amqpcpp; then
 
         echo "libev downloaded and built successfully"
     fi
+fi
+
+log_function() {
+    local LOG_FILE="$1"
+    localLOG_CONFIGURATION_FILE="$2"
+
+    echo "Generating $LOG_FILE file..."
+    sudo touch "$LOG_FILE"
+    echo "if \$programname == 'agent' then $LOG_FILE" | sudo tee "$LOG_CONFIGURATION_FILE" > /dev/null
+    echo "& stop" | sudo tee -a "$LOG_CONFIGURATION_FILE" > /dev/null
+
+    echo "Configuration files written successfully..."
+    echo "Started writing log rotation configuration..."
+    log_rotate_function "$1"
+}
+
+log_rotate_function() {
+    # Specify the log file and rotation settings
+    ROTATION_SETTINGS="rotate 7\ndaily\nmissingok\nnotifempty\ncompress\ndelaycompress\ncreate 0640 root root"
+
+    # Create the log rotation configuration file
+    echo -e "$1 {\n\t$ROTATION_SETTINGS\n}" | sudo tee "/etc/logrotate.d/agent" > /dev/null
+
+    # Display a message indicating the log rotation setup
+    echo "Log rotation for $1 has been configured."
+
+    # Restart syslog to apply the changes
+    sudo systemctl restart rsyslog
+
+    # Restart your application service (assuming it's named agent.service)
+    sudo systemctl restart agent.service
+
+    echo "Syslog service and agent.service restarted."
+}
+
+if [ -e "/var/log/syslog" ]; then
+    echo "Syslog service found...."
+    echo "Starting creating Log Mechanism..."
+    log_function "$LOG_FILE" "$LOG_CONFIGURATION_FILE"
+else
+    echo "Syslog service not found..."
 fi
 
 echo "Configuration complete."

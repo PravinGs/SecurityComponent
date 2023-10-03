@@ -4,6 +4,7 @@
 
 int main()
 {
+    openlog("agent.service", LOG_INFO|LOG_CONS, LOG_USER);
     AgentUtils::syslog_enabled = true;
     AgentUtils::setupLogger();
     if (!AgentUtils::syslog_enabled)
@@ -17,5 +18,6 @@ int main()
     {
         AgentUtils::logfp.close();
     }
+        closelog();
     return 0;
 }

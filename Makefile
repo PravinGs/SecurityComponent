@@ -51,11 +51,15 @@ $(OBJ_DIR)/%.o: $(TEST_DIR)/%.cpp
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
 
-deploy: init stop_service copy_binary start_service 
+deploy: init copy_binary enable start_service 
+
+enable:
+	echo "enabling agent.service"
+	@sudo systemctl enable --now agent.service
 
 init:
 
-	@if [ ! systemctl is-active --quiet $(UNIT_FILE) ]; then \
+	@if [ ! -e $(UNIT_FILE) ]; then \
 		touch $(UNIT_FILE); \
 		echo "[Unit]" > $(UNIT_FILE); \
 		echo "Description=Security agent for this device." >> $(UNIT_FILE); \

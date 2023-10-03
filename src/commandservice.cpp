@@ -30,8 +30,8 @@ int Command::readCommand(const string command, const string processName)
 
 int Command::readCommand(const string command, vector<string> &logs)
 {
-    if (validateCommand(command) == FAILED)
-        return FAILED;
+    // if (validateCommand(command) == FAILED)
+    //     return FAILED;
 
     FILE *process = popen(command.c_str(), "r");
 
