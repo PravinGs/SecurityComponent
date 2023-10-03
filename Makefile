@@ -1,14 +1,17 @@
 CXX = g++
 CFLAGS = -Wall -Werror -std=c++1z -g
 INCLUDES = -Iinclude
-LFLAGS = -lamqpcpp -lpthread -ldl -lev -ljsoncpp -lz -lcurl -lssl -lcrypto -lboost_system  -lgtest -lgtest_main -lpugixml -lpcre2-8
+LFLAGS = -lpthread -ljsoncpp -lz -lcurl -lssl -lcrypto -lboost_system  -lgtest -lgtest_main -lpugixml -lpcre2-8
+
+# LFLAGS = -lamqpcpp -lpthread -ldl -lev -ljsoncpp -lz -lcurl -lssl -lcrypto -lboost_system  -lgtest -lgtest_main -lpugixml -lpcre2-8
+
 
 UNIT_FILE = /etc/systemd/system/agent.service 
 # Source files and directories
 SRC_DIR = src
-# SRCS = $(wildcard $(SRC_DIR)/*.cpp)
+SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 # SRCS := $(filter-out $(SRC_DIR)/rqueue.cpp, $(wildcard $(SRC_DIR)/*.cpp))
-SRCS := $(filter-out $(addprefix $(SRC_DIR)/, rqueue.cpp watchservice.cpp connection.cpp), $(wildcard $(SRC_DIR)/*.cpp))
+# SRCS := $(filter-out $(addprefix $(SRC_DIR)/, rqueue.cpp watchservice.cpp connection.cpp), $(wildcard $(SRC_DIR)/*.cpp))
 
 # Test source files and directories
 TEST_DIR = test

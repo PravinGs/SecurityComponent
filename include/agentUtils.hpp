@@ -10,6 +10,7 @@
 #include <fstream>
 #include <sstream>
 #include <map>
+#include <set>
 #include <unordered_map>
 #include <sys/sysinfo.h>
 #include <sys/statvfs.h>
@@ -24,10 +25,12 @@
 #include <filesystem>
 #include <chrono>
 #include <thread>
-// #include <amqpcpp.h>
-// #include <amqpcpp/libev.h>
-// #include <ev.h>
-// #include <fcntl.h>
+#if RABBITMQ
+    #include <amqpcpp.h>
+    #include <amqpcpp/libev.h>
+    #include <ev.h>
+#endif
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <openssl/bio.h>
@@ -417,6 +420,8 @@ public:
     static bool debug;
 
     static void setupLogger();
+
+    static void backupLogFile();
 
     /**
      * @brief Validate a syslog time string.

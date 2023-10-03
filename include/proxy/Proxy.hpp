@@ -3,8 +3,6 @@
 
 #include "service/configservice.hpp"
 
-int ORG_ID = 234225;
-
 /**
  * @brief Proxy Validation and Control
  *
@@ -74,7 +72,7 @@ public:
             if (AgentUtils::getHostName(hostName) == FAILED)
                 return FAILED;
 
-            json["OrgId"] = ORG_ID;
+            json["OrgId"] = 234225;
             json["AppName"] = configTable[name]["name"];
             json["Source"] = hostName;
         }
