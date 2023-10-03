@@ -51,8 +51,11 @@ $(OBJ_DIR)/%.o: $(TEST_DIR)/%.cpp
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
 
-deploy: stop_service copy_binary start_service
-	@if [ ! -e $(UNIT_FILE) ]; then \
+deploy: init stop_service copy_binary start_service 
+
+init:
+
+	@if [ ! systemctl is-active --quiet $(UNIT_FILE) ]; then \
 		touch $(UNIT_FILE); \
 		echo "[Unit]" > $(UNIT_FILE); \
 		echo "Description=Security agent for this device." >> $(UNIT_FILE); \
@@ -70,9 +73,10 @@ deploy: stop_service copy_binary start_service
 		echo "WantedBy=multi-user.target" >> $(UNIT_FILE); \
 		echo "Content written to $(UNIT_FILE)." && \
 		echo "File $(UNIT_FILE) created."; \
+		@sudo systemctl daemon-reload; \
+	else \
+		echo "Unit file $(UNIT_FILE) already exists."; \
 	fi
-	
-	@sudo systemctl daemon-reload
 
 stop_service:
 	@echo "Stopping agent service..."
@@ -80,6 +84,9 @@ stop_service:
 
 copy_binary:
 	@echo "Copying binary to root directory"
+	@if [ ! -d "/etc/scl/bin" ]; then \
+		mkdir -p /etc/scl/bin; \
+	fi
 	@sudo cp $(TARGET) /etc/scl/bin/
 
 start_service:
