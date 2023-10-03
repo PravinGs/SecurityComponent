@@ -105,7 +105,7 @@ if [ ! -d "$BUILD_DIRECTORY" ]; then
 fi
 cd "$BUILD_DIRECTORY" 
 
-sudo apt install -y libssl-dev libboost-all-dev cmake libpcre2-dev
+sudo apt install -y libssl-dev libboost-all-dev cmake libpcre2-dev libgtest-dev
 
 # Check if pugixml is installed
 if pkg-config --exists pugixml; then
