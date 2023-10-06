@@ -2,10 +2,10 @@
 #define MCONTROLLER_HPP
 #pragma once
 
-#include "service/monitor.hpp"
-#include "service/configservice.hpp"
-#include "proxy/Proxy.hpp"
-#include "service/curlservice.hpp"
+#include "service/monitor_service.hpp"
+#include "service/config_service.hpp"
+#include "proxy/proxy.hpp"
+#include "service/curl_service.hpp"
 
 /**
  * @brief Monitor Controller

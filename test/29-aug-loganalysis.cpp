@@ -1,7 +1,7 @@
-#include "service/loganalysis.hpp"
+#include "service/loganalysis_service.hpp"
 #include <gtest/gtest.h>
-#include "service/configservice.hpp"
-#include "agentUtils.hpp"
+#include "service/config_service.hpp"
+#include "common.hpp"
 
 struct LogAnalysisTest : public testing::Test
 {

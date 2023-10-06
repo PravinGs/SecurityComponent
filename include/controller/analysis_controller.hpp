@@ -1,7 +1,7 @@
 #pragma once
 
 #include "agentUtils.hpp"
-#include "service/loganalysis.hpp"
+#include "service/loganalysis_service.hpp"
 
 /**
  * @brief Analysis Controller

@@ -2,10 +2,10 @@
 #define LOGCONTROLLET_HPP
 #pragma once
 
-#include "service/logservice.hpp"
-#include "service/configservice.hpp"
-#include "proxy/Proxy.hpp"
-#include "service/curlservice.hpp"
+#include "service/logcollector_service.hpp"
+#include "service/config_service.hpp"
+#include "proxy/proxy.hpp"
+#include "service/curl_service.hpp"
 
 /**
  * @brief Log Controller

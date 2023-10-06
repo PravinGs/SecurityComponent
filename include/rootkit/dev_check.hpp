@@ -12,7 +12,7 @@
         ".zone_reg_door",
 #endif
 */
-#include "agentUtils.hpp"
+#include "common.hpp"
 
 class DevCheck
 {
@@ -36,8 +36,9 @@ private:
         ""
     };
 public:
-    int read_dev_file(const string file_name)
+    int read_dev_file(const string file_name, vector<string> & reports)
     {
+        int result = SUCCESS;
         std::filesystem::path file_path(file_name);
         if (!std::filesystem::exists(file_path)) 
         {
@@ -46,19 +47,20 @@ public:
         }
         if (std::filesystem::is_directory(file_path)) 
         {
-            return read_dev_dir(file_name);
+            return read_dev_dir(file_name, reports);
         }
         else if (std::filesystem::is_regular_file(file_path)) 
         {
+            result = CRITICAL;
             string error = file_name;
             std::string op_msg = "File '" + error + "' present on /dev. Possible hidden file.";
             AgentUtils::writeLog(op_msg, CRITICAL);
             devErrors++;
         }
-        return 0;
+        return result;
     }
 
-    int read_dev_dir(const string dir_name)
+    int read_dev_dir(const string dir_name, vector<string> & reports)
     {
         
         if (dir_name.empty() || dir_name.length() > PATH_MAX) 
@@ -90,12 +92,15 @@ public:
             }
 
             // Found a non-ignored entry in the directory, so process it
-            read_dev_file(entry.path().string());
+            int response = read_dev_file(entry.path().string(), reports);
+            if (response == CRITICAL){
+                reports.push_back(entry.path().string());
+            }
         }
         return (0);
     }
 
-    int check()
+    int check(vector<string> & reports)
     {
         const char *basedir = "/";
         char file_path[OS_SIZE_1024 + 1];
@@ -106,7 +111,7 @@ public:
 
         snprintf(file_path, OS_SIZE_1024, "%s/dev", basedir);
 
-        read_dev_dir(file_path);
+        read_dev_dir(file_path, reports);
         if (devErrors == 0)
         {
             string opMessage = "No problem detected on the /dev directory. Analyzed " + std::to_string(devTotal) + " files";

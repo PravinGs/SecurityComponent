@@ -2,7 +2,7 @@
 #define PORT_CHECK
 #pragma once
 
-#include "agentUtils.hpp"
+#include "common.hpp"
 
 #define NETSTAT "netstat -an | grep \"^%s\" | " \
                 "grep \"[^0-9]%d \" > /dev/null 2>&1"

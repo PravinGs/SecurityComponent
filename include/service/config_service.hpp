@@ -2,7 +2,7 @@
 #define CONFIGSERVICE_HPP
 #pragma once
 
-#include "agentUtils.hpp"
+#include "common.hpp"
 
 /**
  * @brief Configuration Management Class

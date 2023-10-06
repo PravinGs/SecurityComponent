@@ -1,7 +1,7 @@
 #ifndef LOGPROXY_HPP
 #define LOGPROXY_HPP
 
-#include "service/configservice.hpp"
+#include "service/config_service.hpp"
 
 /**
  * @brief Proxy Validation and Control

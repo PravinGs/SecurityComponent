@@ -3,7 +3,7 @@
 #pragma once
 
 
-#include "agentUtils.hpp"
+#include "common.hpp"
 
 /*
     1.identify the files attendance.
@@ -22,7 +22,7 @@ class SysCheck
     
     public:
 
-        int check(const string sourceFile)
+        int check(const string sourceFile, vector<string> & reports)
         {
             total = 0;
             errors = 0;
@@ -72,6 +72,7 @@ class SysCheck
 
                 if (std::filesystem::exists(filePath))
                 {
+                    reports.push_back(name+","+file);
                     AgentUtils::writeLog("Rootkit " + name + " detected by the presence of file " + file, CRITICAL);
                     errors++;
                 }

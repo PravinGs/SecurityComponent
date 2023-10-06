@@ -16,7 +16,7 @@ echo "Checking Configuration directories.."
 if [ ! -d "$ROOT" ]; then
     echo "Root directory not found..."
     echo "Creating root directory..."
-    mkdir -p "$ROOT"
+    sudo mkdir -p "$ROOT"
 else
     echo "Root directory found..."
 fi
@@ -24,7 +24,7 @@ fi
 #check and create configuration directory
 if [ ! -d "$CONFIGURATION_DIRECTORY" ]; then
     echo "Building Configuration directories..."
-    mkdir -p "$CONFIGURATION_DIRECTORY" 
+    sudo mkdir -p "$CONFIGURATION_DIRECTORY" 
     echo "Directory created: $CONFIGURATION_DIRECTORY"
 else
     echo "Directory already exists: $CONFIGURATION_DIRECTORY"
@@ -51,7 +51,7 @@ fi
 if [ ! -d "$DECODER" ]; then
     echo "Decoder directory not found..."
     echo "Creating decoder directory..."
-    mkdir -p "$DECODER"
+    sudo mkdir -p "$DECODER"
 else
     echo "Decoder directory found..."
 fi
@@ -73,18 +73,30 @@ else
 fi
 
 #check and create rules directory and add the ossec rules
-ls -la "$ROOT/rules" > /dev/null 2>&1
-if [ ! $? = 0 ]; then
-    echo "Rules directory is emtpty adding rules..."
-    sudo cp -rf rules "$ROOT"
-else    
-    echo "Rules directory not empty..."
-fi     
+if [ "$(find "$ROOT/rules" -type f)" ]; then
+    echo "Rules directory contains rule files."
+else
+    echo "Rules directory is empty or doesn't contain regular files. Adding rules..."
+    sudo cp -rf rules/* "$ROOT/rules/"
+fi
+    
+if [ ! -d "$ROOT/ids" ]; then
+    echo "IDS database not found..."
+    echo "Creating new IDS directory..."
+    sudo mkdir -p "$ROOT/ids"
+fi
+
+if [ "$(find "$ROOT/ids" -type f)" ]; then
+    echo "Ids directory is contains db files..."
+else
+    echo "Ids directory is empty, adding rules..."
+    sudo cp -rf ids "$ROOT"
+fi
 
 if [ ! -d "$LOG_PATH" ]; then
     echo "Log directory not found..."
     echo "Creating new directoy:  $LOG_PATH"
-    mkdir -p "$LOG_PATH" 
+    sudo mkdir -p "$LOG_PATH" 
 else
     echo "Found log directory: $LOG_PATH"
 fi
@@ -92,10 +104,11 @@ fi
 if [ ! -f "$LOG_PATH/agent.log" ]; then
     echo "Log file not found..."
     echo "Log file created under: $LOG_PATH"
-    touch "$LOG_PATH/agent.log" 
+    sudo touch "$LOG_PATH/agent.log" 
 else   
     echo "Log file found:  $LOG_PATH/agent.log"
 fi
+
 
 # Check if necessary tools are available
 command -v g++ >/dev/null 2>&1 || { echo >&2 "g++ is required but not installed. Aborting."; sudo apt install g++ -y; }
@@ -201,7 +214,7 @@ fi
 
 log_function() {
     local LOG_FILE="$1"
-    localLOG_CONFIGURATION_FILE="$2"
+    local LOG_CONFIGURATION_FILE="$2"    
 
     echo "Generating $LOG_FILE file..."
     sudo touch "$LOG_FILE"
@@ -211,6 +224,7 @@ log_function() {
     echo "Configuration files written successfully..."
     echo "Started writing log rotation configuration..."
     log_rotate_function "$1"
+
 }
 
 log_rotate_function() {
@@ -232,12 +246,16 @@ log_rotate_function() {
     echo "Syslog service and agent.service restarted."
 }
 
-if [ -e "/var/log/syslog" ]; then
-    echo "Syslog service found...."
-    echo "Starting creating Log Mechanism..."
-    log_function "$LOG_FILE" "$LOG_CONFIGURATION_FILE"
-else
-    echo "Syslog service not found..."
+if [ -e "$LOG_FILE" ]; then
+    echo "$LOG_FILE already configured..."
+else 
+    if [ -e "/var/log/syslog" ]; then
+        echo "Syslog service found...."
+        echo "Starting creating Log Mechanism..."
+        log_function "$LOG_FILE" "$LOG_CONFIGURATION_FILE"
+    else
+        echo "Syslog service not found..."
+    fi
 fi
 
 echo "Configuration complete."

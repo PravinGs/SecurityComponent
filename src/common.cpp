@@ -1,4 +1,4 @@
-#include "agentUtils.hpp"
+#include "common.hpp"
 
 int OS::CurrentDay = 0;
 int OS::CurrentMonth = 0;
@@ -157,6 +157,10 @@ void AgentUtils::writeLog(const string& log)
 
 void AgentUtils::writeLog(const string& log, int logLevel)
 {
+    #if NO_DEBUG && logLevel == DEBUG
+        return;
+    #endif
+
     string time = getCurrentTime();
     string line;
     switch (logLevel)

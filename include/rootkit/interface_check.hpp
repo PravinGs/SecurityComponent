@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "agentUtils.hpp"
+#include "common.hpp"
 
 #define PROMISCOUS "ifconfig %s | grep PROMISC > /dev/null 2>&1"
 
@@ -37,7 +37,7 @@ public:
         return (0);
     }
     
-    int check()
+    int check(vector<string> & reports)
     {
         AgentUtils::writeLog("Checking Network Interfaces starting", INFO);
         fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -87,6 +87,7 @@ public:
                          " mode, but ifconfig is not showing it"
                          "(probably trojaned).", _ifr.ifr_name);
                 }
+                reports.push_back(_ifr.ifr_name);
                 AgentUtils::writeLog(op_msg, FAILED);
                 errors++;
             }
@@ -94,7 +95,7 @@ public:
         close(fd);
 
         if (errors == 0) {
-            AgentUtils::writeLog("No problem detected on ifconfig/ifs. Analyzed " + total + " interfaces", INFO);
+            AgentUtils::writeLog("No problem detected on ifconfig/ifs. Analyzed " + std::to_string(total) + " interfaces", INFO);
         }
 
         return SUCCESS;

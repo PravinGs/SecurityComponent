@@ -2,7 +2,7 @@
 #define LINMONITOR_HPP
 #pragma once
 
-#include "agentUtils.hpp"
+#include "common.hpp"
 
 #define MAX_NICE_VALUE 20
 #define CLK_TCK 100

@@ -1,7 +1,7 @@
 #ifndef UDP_QUEUE
 #define UDP_QUEUE
 
-#include "agentUtils.hpp"
+#include "common.hpp"
 
 #define MAX_UDP_MSG_SIZE 65507
 

@@ -1,8 +1,8 @@
 #ifndef FIRMWARE_CONTROLLER
 #define FIRMWARE_CONTROLLER
 
-#include "service/fwservice.hpp"
-#include "proxy/Proxy.hpp"
+#include "service/patch_service.hpp"
+#include "proxy/proxy.hpp"
 
 #define DOWNLOAD_WAITING_TIME 5
 

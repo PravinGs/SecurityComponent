@@ -3,7 +3,7 @@
 #pragma once
 
 
-#include "agentUtils.hpp"
+#include "common.hpp"
 
 class TrojenCheck
 {
@@ -39,7 +39,7 @@ private:
 
 public:
 
-    int check(const string filePath)
+    int check(const string filePath, vector<string> & reports)
     {
         fstream fp(filePath, std::ios::in);
         string line;
@@ -69,6 +69,7 @@ public:
                 if (patternMatching(path, pattern))
                 {
                     detected = 1;
+                    reports.push_back(path+","+pattern);
                     string errorMessage = "Trojaned version of file " + path + " detected. Signature used: " + pattern;
                     AgentUtils::writeLog(errorMessage, CRITICAL);
                 }

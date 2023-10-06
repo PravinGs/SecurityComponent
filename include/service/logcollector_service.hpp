@@ -2,8 +2,8 @@
 #define LOGSERVICE_HPP
 #pragma once
 
-#include "agentUtils.hpp"
-#include "service/configservice.hpp"
+#include "common.hpp"
+#include "service/config_service.hpp"
 #include "udp.hpp"
 
 typedef struct standard_log_attrs standard_log_attrs;

@@ -1,4 +1,4 @@
-#include "service/loganalysis.hpp"
+#include "service/loganalysis_service.hpp"
 
 const string AFTER_PARENT = "after_parent";
 const string AFTER_PREMATCH = "after_prematch";

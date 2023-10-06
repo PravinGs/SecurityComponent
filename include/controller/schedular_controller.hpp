@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include "controller/logController.hpp"
-#include "controller/monitorController.hpp"
-#include "controller/firmwareController.hpp"
-#include "service/configservice.hpp"
+#include "controller/log_controller.hpp"
+#include "controller/monitor_controller.hpp"
+#include "controller/patch_controller.hpp"
+#include "service/config_service.hpp"
 
 /**
  * @brief Schedule Manager

@@ -1,6 +1,7 @@
-#include "service/commandservice.hpp"
+#include "service/command_service.hpp"
 
 vector<string> whitelist = {"netstat -tan | grep LISTEN | egrep -v '(127.0.0.1|::1)' | sort", "df -P", "last -n 5"};
+
 
 int Command::validateCommand(const string command)
 {
@@ -16,19 +17,19 @@ int Command::validateCommand(const string command)
     return result;
 }
 
-int Command::readCommand(const string command, const string processName)
-{
-    int result = SUCCESS;
-    vector<string> logs;
-    result = readCommand(command, logs);
-    if (result == FAILED)
-    {
-        return FAILED;
-    }
-    return SUCCESS;
-}
+// int Command::readCommand(const string command, const string processName)
+// {
+//     int result = SUCCESS;
+//     string logs;
+//     result = readCommand(command, logs);
+//     if (result == FAILED)
+//     {
+//         return FAILED;
+//     }
+//     return SUCCESS;
+// }
 
-int Command::readCommand(const string command, vector<string> &logs)
+int Command::readCommand(const string& command, vector<string> &logs)
 {
     // if (validateCommand(command) == FAILED)
     //     return FAILED;

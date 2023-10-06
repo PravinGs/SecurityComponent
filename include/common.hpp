@@ -31,13 +31,15 @@
     #include <ev.h>
 #endif
 #include <fcntl.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <openssl/bio.h>
 #include <csignal>
 #include <filesystem>
 #include <curl/curl.h>
-#include <boost/asio.hpp>
+// #include <boost/asio.hpp>
 #include <zlib.h>
 #include <regex>
 #include <pugixml.hpp>

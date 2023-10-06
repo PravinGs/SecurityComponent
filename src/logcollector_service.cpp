@@ -1,4 +1,4 @@
-#include "service/logservice.hpp"
+#include "service/logcollector_service.hpp"
 
 string toLowerCase(string &str)
 {

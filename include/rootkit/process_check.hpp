@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "agentUtils.hpp"
+#include "common.hpp"
 
 class ProcessCheck
 {

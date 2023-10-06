@@ -1,6 +1,6 @@
 #ifndef COMMAND_SERVICE
 #define COMMAND_SERVICE
-#include "agentUtils.hpp"
+#include "common.hpp"
 
 /**
  * @cond HIDE_THIS_CLASS
@@ -9,7 +9,7 @@
 class ICommand
 {
 public:
-    virtual int readCommand(const string command, const string processName) = 0;
+    virtual int readCommand(const string& command, vector<string> & processName) = 0;
     virtual ~ICommand() {}
 };
 /**
@@ -26,8 +26,9 @@ private:
     int validateCommand(const string command);
 
 public:
-    int readCommand(const string command, const string processName);
-    int readCommand(const string command, vector<string> &logs);
+    Command(){}
+    // int readCommand(const string command, const string processName);
+    int readCommand(const string& command, vector<string> &logs);
 };
 /**
  * @endcond

@@ -1,9 +1,9 @@
 #ifndef MAINCONTROLLER_HPP
 #define MAINCONTROLLER_HPP
 
-#include "controller/scheduleController.hpp"
+#include "controller/schedular_controller.hpp"
 // #include "controller/watchFileController.hpp"
-#include "service/configservice.hpp"
+#include "service/config_service.hpp"
 
 /**
  * @brief Main Controller

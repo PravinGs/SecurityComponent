@@ -1,7 +1,7 @@
 #ifndef FWSERVICE_HPP
 #define FWSERVICE_HPP
 
-#include "agentUtils.hpp"
+#include "common.hpp"
 
 #define MAX_RETRY_COUNT 3
 #define TIME_OUT_ERROR 12
