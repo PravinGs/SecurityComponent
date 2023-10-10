@@ -9,7 +9,7 @@ const string BOOTTIME   = "uptime";
 const string COMM       = "/comm";
 const string IO         = "/io";
 
-int CpuTable::_getUpTime()
+int cpu_table::_getUpTime()
 {
     string path = PROC + BOOTTIME;
     fstream file;
@@ -25,7 +25,7 @@ int CpuTable::_getUpTime()
     return stoi(word);
 }
 
-double MonitorService::_calculateCpuTime(CpuTable &table)
+double monitor_service::calculate_cpu_time(cpu_table &table)
 {
     double utime = table.getUTime() / CLK_TCK;
     double stime = table.getSTime() / CLK_TCK;
@@ -36,17 +36,17 @@ double MonitorService::_calculateCpuTime(CpuTable &table)
     return cpuRunTime;
 }
 
-vector<int> MonitorService::_getProcessIds() // I don't see it could be optimized
+vector<int> monitor_service::get_processes_id() // I don't see it could be optimized
 {
     int pid = -1;
-    vector<int> processIds;
+    vector<int> process_ids;
     DIR *dir = opendir(PROC.c_str());
     dirent *entry = NULL;
 
     if (dir == NULL)
     {
-        AgentUtils::writeLog(INVALID_PATH + PROC, FAILED);
-        return processIds;
+        agent_utils::write_log(INVALID_PATH + PROC, FAILED);
+        return process_ids;
     }
     while ((entry = readdir(dir)) != NULL)
     {
@@ -55,20 +55,20 @@ vector<int> MonitorService::_getProcessIds() // I don't see it could be optimize
             try
             {
                 pid = std::stoi(entry->d_name);
-                processIds.push_back(pid);
+                process_ids.push_back(pid);
             }
             catch (const std::exception &e)
             {
             }
         }
     }
-    return processIds;
+    return process_ids;
 }
 
-string MonitorService::_getProcesNameById(const unsigned int &processId)
+string monitor_service::get_proces_name_id(const unsigned int &process_id)
 {
     string processName = "";
-    string path = PROC + std::to_string(processId) + COMM;
+    string path = PROC + std::to_string(process_id) + COMM;
     std::ifstream file(path);
 
     if (file.is_open())
@@ -79,17 +79,17 @@ string MonitorService::_getProcesNameById(const unsigned int &processId)
     return processName;
 }
 
-int MonitorService::_saveLog(const vector<process_data> &logs)
+int monitor_service::save_monitor_log(const vector<process_data> &logs)
 {
     string hostName;
-    string path = OS::getJsonWritePath("process");
-    AgentUtils::getHostName(hostName);
-    sys_properties properties = getSystemProperties();
+    string path = os::get_json_write_path("process");
+    agent_utils::get_hostname(hostName);
+    sys_properties properties = get_system_properties();
     Json::Value props;
     props["CpuMemory"] = properties.cpu;
     props["RamMeomry"] = properties.ram;
     props["DiskMemory"] = properties.disk;
-    properties = getAvailedSystemProperties();
+    properties = get_availed_system_properties();
     Json::Value availedProps;
     availedProps["CpuMemory"] = properties.cpu;
     availedProps["RamMeomry"] = properties.ram;
@@ -99,20 +99,20 @@ int MonitorService::_saveLog(const vector<process_data> &logs)
     Json::StreamWriterBuilder writerBuilder;
     if (!file)
     {
-        AgentUtils::writeLog(FWRITE_FAILED + path, FAILED);
+        agent_utils::write_log(FWRITE_FAILED + path, FAILED);
         return FAILED;
     }
     
     jsonData["DeviceTotalSpace"] = props;
     jsonData["DeviceUsedSpace"] = availedProps;
-    jsonData["TimeGenerated"] = AgentUtils::getCurrentTime();
+    jsonData["TimeGenerated"] = agent_utils::get_current_time();
     jsonData["Source"] = hostName;
     jsonData["OrgId"] = 12345;
     jsonData["ProcessObjects"] = Json::Value(Json::arrayValue);
     for (process_data data : logs)
     {
         Json::Value jsonLog;
-        jsonLog["processId"] = std::stoi(data.processId);
+        jsonLog["process_id"] = std::stoi(data.process_id);
         jsonLog["process_name"] = data.processName;
         jsonLog["cpu_usage"] = std::stod(data.cpuTime);
         jsonLog["ram_usage"] = std::stod(data.memUsage);
@@ -124,16 +124,16 @@ int MonitorService::_saveLog(const vector<process_data> &logs)
     writer->write(jsonData, &file);
 
     file.close();
-    AgentUtils::writeLog(FWRITE_SUCCESS + path, SUCCESS);
+    agent_utils::write_log(FWRITE_SUCCESS + path, SUCCESS);
     return SUCCESS;
 }
 
-double MonitorService::_getMemoryUsage(const unsigned int &processId)
+double monitor_service::get_memory_usage(const unsigned int &process_id)
 {
     unsigned long size, resident, shared, text, lib, data, dt;
     double memoryPercentage = -1.0;
     string line;
-    string path = PROC + std::to_string(processId) + MEMORYDATA;
+    string path = PROC + std::to_string(process_id) + MEMORYDATA;
 
     long pageSize = sysconf(_SC_PAGESIZE);
     long totalMemory = sysconf(_SC_PHYS_PAGES) * pageSize;
@@ -141,7 +141,7 @@ double MonitorService::_getMemoryUsage(const unsigned int &processId)
     std::ifstream file(path);
     if (!file)
     {
-        AgentUtils::writeLog(FILE_ERROR + path, FAILED);
+        agent_utils::write_log(FILE_ERROR + path, FAILED);
         return memoryPercentage;
     }
     std::getline(file, line);
@@ -149,7 +149,7 @@ double MonitorService::_getMemoryUsage(const unsigned int &processId)
 
     if (!(iss >> size >> resident >> shared >> text >> lib >> data >> dt))
     {
-        AgentUtils::writeLog("Failed to parse memory statistics.", FAILED);
+        agent_utils::write_log("Failed to parse memory statistics.", FAILED);
         return memoryPercentage;
     }
 
@@ -158,9 +158,9 @@ double MonitorService::_getMemoryUsage(const unsigned int &processId)
     return memoryPercentage;
 }
 
-CpuTable MonitorService::_readProcessingTimeById(const unsigned int &processId)
+cpu_table monitor_service::read_processing_time_id(const unsigned int &process_id)
 {
-    string path = PROC + std::to_string(processId) + CPUDATA;
+    string path = PROC + std::to_string(process_id) + CPUDATA;
     vector<string> stats;
     string line, word;
     fstream file;
@@ -168,8 +168,8 @@ CpuTable MonitorService::_readProcessingTimeById(const unsigned int &processId)
     file.open(path, std::ios::in);
     if (!(file.is_open()))
     {
-        CpuTable emptyTable;
-        AgentUtils::writeLog(FILE_ERROR + path, FAILED);
+        cpu_table emptyTable;
+        agent_utils::write_log(FILE_ERROR + path, FAILED);
         return emptyTable;
     }
     std::getline(file, line);
@@ -179,24 +179,24 @@ CpuTable MonitorService::_readProcessingTimeById(const unsigned int &processId)
         stats.push_back(word);
     }
     file.close();
-    CpuTable table{
+    cpu_table table{
         stoi(stats.at(UITME)), stoi(stats.at(STIME)),
         stoi(stats.at(CUTIME)), stoi(stats.at(CSTIME)),
         stoi(stats.at(NICETIME)), stoi(stats.at(START_TIME))};
     return table;
 }
 
-double MonitorService::_getDiskUsage(const unsigned int &processId)
+double monitor_service::get_disk_usage(const unsigned int &process_id)
 {
     double diskUsage = -1.0;
     int i = 0;
     string line;
-    string path = PROC + std::to_string(processId) + IO;
+    string path = PROC + std::to_string(process_id) + IO;
     std::fstream file(path, std::ios::in);
 
     if (!file.is_open())
     {
-        AgentUtils::writeLog("Process does not exist with this id : " + std::to_string(processId), FAILED);
+        agent_utils::write_log("Process does not exist with this id : " + std::to_string(process_id), FAILED);
         return diskUsage;
     }
     diskUsage = 0.0;
@@ -225,9 +225,9 @@ double MonitorService::_getDiskUsage(const unsigned int &processId)
     return diskUsage;
 }
 
-sys_properties MonitorService::getSystemProperties()
+sys_properties monitor_service::get_system_properties()
 {
-    AgentUtils::writeLog("Request for collecting system properties started...", INFO);
+    agent_utils::write_log("Request for collecting system properties started...", INFO);
     struct sys_properties properties;
     struct statvfs buffer;
     if (statvfs("/", &buffer) == 0)
@@ -273,9 +273,9 @@ sys_properties MonitorService::getSystemProperties()
     return properties;
 }
 
-sys_properties MonitorService::getAvailedSystemProperties()
+sys_properties monitor_service::get_availed_system_properties()
 {
-    AgentUtils::writeLog("Request for collecting availed system properties started..", INFO);
+    agent_utils::write_log("Request for collecting availed system properties started..", INFO);
     struct sys_properties properties;
     struct statvfs buffer;
     if (statvfs("/", &buffer) == 0)
@@ -325,47 +325,47 @@ sys_properties MonitorService::getAvailedSystemProperties()
     return properties;
 }
 
-process_data MonitorService::createProcessData(int processId)
+process_data monitor_service::create_process_data(int process_id)
 {
-    CpuTable table = _readProcessingTimeById(processId);
-    string processName = _getProcesNameById(processId);
-    double cpuTime = _calculateCpuTime(table);
-    double memUsage = _getMemoryUsage(processId);
-    double diskUsage = _getDiskUsage(processId);
+    cpu_table table = read_processing_time_id(process_id);
+    string processName = get_proces_name_id(process_id);
+    double cpuTime = calculate_cpu_time(table);
+    double memUsage = get_memory_usage(process_id);
+    double diskUsage = get_disk_usage(process_id);
     process_data processData{
-        std::to_string(processId), processName,
+        std::to_string(process_id), processName,
         std::to_string(cpuTime), std::to_string(memUsage),
         std::to_string(diskUsage)};
     // data.push_back(processData);
     return processData;
 }
 
-int MonitorService::getData()
+int monitor_service::get_monitor_data()
 {
-    AgentUtils::writeLog("Request for collecting process details", DEBUG);
+    agent_utils::write_log("Request for collecting process details", DEBUG);
     vector<process_data> parent;
-    vector<int> processIds = _getProcessIds();
-    for (int i = 0; i < (int)processIds.size(); i++)
+    vector<int> process_ids = get_processes_id();
+    for (int i = 0; i < (int)process_ids.size(); i++)
     {
-        int p_id = processIds[i];
+        int p_id = process_ids[i];
         auto asyncTask = [&, p_id]()
         {
             // vector<process_data> localData;
-            process_data localData = createProcessData(p_id);
+            process_data localData = create_process_data(p_id);
             std::lock_guard<std::mutex> lock(p_mutex);
             parent.push_back(localData);
             // parent.insert(parent.end(), localData.begin(), localData.end());
         };
-        _asyncTasks.push_back(std::async(std::launch::async, asyncTask));
+        _async_tasks.push_back(std::async(std::launch::async, asyncTask));
     }
 
     // Wait for async tasks to complete
-    for (auto &task : _asyncTasks)
+    for (auto &task : _async_tasks)
     {
         task.wait();
     }
-    AgentUtils::writeLog("Process information collected", DEBUG);
-    return _saveLog(parent);
+    agent_utils::write_log("Process information collected", DEBUG);
+    return save_monitor_log(parent);
 }
 
-MonitorService::~MonitorService() {}
+monitor_service::~monitor_service() {}

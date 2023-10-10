@@ -7,7 +7,7 @@
 #define NETSTAT "netstat -an | grep \"^%s\" | " \
                 "grep \"[^0-9]%d \" > /dev/null 2>&1"
 
-class PortCheck
+class port_check
 {
     private:
         int errors;
@@ -27,7 +27,7 @@ class PortCheck
             } else if (protocol == IPPROTO_UDP) {
                 snprintf(nt, OS_SIZE_1024, NETSTAT, "udp", port);
             } else {
-                AgentUtils::writeLog("Netstat error (wrong protocol)", FAILED);
+                agent_utils::write_log("Netstat error (wrong protocol)", FAILED);
                 return (0);
             }
 
@@ -138,7 +138,7 @@ class PortCheck
                                 "version of netstat.", i,
                                 (protocol == IPPROTO_UDP) ? "udp" : "tcp");
 
-                        AgentUtils::writeLog(op_msg, CRITICAL);
+                        agent_utils::write_log(op_msg, CRITICAL);
                     }
                 }
 
@@ -149,7 +149,7 @@ class PortCheck
                             "hidden. It maybe a false-positive or "
                             "something really bad is going on.",
                             (protocol == IPPROTO_UDP) ? "udp" : "tcp" );
-                    AgentUtils::writeLog(op_msg, CRITICAL);
+                    agent_utils::write_log(op_msg, CRITICAL);
                     return;
                 }
             }
@@ -176,7 +176,7 @@ class PortCheck
                 snprintf(op_msg, OS_SIZE_1024, "No kernel-level rootkit hiding any port."
                         "\n      Netstat is acting correctly."
                         " Analyzed %d ports.", total);
-                AgentUtils::writeLog(op_msg, SUCCESS);
+                agent_utils::write_log(op_msg, SUCCESS);
             }
 
             for (int port = 0; port < 65535; port++)

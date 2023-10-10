@@ -16,7 +16,7 @@ int Queue::_parseJSON(string jsonFile, string &json)
     std::ifstream file(jsonFile);
     if (!file.is_open())
     {
-        AgentUtils::writeLog(FILE_ERROR + jsonFile, FAILED);
+        agent_utils::write_log(FILE_ERROR + jsonFile, FAILED);
         return FAILED;
     }
 
@@ -25,7 +25,7 @@ int Queue::_parseJSON(string jsonFile, string &json)
     std::istringstream jsonStream(jsonString);
     if (!Json::parseFromStream(builder, jsonStream, &root, &parseErrors))
     {
-        AgentUtils::writeLog("Failed to parse the JSON file: " + jsonFile, FAILED);
+        agent_utils::write_log("Failed to parse the JSON file: " + jsonFile, FAILED);
         return FAILED;
     }
 
@@ -40,7 +40,7 @@ int Queue::send(string jsonFile, string queue)
         return FAILED;
     if (_checkConnection() == FAILED)
     {
-        AgentUtils::writeLog("RabbitMQ connecetion not alive", FAILED);
+        agent_utils::write_log("RabbitMQ connecetion not alive", FAILED);
         return FAILED;
     }
     return _publish(jsonString, queue);
@@ -75,7 +75,7 @@ int Queue::_publish(const string jsonString, string queue)
     catch (exception &e)
     {
         string error = e.what();
-        AgentUtils::writeLog(error, FAILED);
+        agent_utils::write_log(error, FAILED);
     }
     return result;
 }

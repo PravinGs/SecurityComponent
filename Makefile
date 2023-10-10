@@ -1,6 +1,6 @@
 CXX = g++
 CFLAGS = -Wall -Werror -std=c++1z -g
-INCLUDES = -Iinclude
+INCLUDES = -Iinclude -I/usr/include/jsoncpp
 LFLAGS = -lpthread -ljsoncpp -lz -lcurl -lssl -lcrypto -lgtest -lgtest_main -lpugixml -lpcre2-8
 
 # LFLAGS = -lamqpcpp -lpthread -ldl -lev -ljsoncpp -lz -lcurl -lssl -lcrypto -lboost_system  -lgtest -lgtest_main -lpugixml -lpcre2-8

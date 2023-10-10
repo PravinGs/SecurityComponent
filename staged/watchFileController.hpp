@@ -1,7 +1,7 @@
 #ifndef WATCHFILE_HPP
 #define WATCHFILE_HPP
 
-#include "agentUtils.hpp"
+#include "agent_utils.hpp"
 #include "service/watchservice.hpp"
 
 class WatchController

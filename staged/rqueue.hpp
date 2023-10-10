@@ -2,7 +2,7 @@
 #define RQUEUE_H
 #pragma once
 
-#include "agentUtils.hpp"
+#include "agent_utils.hpp"
 
 /**
  * @cond HIDE_THIS_CLASS
@@ -31,24 +31,24 @@ public:
     {
         if (SSL_CTX_load_verify_locations(SSL_get_SSL_CTX(ssl), caKey.c_str(), nullptr) != 1)
         {
-            AgentUtils::writeLog("Failed to load CA certificates: " + caKey, FAILED);
+            agent_utils::write_log("Failed to load CA certificates: " + caKey, FAILED);
             return false;
         }
         if (SSL_use_certificate_file(ssl, clientCert.c_str(), SSL_FILETYPE_PEM) != 1)
         {
-            AgentUtils::writeLog("Failed to load client certificate: " + clientCert, FAILED);
+            agent_utils::write_log("Failed to load client certificate: " + clientCert, FAILED);
             return false;
         }
 
         if (SSL_use_PrivateKey_file(ssl, clientKey.c_str(), SSL_FILETYPE_PEM) != 1)
         {
-            AgentUtils::writeLog("Failed to load client private key: " + clientKey, FAILED);
+            agent_utils::write_log("Failed to load client private key: " + clientKey, FAILED);
             return false;
         }
 
         if (SSL_check_private_key(ssl) != 1)
         {
-            AgentUtils::writeLog("Private key does not match the certificate: ", FAILED);
+            agent_utils::write_log("Private key does not match the certificate: ", FAILED);
             return false;
         }
 
@@ -62,7 +62,7 @@ public:
 
     void onError(AMQP::TcpState *state, const char *message, bool connected)
     {
-        AgentUtils::writeLog(message, FAILED);
+        agent_utils::write_log(message, FAILED);
     }
 };
 

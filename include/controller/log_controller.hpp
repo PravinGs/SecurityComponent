@@ -1,4 +1,4 @@
-#ifndef LOGCONTROLLER_HPP
+#ifndef log_controller_HPP
 #define LOGCONTROLLET_HPP
 #pragma once
 
@@ -10,35 +10,38 @@
 /**
  * @brief Log Controller
  *
- * The `LogController` class serves as the controller layer for managing and reading logs from system and application logs.
+ * The `log_controller
+ *` class serves as the controller layer for managing and reading logs from system and application logs.
  * It provides methods for initiating log reading operations and managing log-related tasks.
  */
-class LogController
+class log_controller
 {
 private:
-    ILog* _logService = nullptr; /**< A private pointer to the ILog service. */
-    Config _configService; /**< A private instance of IniConfig for configuration management. */
-    vector<std::future<int>> _asyncSysTasks; /**< A private vector of futures for asynchronous system tasks. */
-    vector<std::future<int>> _asyncAppTasks; /**< A private vector of futures for asynchronous application tasks. */
-    Proxy _proxy; /**< A private instance of the Proxy class. */
-    const string sysLogName = "syslog"; /**< A private constant string for system log name. */
+    ILog *_log_service = nullptr;                 /**< A private pointer to the ILog service. */
+    Config _config_service;                       /**< A private instance of IniConfig for configuration management. */
+    vector<std::future<int>> _async_syslog_tasks; /**< A private vector of futures for asynchronous system tasks. */
+    vector<std::future<int>> _async_applog_tasks; /**< A private vector of futures for asynchronous application tasks. */
+    Proxy _proxy;                                 /**< A private instance of the Proxy class. */
+    const string SYSLOG = "syslog";               /**< A private constant string for system log name. */
 
 public:
     /**
-     * @brief Construct a new LogController object.
+     * @brief Construct a new log_controller
+     * object.
      *
-     * This constructor initializes the `LogController` and creates an instance of the `LogService`
+     * This constructor initializes the `log_controller
+     *` and creates an instance of the `LogService`
      * to be used for log management.
      */
-    LogController() : _logService(new LogService()) {}
+    log_controller() : _log_service(new log_service()) {}
 
     /**
      * @brief System Log Manager
      *
-     * This function reads configured log files from the `configTable` and asynchronously invokes the `getSysLog` function
+     * This function reads configured log files from the `config_table` and asynchronously invokes the `get_syslog` function
      * for each configured file. It manages the logging process and returns a result code.
      *
-     * @param[in] configTable A map containing configuration data for log files.
+     * @param[in] config_table A map containing configuration data for log files.
      *                       The map should be structured as follows:
      *                       - The keys are log file identifiers.
      *                       - The values are maps containing log configuration settings.
@@ -46,96 +49,99 @@ public:
      *         - SUCCESS: The logging process was successful for all configured files.
      *         - FAILED: The logging process encountered errors for one or more files.
      *
-     * @see getSysLog
+     * @see get_syslog
      */
-    int sysLogManager(map<string, map<string, string>> &configTable)
+    int syslog_manager(map<string, map<string, string>> &config_table)
     {
-        int result = SUCCESS;
-        vector<string> syslogFiles = _configService.toVector(configTable["syslog"]["paths"], ',');
+        vector<string> syslogFiles = _config_service.to_vector(config_table["syslog"]["paths"], ',');
 
         for (const string &file : syslogFiles)
         {
-            string appName;
+            string app_name;
             if (file.size() == 0)
                 continue;
+
             size_t start = file.find_last_of('/');
             size_t end = file.find_first_of('.');
+
             if (start != std::string::npos && end != std::string::npos)
             {
-                appName = file.substr(start + 1, end - start - 1);
+                app_name = file.substr(start + 1, end - start - 1);
             }
             else if (start != std::string::npos && end == std::string::npos)
             {
-                appName = file.substr(start + 1);
+                app_name = file.substr(start + 1);
             }
             else
             {
                 break;
             }
-            auto asyncTask = [&, file, appName]() -> int
+            auto asyncTask = [&, file, app_name]() -> int
             {
-                return getSysLog(configTable, file, appName);
+                return get_syslog(config_table, file, app_name);
             };
-            _asyncSysTasks.push_back(std::async(std::launch::async, asyncTask));
+            _async_syslog_tasks.push_back(std::async(std::launch::async, asyncTask));
         }
 
-        for (auto &asyncTask : _asyncSysTasks)
+        for (auto &async_task : _async_syslog_tasks)
         {
-            result = asyncTask.get();
+            async_task.get();
         }
 
-        return result;
+        return SUCCESS;
     }
 
     /**
      * @brief Get System Log
      *
-     * This function performs necessary validations for a log file specified by `logName` in the `configTable`. It reads
-     * log data from the file located at `readPath` and processes it as needed.
-     * 
-     * After validating, it invokes the `getSysLog` function from the `_logService` instance to perform
+     * This function performs necessary validations for a log file specified by `log_name` in the `config_table`. It reads
+     * log data from the file located at `read_path` and processes it as needed.
+     *
+     * After validating, it invokes the `get_syslog` function from the `_log_service` instance to perform
      * the actual log collection. Finally, it sends the collected log data to the cloud for further processing.
      *
-     * @param[in] configTable A map containing configuration data for log files.
+     * @param[in] config_table A map containing configuration data for log files.
      *                       The map should be structured as follows:
      *                       - The keys are log file identifiers.
      *                       - The values are maps containing log configuration settings.
-     * @param[in] readPath The path to the log file to be read.
-     * @param[in] logName The identifier of the log file to be processed.
+     * @param[in] read_path The path to the log file to be read.
+     * @param[in] log_name The identifier of the log file to be processed.
      * @return An integer result code:
      *         - SUCCESS: The log file was successfully validated, read, and processed.
      *         - FAILED: The validation or processing of the log file encountered errors.
      */
-    int getSysLog(map<string, map<string, string>> &configTable, const string &readPath, const string &logName)
+    int get_syslog(map<string, map<string, string>> &config_table, const string &read_path, const string &log_name)
     {
         int result;
-        AgentUtils::writeLog("Reading " + logName + " starting...", INFO);
+        agent_utils::write_log("Reading " + log_name + " starting...", INFO);
         Json::Value json;
         char remote;
-        const string postUrl = configTable["cloud"]["log_url"];
-        const string name = configTable["cloud"]["form_name"];
-        string previousTime = _configService.trim(_proxy.getLastLogWrittenTime(logName, readPath));
-        vector<string> names = _configService.toVector(configTable[sysLogName]["columns"], ',');
-        vector<string> levels = _configService.toVector(configTable[sysLogName]["level"], ',');
-        result = _proxy.isValidLogConfig(configTable, json, sysLogName, remote, previousTime);
+        const string post_url = config_table["cloud"]["log_url"];
+        const string name = config_table["cloud"]["form_name"];
+        string last_read_time = _config_service.trim(_proxy.getLastLogWrittenTime(log_name, read_path));
+        vector<string> attributes = _config_service.to_vector(config_table[SYSLOG]["columns"], ',');
+        vector<string> log_levels = _config_service.to_vector(config_table[SYSLOG]["level"], ',');
+
+        result = _proxy.isValidLogConfig(config_table, json, SYSLOG, remote, last_read_time);
+
         if (result == FAILED)
             return result;
 
-        json["AppName"] = logName;
-        result = _logService->getSysLog(logName, json, names, readPath, previousTime, levels, remote);
-        if (result == FAILED)
-            return result;
-        AgentUtils::updateLogWrittenTime(logName, previousTime);
+        json["app_name"] = log_name;
+        result = _log_service->get_syslog(log_name, json, attributes, read_path, last_read_time, log_levels, remote);
+        if (result == SUCCESS)
+            agent_utils::update_log_written_time(log_name, last_read_time);
+
         return result;
     }
 
     /**
      * @brief Application Log Manager
      *
-     * This function reads configured log files from the `configTable` and asynchronously invokes the `getAppLog` function
+     * This function reads configured log files from the `config_table` and asynchronously invokes the `get_applog` function
      * for each configured file. It manages the logging process and returns a result code.
      *
-     * @param[in] configTable A map containing configuration data for log files.
+     * @param[in] config_table A map containing configuration data for log files.
      *                       The map should be structured as follows:
      *                       - The keys are log file identifiers.
      *                       - The values are maps containing log configuration settings.
@@ -143,90 +149,90 @@ public:
      *         - SUCCESS: The logging process was successful for all configured files.
      *         - FAILED: The logging process encountered errors for one or more files.
      *
-     * @see getAppLog
+     * @see get_applog
      */
-    int appLogManager(map<string, map<string, string>> &configTable)
+    int applog_manager(map<string, map<string, string>> &config_table)
     {
-        int result = SUCCESS;
-        vector<string> apps = _configService.toVector(configTable["applog"]["list"], ',');
+        vector<string> apps = _config_service.to_vector(config_table["applog"]["list"], ',');
 
         for (string app : apps)
         {
-            
-            auto asyncTask = [&, app]() -> int 
+
+            auto asyncTask = [&, app]() -> int
             {
-                return getAppLog(configTable, app);
-            };
+                return get_applog(config_table, app);
+            }; 
 
-            _asyncAppTasks.push_back(std::async(std::launch::async, asyncTask));
+            _async_applog_tasks.push_back(std::async(std::launch::async, asyncTask));
         }
 
-        for (auto &asyncTask : _asyncAppTasks)
+        for (auto &asyncTask : _async_applog_tasks)
         {
-            result = asyncTask.get();
+            asyncTask.get();
         }
-        return result;
+        return SUCCESS;
     }
 
     /**
      * @brief Get Application Log
      *
-     * This function performs necessary validations for a log file specified by `logName` in the `configTable`. It reads
-     * log data from the file located at `readPath` and processes it as needed.
+     * This function performs necessary validations for a log file specified by `log_name` in the `config_table`. It reads
+     * log data from the file located at `read_path` and processes it as needed.
      *
-     * After validating, it invokes the `getSysLog` function from the `_logService` instance to perform
+     * After validating, it invokes the `get_syslog` function from the `_log_service` instance to perform
      * the actual log collection. Finally, it sends the collected log data to the cloud for further processing.
-     * 
-     * @param[in] configTable A map containing configuration data for log files.
+     *
+     * @param[in] config_table A map containing configuration data for log files.
      *                       The map should be structured as follows:
      *                       - The keys are log file identifiers.
      *                       - The values are maps containing log configuration settings.
-     * @param[in] logName The identifier of the log file to be processed.
+     * @param[in] log_name The identifier of the log file to be processed.
      * @return An integer result code:
      *         - SUCCESS: The log file was successfully validated, read, and processed.
      *         - FAILED: The validation or processing of the log file encountered errors.
      */
-    int getAppLog(map<string, map<string, string>> &configTable, const string &logName)
+    int get_applog(map<string, map<string, string>> &config_table, const string &log_name)
     {
-        AgentUtils::writeLog("Reading " + logName + " log starting...", INFO);
-        long postResult;
+        agent_utils::write_log("Reading " + log_name + " log starting...", DEBUG);
+        long post_result = 0L;
         Json::Value json;
         char sep = ' ';
-        const string writePath = configTable[logName]["write_path"];
-        const string readDir = configTable[logName]["log_directory"];
-        const string postUrl = configTable["cloud"]["monitor_url"];
-        const string attributeName = configTable["cloud"]["form_name"];
-        vector<string> names = _configService.toVector(configTable[logName]["columns"], ',');
-        vector<string> levels = _configService.toVector(configTable[logName]["level"], ',');
-        string previousTime = _configService.trim(_proxy.getLastLogWrittenTime(configTable["cloud"]["name"], readDir));
+        const string write_path = config_table[log_name]["write_path"];
+        const string read_path = config_table[log_name]["log_directory"];
+        const string post_url = config_table["cloud"]["monitor_url"];
+        const string form_name = config_table["cloud"]["form_name"];
+        vector<string> attributes = _config_service.to_vector(config_table[log_name]["columns"], ',');
+        vector<string> log_levels = _config_service.to_vector(config_table[log_name]["level"], ',');
+        string last_read_time = _config_service.trim(_proxy.getLastLogWrittenTime(config_table["cloud"]["name"], read_path));
 
-        if (_proxy.isValidLogConfig(configTable, json, logName, sep, previousTime) == FAILED)
+        if (_proxy.isValidLogConfig(config_table, json, log_name, sep, last_read_time) == FAILED)
             return FAILED;
 
-        if (_logService->getAppLog(json, names, readDir, writePath, previousTime, levels, sep) == FAILED)
+        if (_log_service->get_applog(json, attributes, read_path, write_path, last_read_time, log_levels, sep) == FAILED)
             return FAILED;
 
-        postResult = CurlHandler::post(postUrl, attributeName, writePath);
+        post_result = curl_handler::post(post_url, form_name, write_path);
 
-        if (postResult == POST_SUCCESS)
+        if (post_result == POST_SUCCESS)
         {
-            AgentUtils::updateLogWrittenTime(configTable[logName]["last_time"], previousTime);
+            agent_utils::update_log_written_time(config_table[log_name]["last_time"], last_read_time);
+            _config_service.clean_file(write_path);
         }
 
-        _configService.cleanFile(writePath);
-
-        return postResult == POST_SUCCESS ? SUCCESS : FAILED;
+        return (post_result == POST_SUCCESS) ? SUCCESS : FAILED;
     }
 
     /**
-     * @brief Destructor for LogController.
+     * @brief Destructor for log_controller
+     *.
      *
-     * The destructor performs cleanup tasks for the `LogController` class, which may include
-     * releasing resources and deallocating memory, such as deleting the `_logService` instance.
+     * The destructor performs cleanup tasks for the `log_controller
+     *` class, which may include
+     * releasing resources and deallocating memory, such as deleting the `_log_service` instance.
      */
-    virtual ~LogController()
+    virtual ~log_controller()
     {
-        delete _logService;
+        delete _log_service;
     }
 };
 

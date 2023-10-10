@@ -1,7 +1,7 @@
 // // #include "service/configservice.hpp"
 // #include <iostream>
 // #include <gtest/gtest.h>
-// #include "agentUtils.hpp"
+// #include "agent_utils.hpp"
 
 
 // struct IniConfigTest : public testing::Test
@@ -63,10 +63,10 @@
 //     EXPECT_FALSE(result == true);
 // }
 
-// // TEST_F(IniConfigTest, toVector)
+// // TEST_F(IniConfigTest, to_vector)
 // // {
 
-// //     vector<string> result = config->toVector(columns,sep);
+// //     vector<string> result = config->to_vector(columns,sep);
 // //     EXPECT_FALSE(result == true);
 // // }
 // // TEST (Parent, Child) /*Independent test case format*/

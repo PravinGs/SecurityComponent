@@ -1,7 +1,7 @@
 #ifndef CONNECTION_HPP
 #define CONNNECTION_HPP
 
-#include "agentUtils.hpp"
+#include "agent_utils.hpp"
 
 class TlsConnection
 {

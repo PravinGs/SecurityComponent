@@ -14,7 +14,7 @@
 class Proxy
 {
 private:
-    Config _configService; /**< A private instance of IniConfig for configuration management. */
+    Config _config_service; /**< A private instance of IniConfig for configuration management. */
 public:
     Proxy() = default;
 
@@ -22,12 +22,12 @@ public:
      * @brief Validate Log Configuration
      *
      * The `isValidLogConfig` function validates the configuration for syslog, application log, or similar log types.
-     * It uses the `configTable` parameter to access and validate the log configuration settings. The `json` parameter
+     * It uses the `config_table` parameter to access and validate the log configuration settings. The `json` parameter
      * is utilized to set common information about the logs. The `name` parameter specifies the log's identifier.
      * The `remote` parameter is used to identify whether a remote connection is configured or not.
      * The `prevTime` parameter is used to obtain the last read time of the log file.
      *
-     * @param[in] configTable A map containing log configuration data.
+     * @param[in] config_table A map containing log configuration data.
      *                       The map should be structured to include settings for the specified log type.
      * @param[in, out] json A JSON object used to set common log information.
      * @param[in] name The identifier of the log being validated.
@@ -38,16 +38,16 @@ public:
      *         - FAILED: The validation encountered errors or the configuration is invalid.
      */
 
-    int isValidLogConfig(map<string, map<string, string>> &configTable, Json::Value &json, const string& name, char &remote, const string& prevTime)
+    int isValidLogConfig(map<string, map<string, string>> &config_table, Json::Value &json, const string& name, char &remote, const string& prevTime)
     {
         int result = SUCCESS;
         try
         {
             string hostName = "unknown";
 
-            vector<string> names = _configService.toVector(configTable[name]["columns"], ',');
+            vector<string> names = _config_service.to_vector(config_table[name]["columns"], ',');
 
-            if (name != "syslog" && OS::isDirExist(configTable[name]["log_directory"]))
+            if (name != "syslog" && os::is_dir_exist(config_table[name]["log_directory"]))
             {
                 throw std::invalid_argument("Invalid log directory for " + name);
             };
@@ -57,30 +57,30 @@ public:
                 throw std::invalid_argument("Log attributes not configured for " + name);
             }
 
-            if (configTable[name]["remote"].length() == 1)
+            if (config_table[name]["remote"].length() == 1)
             {
-                remote = (configTable[name]["remote"][0] == '1') ? 'y' : 'n';
+                remote = (config_table[name]["remote"][0] == '1') ? 'y' : 'n';
             }
 
-            // else if (configTable[name]["remote"].length() > 1) { throw std::invalid_argument("Delimeter not configured Properly"); }
+            // else if (config_table[name]["remote"].length() > 1) { throw std::invalid_argument("Delimeter not configured Properly"); }
 
             if (prevTime.length() == 0)
             {
                 throw std::invalid_argument("No Specific time mentioned to collect log");
             }
 
-            if (AgentUtils::getHostName(hostName) == FAILED)
+            if (agent_utils::get_hostname(hostName) == FAILED)
                 return FAILED;
 
             json["OrgId"] = 234225;
-            json["AppName"] = configTable[name]["name"];
+            json["AppName"] = config_table[name]["name"];
             json["Source"] = hostName;
         }
         catch (exception &e)
         {
             result = FAILED;
             string error = e.what();
-            AgentUtils::writeLog(error, FAILED);
+            agent_utils::write_log(error, FAILED);
         }
         return result;
     }
@@ -98,10 +98,10 @@ public:
      */
     string getLastLogWrittenTime(const string& name, const string& path)
     {
-        string nonEmtPath = OS::isEmpty(path);
+        string nonEmtPath = os::is_empty(path);
         if (nonEmtPath.size() == 0)
         {
-            AgentUtils::writeLog("Invalid file " + path, FAILED);
+            agent_utils::write_log("Invalid file " + path, FAILED);
             return "";
         }
         string filePath = BASE_CONFIG_DIR;
@@ -119,24 +119,24 @@ public:
         }
         else
         {
-            AgentUtils::writeLog("Log reading directory not exists, creating new directory");
+            agent_utils::write_log("Log reading directory not exists, creating new directory");
             string dirPath = BASE_CONFIG_DIR;
-            if (OS::isDirExist(dirPath) == FAILED)
-                OS::createDir(dirPath);
+            if (os::is_dir_exist(dirPath) == FAILED)
+                os::create_dir(dirPath);
             dirPath += BASE_CONFIG_TMP;
-            if (OS::isDirExist(dirPath) == FAILED)
-                OS::createDir(dirPath);
+            if (os::is_dir_exist(dirPath) == FAILED)
+                os::create_dir(dirPath);
         }
         std::ofstream nf(filePath);
         if (!nf)
         {
-            AgentUtils::writeLog("Failed to create file check it's permission", FAILED);
+            agent_utils::write_log("Failed to create file check it's permission", FAILED);
             return lastTime;
         }
         fstream fp(nonEmtPath, std::ios::in | std::ios::binary);
         if (!fp)
         {
-            AgentUtils::writeLog("Invalid Log file " + path, FAILED);
+            agent_utils::write_log("Invalid Log file " + path, FAILED);
             nf.close();
             return lastTime;
         }
@@ -145,7 +145,7 @@ public:
         if (name == "syslog" || name == "auth")
         {
             string timestamp = line.substr(0, 15);
-            AgentUtils::convertTimeFormat(timestamp, lastTime);
+            agent_utils::convert_time_format(timestamp, lastTime);
         }
         else if (name == "dpkg")
         {

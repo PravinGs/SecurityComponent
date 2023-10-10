@@ -5,7 +5,7 @@
 
 #include "common.hpp"
 
-class TrojenCheck
+class trojan_check
 {
 private:
     vector<string> rootFolders = {"bin", "sbin", "usr/bin", "usr/sbin"};
@@ -19,7 +19,7 @@ private:
 
         if (!fp.is_open())
         {
-            AgentUtils::writeLog(FILE_ERROR + file, FAILED);
+            agent_utils::write_log(FILE_ERROR + file, FAILED);
             return false;
         }
         char buffer[OS_SIZE_1024];
@@ -30,7 +30,7 @@ private:
         }
         if (fp.bad())
         {
-            AgentUtils::writeLog(FREAD_FAILED + file, FAILED);
+            agent_utils::write_log(FREAD_FAILED + file, FAILED);
             return false;
         }
         std::regex regex(pattern);
@@ -45,7 +45,7 @@ public:
         string line;
         if (!fp)
         {
-            AgentUtils::writeLog(FILE_ERROR + filePath, FAILED);
+            agent_utils::write_log(FILE_ERROR + filePath, FAILED);
             return FAILED;
         }
         detected = 0;
@@ -58,8 +58,8 @@ public:
             int start = 0;
             int mid = (int)line.find_first_of('!');
             int end = (int)line.find_last_of('!');
-            string searchBinary = AgentUtils::trim(line.substr(start, mid));
-            string pattern = AgentUtils::trim(line.substr(mid + 1, (end - mid - 1)));
+            string searchBinary = agent_utils::trim(line.substr(start, mid));
+            string pattern = agent_utils::trim(line.substr(mid + 1, (end - mid - 1)));
             total++;
             for (string folder : rootFolders)
             {
@@ -71,7 +71,7 @@ public:
                     detected = 1;
                     reports.push_back(path+","+pattern);
                     string errorMessage = "Trojaned version of file " + path + " detected. Signature used: " + pattern;
-                    AgentUtils::writeLog(errorMessage, CRITICAL);
+                    agent_utils::write_log(errorMessage, CRITICAL);
                 }
             }
         }
@@ -79,7 +79,7 @@ public:
         if (detected == 0)
         {
             string errorMessage = "No binaries with any trojan detected. Analyzed " + std::to_string(total) + " files.";
-            AgentUtils::writeLog(errorMessage);
+            agent_utils::write_log(errorMessage);
         }
         return SUCCESS;
     }

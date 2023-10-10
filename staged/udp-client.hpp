@@ -1,7 +1,7 @@
 #ifndef UDP_QUEUE
 #define UDP_QUEUE
 
-#include "agentUtils.hpp"
+#include "agent_utils.hpp"
 
 class UdpClient
 {
@@ -16,10 +16,10 @@ public:
         clientSocket = socket(AF_INET, SOCK_DGRAM, 0);
         if (clientSocket == -1)
         {
-            AgentUtils::writeLog("Socket creation failed", FAILED);
+            agent_utils::write_log("Socket creation failed", FAILED);
             return FAILED;
         }
-        AgentUtils::writeLog("Socket created for client");
+        agent_utils::write_log("Socket created for client");
         memset(&serverAddress, 0, sizeof(serverAddress));
         serverAddress.sin_family = AF_INET;
         serverAddress.sin_port = htons(UDP_PORT);
@@ -37,7 +37,7 @@ public:
         ssize_t sendBytes = sendto(clientSocket, message.c_str(), message.size(), MSG_CONFIRM, (const struct sockaddr *)&serverAddress, sizeof(serverAddress));
         if (sendBytes == -1)
         {
-            AgentUtils::writeLog("Error sending data.", FAILED);
+            agent_utils::write_log("Error sending data.", FAILED);
             close(clientSocket);
             return FAILED;
         }

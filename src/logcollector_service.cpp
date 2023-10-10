@@ -1,27 +1,25 @@
 #include "service/logcollector_service.hpp"
 
-string toLowerCase(string &str)
+string to_lower_case(string &str)
 {
-    string lowerCaseString;
-    for (char c : str)
+    string lower_case_string;
+    for (char ch : str)
     {
-        lowerCaseString += std::tolower(c);
+        lower_case_string += std::tolower(ch);
     }
-    return lowerCaseString;
+    return lower_case_string;
 }
 
-int LogService::_saveAsJSON(Json::Value &json, const string &path, const vector<string> &logs, const vector<string> &columns, const char &delimeter)
+int log_service::save_json(Json::Value &json, const string &path, const vector<string> &logs, const vector<string> &columns, const char &delimeter)
 {
-    string jsonPath = path;
-    if (verifyJsonPath(jsonPath) == FAILED)
-    {
-        return FAILED;
-    }
-    fstream file(jsonPath, std::ios::out);
-    Json::StreamWriterBuilder writerBuilder;
+    string json_write_path = path;
+    if (get_json_write_path(json_write_path) == FAILED) return FAILED;
+
+    fstream file(json_write_path, std::ios::out);
+    Json::StreamWriterBuilder writer_builder;
     if (!file)
     {
-        AgentUtils::writeLog(FWRITE_FAILED + jsonPath, FAILED);
+        agent_utils::write_log(FWRITE_FAILED + json_write_path, FAILED);
         return FAILED;
     }
 
@@ -40,41 +38,41 @@ int LogService::_saveAsJSON(Json::Value &json, const string &path, const vector<
 
         json["LogObjects"].append(jsonLog);
     }
-    std::unique_ptr<Json::StreamWriter> writer(writerBuilder.newStreamWriter());
+    std::unique_ptr<Json::StreamWriter> writer(writer_builder.newStreamWriter());
     writer->write(json, &file);
     file.close();
-    AgentUtils::writeLog(FWRITE_SUCCESS + jsonPath, SUCCESS);
+    agent_utils::write_log(FWRITE_SUCCESS + json_write_path, SUCCESS);
     return SUCCESS;
 }
 
-void LogService::categorize(string &line, const vector<string> &levels)
+void log_service::categorize(string &line, const vector<string> &log_levels)
 {
-    int maxLevel = 0;
+    int max_level = 0;
     string network = "network";
     string ufw = "ufw";
-    string lowerLine = line;
-    for (string level : levels)
+    string lowercase_line = line;
+    for (string level : log_levels)
     {
-        std::transform(lowerLine.begin(), lowerLine.end(), lowerLine.begin(), [](unsigned char c)
+        std::transform(lowercase_line.begin(), lowercase_line.end(), lowercase_line.begin(), [](unsigned char c)
                        { return std::tolower(c); });
         std::transform(level.begin(), level.end(), level.begin(), [](unsigned char c)
                        { return std::tolower(c); });
-        if (lowerLine.find(level) != std::string::npos)
+        if (lowercase_line.find(level) != std::string::npos)
         {
-            if (_logLevel[toLowerCase(level)] > maxLevel)
+            if (_logLevel[to_lower_case(level)] > max_level)
             {
-                maxLevel = _logLevel[toLowerCase(level)];
+                max_level = _logLevel[to_lower_case(level)];
             }
         }
     }
 
-    line += "|" + std::to_string(maxLevel);
+    line += "|" + std::to_string(max_level);
 
-    if (lowerLine.find(network) != std::string::npos)
+    if (lowercase_line.find(network) != std::string::npos)
     {
         line += "|" + network;
     }
-    else if (lowerLine.find(ufw) != std::string::npos)
+    else if (lowercase_line.find(ufw) != std::string::npos)
     {
         line += "|" + ufw;
     }
@@ -86,17 +84,17 @@ void LogService::categorize(string &line, const vector<string> &levels)
     return;
 }
 
-bool filterLog(string &line, vector<string> levels)
+bool filter_log(string &line, vector<string> log_levels)
 {
     bool result = false;
-    string lowerLine = line;
-    for (string level : levels)
+    string lowercase_line = line;
+    for (string level : log_levels)
     {
-        std::transform(lowerLine.begin(), lowerLine.end(), lowerLine.begin(), [](unsigned char c)
+        std::transform(lowercase_line.begin(), lowercase_line.end(), lowercase_line.begin(), [](unsigned char c)
                        { return std::tolower(c); });
         std::transform(level.begin(), level.end(), level.begin(), [](unsigned char c)
                        { return std::tolower(c); });
-        if (lowerLine.find(level) != std::string::npos)
+        if (lowercase_line.find(level) != std::string::npos)
         {
             result = true;
         }
@@ -104,17 +102,16 @@ bool filterLog(string &line, vector<string> levels)
     return result;
 }
 
-int LogService::_readSysLog(const string &path, vector<string> &logs, const char &delimeter, const string &previousTime, bool &flag, const vector<string> &levels, string &nextReadingTime)
+int log_service::read_syslog_file(const string &path, vector<string> &logs, const char &delimeter, const string &last_read_time, bool &flag, const vector<string> &log_levels, string &next_reading_time)
 {
-    int result = SUCCESS;
     const string sep = "|";
-    string formattedTime, line;
-    std::time_t lastWrittenTime = AgentUtils::convertStrToTime(previousTime);
+    string formatted_time, line;
+    std::time_t last_written_time = agent_utils::format_string_time(last_read_time);
 
     fstream file(path, std::ios::in);
     if (!file)
     {
-        AgentUtils::writeLog(FILE_ERROR + path, FAILED);
+        agent_utils::write_log(FILE_ERROR + path, FAILED);
         return FAILED;
     }
 
@@ -123,14 +120,14 @@ int LogService::_readSysLog(const string &path, vector<string> &logs, const char
         if (line.empty())
             continue;
         string currentTime = line.substr(0, 15);                         /* Extract the date time format fromt the line */
-        AgentUtils::convertTimeFormat(currentTime, formattedTime);       /* This func convert to standard time format */
-        std::time_t cTime = AgentUtils::convertStrToTime(formattedTime); /* Convert string time to time_t format for comparision between time_t objects */
-        if (cTime < lastWrittenTime)
+        agent_utils::convert_time_format(currentTime, formatted_time);       /* This func convert to standard time format */
+        std::time_t cTime = agent_utils::format_string_time(formatted_time); /* Convert string time to time_t format for comparision between time_t objects */
+        if (cTime < last_written_time)
         {
             continue;
         }
         string log, token;
-        log += formattedTime;
+        log += formatted_time;
         std::stringstream stream(line.substr(16));
         int index = 0;
         while (std::getline(stream, token, delimeter) && index < 3)
@@ -143,7 +140,7 @@ int LogService::_readSysLog(const string &path, vector<string> &logs, const char
                     message += ' ' + token;
                 }
                 log += sep + message;
-                categorize(log, levels);
+                categorize(log, log_levels);
                 index = 4;
                 continue;
             }
@@ -152,12 +149,12 @@ int LogService::_readSysLog(const string &path, vector<string> &logs, const char
         }
 
         logs.push_back(log);
-        std::time_t tempTime = AgentUtils::convertStrToTime(nextReadingTime);
+        std::time_t tempTime = agent_utils::format_string_time(next_reading_time);
         if (cTime > tempTime)
         {
-            nextReadingTime = formattedTime;
+            next_reading_time = formatted_time;
         }
-        if (cTime == lastWrittenTime)
+        if (cTime == last_written_time)
         {
             flag = false;
         }
@@ -167,83 +164,85 @@ int LogService::_readSysLog(const string &path, vector<string> &logs, const char
 
     if (flag)
     {
-        _readSysLog(path + ".1", logs, delimeter, previousTime, flag, levels, nextReadingTime);
+        read_syslog_file(path + ".1", logs, delimeter, last_read_time, flag, log_levels, next_reading_time);
     }
-    return result;
+    return SUCCESS;
 }
 
-int LogService::getSysLog(const string &appName, Json::Value &json, const vector<string> &names, const string &path, string &previousTime, const vector<string> &levels, const char &remote)
+int log_service::get_syslog(const string &app_name, Json::Value &json, const vector<string> &log_attributes, const string &path, string &last_read_time, const vector<string> &log_levels, const char &remote)
 {
-    string logDir = BASE_LOG_DIR;
-    logDir += BASE_LOG_ARCHIVE;
+    bool flag = true;
+    int result = SUCCESS;
     const char delimeter = ' ';
     vector<string> logs;
-    string nextReadingTime = previousTime;
-    bool flag = true;
-    int result;
 
-    if (strcmp(appName.c_str(), "syslog") == 0 || strcmp(appName.c_str(), "auth") == 0)
+    string log_dir = BASE_LOG_DIR;
+    log_dir += BASE_LOG_ARCHIVE;
+    string next_reading_time = last_read_time;
+    
+
+    if (strcmp(app_name.c_str(), "syslog") == 0 || strcmp(app_name.c_str(), "auth") == 0)
     {
 
         if (remote == 'y' || remote == 'Y')
         {
             UdpQueue queue;
-            result = readRemoteSysLog(queue, logs);
+            result = read_remote_syslog(queue, logs);
             queue.stop();
         }
         else
         {
-            result = _readSysLog(path, logs, delimeter, previousTime, flag, levels, nextReadingTime);
+            result = read_syslog_file(path, logs, delimeter, last_read_time, flag, log_levels, next_reading_time);
         }
         if (logs.size() == 0 || result == FAILED)
         {
-            AgentUtils::writeLog("Read 0 logs for" + appName);
+            agent_utils::write_log("Read 0 logs for" + app_name);
         }
         else
         {
-            previousTime = nextReadingTime;
-            AgentUtils::writeLog(appName + " logs collected", INFO);
-            if (_configService.toVector(logs[0], '|').size() < names.size())
+            last_read_time = next_reading_time;
+            agent_utils::write_log(app_name + " logs collected", INFO);
+            if (_config_service.to_vector(logs[0], '|').size() < log_attributes.size())
             {
-                AgentUtils::writeLog("Invalid Log Attributes configured for " + appName, FAILED);
+                agent_utils::write_log("Invalid Log Attributes configured for " + app_name, FAILED);
                 result = FAILED;
             }
             else
             {
-                string fileName = nextReadingTime + "-" + appName;
-                result = _saveAsJSON(json, fileName, logs, names, '|');
+                string fileName = next_reading_time + "-" + app_name;
+                result = save_json(json, fileName, logs, log_attributes, '|');
             }
 
-            AgentUtils::writeLog("Storing " + appName + " logs started", INFO);
-            if ((result = saveToLocal(logs, appName)) == SUCCESS)
+            agent_utils::write_log("Storing " + app_name + " logs started", INFO);
+            if ((result = save_read_logs(logs, app_name)) == SUCCESS)
             {
 
-                AgentUtils::writeLog(FWRITE_SUCCESS + logDir, INFO);
+                agent_utils::write_log(FWRITE_SUCCESS + log_dir, INFO);
             }
             else
             {
-                AgentUtils::writeLog(FWRITE_FAILED + logDir, FAILED);
+                agent_utils::write_log(FWRITE_FAILED + log_dir, FAILED);
             }
         }
     }
-    else if (strcmp(appName.c_str(), "dpkg") == 0)
+    else if (strcmp(app_name.c_str(), "dpkg") == 0)
     {
-        result = readDpkgLog(path, logs, previousTime, nextReadingTime, flag);
-        previousTime = nextReadingTime;
+        result = read_dpkg_logfile(path, logs, last_read_time, next_reading_time, flag);
+        last_read_time = next_reading_time;
         if (logs.size() == 0)
         {
-            AgentUtils::writeLog("Read 0 logs for " + appName);
+            agent_utils::write_log("Read 0 logs for " + app_name);
         }
         else
         {
-            AgentUtils::writeLog("Storing " + appName + " logs started", INFO);
-            if ((result = saveToLocal(logs, appName)) == SUCCESS)
+            agent_utils::write_log("Storing " + app_name + " logs started", INFO);
+            if ((result = save_read_logs(logs, app_name)) == SUCCESS)
             {
-                AgentUtils::writeLog(FWRITE_SUCCESS + logDir, INFO);
+                agent_utils::write_log(FWRITE_SUCCESS + log_dir, INFO);
             }
             else
             {
-                AgentUtils::writeLog(FWRITE_FAILED + logDir, FAILED);
+                agent_utils::write_log(FWRITE_FAILED + log_dir, FAILED);
             }
         }
     }
@@ -251,13 +250,13 @@ int LogService::getSysLog(const string &appName, Json::Value &json, const vector
     return result;
 }
 
-int LogService::getAppLog(Json::Value &json, const vector<string> &names, const string &readDir, const string &writePath, string &previousTime, const vector<string> &levels, const char &delimeter)
+int log_service::get_applog(Json::Value &json, const vector<string> &log_attributes, const string &readDir, const string &writePath, string &last_read_time, const vector<string> &log_levels, const char &delimeter)
 {
     vector<string> logs;
     bool flag = true;
-    vector<std::filesystem::directory_entry> files = _getDirFiles(readDir);
+    vector<std::filesystem::directory_entry> files = get_dir_files(readDir);
     int index = (int)files.size() - 1;
-    string nextReadingTime = previousTime;
+    string next_reading_time = last_read_time;
     while (flag && index >= 0)
     {
         string path = files[index].path();
@@ -267,32 +266,32 @@ int LogService::getAppLog(Json::Value &json, const vector<string> &names, const 
             continue;
         }
 
-        if (_readAppLog(path, logs, delimeter, previousTime, flag, levels, nextReadingTime) == FAILED || logs.size() == 0)
+        if (read_applog_file(path, logs, delimeter, last_read_time, flag, log_levels, next_reading_time) == FAILED || logs.size() == 0)
         {
             return FAILED;
         }
-        AgentUtils::writeLog("Applog collected from " + path, INFO);
+        agent_utils::write_log("Applog collected from " + path, INFO);
         index--;
     }
 
-    if (_configService.toVector(logs[0], delimeter).size() < names.size())
+    if (_config_service.to_vector(logs[0], delimeter).size() < log_attributes.size())
     {
-        AgentUtils::writeLog("Invalid Log Attributes configured for Applog", FAILED);
+        agent_utils::write_log("Invalid Log Attributes configured for Applog", FAILED);
         return FAILED;
     }
-    previousTime = nextReadingTime;
-    return _saveAsJSON(json, writePath, logs, names, delimeter);
+    last_read_time = next_reading_time;
+    return save_json(json, writePath, logs, log_attributes, delimeter);
 }
 
-int LogService::_readAppLog(const string &path, vector<string> &logs, const char &delimeter, const string &previousTime, bool &flag, const vector<string> &levels, string &nextReadingTime)
+int log_service::read_applog_file(const string &path, vector<string> &logs, const char &delimeter, const string &last_read_time, bool &flag, const vector<string> &log_levels, string &next_reading_time)
 {
     fstream file(path);
     string line;
-    std::time_t lastWrittenTime = AgentUtils::convertStrToTime(previousTime);
-    bool isCriticalLog = false;
+    std::time_t last_written_time = agent_utils::format_string_time(last_read_time);
+    bool is_critical_log = false;
     if (!file)
     {
-        AgentUtils::writeLog(FILE_ERROR + path, FAILED);
+        agent_utils::write_log(FILE_ERROR + path, FAILED);
         return FAILED;
     }
 
@@ -304,23 +303,23 @@ int LogService::_readAppLog(const string &path, vector<string> &logs, const char
         }
 
         string currentTime = line.substr(0, 19);                       /* Extract the date time format fromt the line */
-        std::time_t cTime = AgentUtils::convertStrToTime(currentTime); /* Convert string time to time_t format for comparision between time_t objects */
-        if (cTime < lastWrittenTime)
+        std::time_t cTime = agent_utils::format_string_time(currentTime); /* Convert string time to time_t format for comparision between time_t objects */
+        if (cTime < last_written_time)
         {
             continue;
         }
 
-        isCriticalLog = filterLog(line, levels);
-        if (isCriticalLog)
+        is_critical_log = filter_log(line, log_levels);
+        if (is_critical_log)
         {
             logs.push_back(line);
         }
-        std::time_t tempTime = AgentUtils::convertStrToTime(nextReadingTime);
+        std::time_t tempTime = agent_utils::format_string_time(next_reading_time);
         if (cTime > tempTime)
         {
-            nextReadingTime = currentTime;
+            next_reading_time = currentTime;
         }
-        if (cTime == lastWrittenTime)
+        if (cTime == last_written_time)
         {
             flag = false;
         }
@@ -329,7 +328,7 @@ int LogService::_readAppLog(const string &path, vector<string> &logs, const char
     return SUCCESS;
 }
 
-vector<std::filesystem::directory_entry> LogService::_getDirFiles(const string &directory)
+vector<std::filesystem::directory_entry> log_service::get_dir_files(const string &directory)
 {
     vector<std::filesystem::directory_entry> files;
 
@@ -344,23 +343,23 @@ vector<std::filesystem::directory_entry> LogService::_getDirFiles(const string &
     return files;
 }
 
-int LogService::saveToLocal(const vector<string> &logs, const string &appName)
+int log_service::save_read_logs(const vector<string> &logs, const string &app_name)
 {
-    string filePath;
+    string file_path;
     auto today = std::chrono::system_clock::now();
-    auto timeInfo = std::chrono::system_clock::to_time_t(today);
-    std::tm *tm_info = std::localtime(&timeInfo);
+    auto time_info = std::chrono::system_clock::to_time_t(today);
+    std::tm *tm_info = std::localtime(&time_info);
 
     int day = tm_info->tm_mday;
     int month = tm_info->tm_mon + 1;
     int year = tm_info->tm_year + 1900;
 
-    if (OS::handleLocalLogFile(day, month, year, filePath, appName) == FAILED)
+    if (os::handle_local_log_file(day, month, year, file_path, app_name) == FAILED)
     {
         return FAILED;
     }
 
-    fstream file(filePath, std::ios::app);
+    fstream file(file_path, std::ios::app);
 
     for (string line : logs)
     {
@@ -372,55 +371,55 @@ int LogService::saveToLocal(const vector<string> &logs, const string &appName)
     return SUCCESS;
 }
 
-int LogService::verifyJsonPath(string &timestamp)
+int log_service::get_json_write_path(string &timestamp)
 {
-    string filePath = BASE_LOG_DIR;
+    string file_path = BASE_LOG_DIR;
 
-    if (OS::isDirExist(filePath) == FAILED)
+    if (os::is_dir_exist(file_path) == FAILED)
     {
-        OS::createDir(filePath);
+        os::create_dir(file_path);
     }
 
-    filePath += "json";
+    file_path += "json";
 
-    if (OS::isDirExist(filePath) == FAILED)
+    if (os::is_dir_exist(file_path) == FAILED)
     {
-        OS::createDir(filePath);
+        os::create_dir(file_path);
     }
 
-    filePath += "/" + timestamp + ".json";
+    file_path += "/" + timestamp + ".json";
 
-    std::ofstream file(filePath);
+    std::ofstream file(file_path);
     if (!file)
     {
-        AgentUtils::writeLog(FILE_ERROR + filePath, FAILED);
+        agent_utils::write_log(FILE_ERROR + file_path, FAILED);
         return FAILED;
     }
     file.close();
-    timestamp = filePath;
+    timestamp = file_path;
     return SUCCESS;
 }
 
-int LogService::readDpkgLog(const string &path, vector<string> &logs, string &previousTime, string &nextReadingTime, bool &flag)
+int log_service::read_dpkg_logfile(const string &path, vector<string> &logs, string &last_read_time, string &next_reading_time, bool &flag)
 {
-    string formattedTime, line;
+    string formatted_time, line;
     const string format = "dpkg";
-    std::time_t lastWrittenTime = AgentUtils::convertStrToTime(previousTime);
+    std::time_t last_written_time = agent_utils::format_string_time(last_read_time);
 
     fstream file(path, std::ios::in);
     if (!file)
     {
-        AgentUtils::writeLog(FILE_ERROR + path, FAILED);
+        agent_utils::write_log(FILE_ERROR + path, FAILED);
         return FAILED;
     }
 
     while (std::getline(file, line))
     {
         string log, temp, host;
-        AgentUtils::getHostName(host);
+        agent_utils::get_hostname(host);
         string currentTime = line.substr(0, 19);
-        std::time_t cTime = AgentUtils::convertStrToTime(currentTime); /* Convert string time to time_t format for comparision between time_t objects */
-        if (cTime < lastWrittenTime)
+        std::time_t cTime = agent_utils::format_string_time(currentTime); /* Convert string time to time_t format for comparision between time_t objects */
+        if (cTime < last_written_time)
         {
             continue;
         }
@@ -432,26 +431,26 @@ int LogService::readDpkgLog(const string &path, vector<string> &logs, string &pr
         log += "|"+temp;
         logs.push_back(log);
 
-        std::time_t tempTime = AgentUtils::convertStrToTime(nextReadingTime);
+        std::time_t tempTime = agent_utils::format_string_time(next_reading_time);
         if (cTime > tempTime)
         {
-            nextReadingTime = currentTime;
+            next_reading_time = currentTime;
         }
-        if (cTime == lastWrittenTime)
+        if (cTime == last_written_time)
         {
             flag = false;
         }
     }
     if (flag)
     {
-        readDpkgLog(path + ".1", logs, previousTime, nextReadingTime, flag);
+        read_dpkg_logfile(path + ".1", logs, last_read_time, next_reading_time, flag);
     }
     return SUCCESS;
 }
 
-int LogService::readRemoteSysLog(UdpQueue &queue, vector<string> &logs)
+int log_service::read_remote_syslog(UdpQueue &queue, vector<string> &logs)
 {
     return queue.getMessage(logs);
 }
 
-LogService::~LogService() {}
+log_service::~log_service() {}

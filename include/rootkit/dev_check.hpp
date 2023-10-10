@@ -14,7 +14,7 @@
 */
 #include "common.hpp"
 
-class DevCheck
+class dev_check
 {
 private:
     int devErrors;
@@ -42,7 +42,7 @@ public:
         std::filesystem::path file_path(file_name);
         if (!std::filesystem::exists(file_path)) 
         {
-            AgentUtils::writeLog(INVALID_PATH + file_name, FAILED);
+            agent_utils::write_log(INVALID_PATH + file_name, FAILED);
             return FAILED;
         }
         if (std::filesystem::is_directory(file_path)) 
@@ -54,7 +54,7 @@ public:
             result = CRITICAL;
             string error = file_name;
             std::string op_msg = "File '" + error + "' present on /dev. Possible hidden file.";
-            AgentUtils::writeLog(op_msg, CRITICAL);
+            agent_utils::write_log(op_msg, CRITICAL);
             devErrors++;
         }
         return result;
@@ -66,7 +66,7 @@ public:
         if (dir_name.empty() || dir_name.length() > PATH_MAX) 
         {
             string error = dir_name;
-            AgentUtils::writeLog(INVALID_PATH + error, FAILED);
+            agent_utils::write_log(INVALID_PATH + error, FAILED);
             return -1;
         }
 
@@ -107,7 +107,7 @@ public:
 
         devTotal = 0;
         devErrors = 0;
-        AgentUtils::writeLog("Starting on check_rc_dev", INFO);
+        agent_utils::write_log("Starting on check_rc_dev", INFO);
 
         snprintf(file_path, OS_SIZE_1024, "%s/dev", basedir);
 
@@ -115,7 +115,7 @@ public:
         if (devErrors == 0)
         {
             string opMessage = "No problem detected on the /dev directory. Analyzed " + std::to_string(devTotal) + " files";
-            AgentUtils::writeLog(opMessage, SUCCESS);
+            agent_utils::write_log(opMessage, SUCCESS);
         }
         return SUCCESS;
     }

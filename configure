@@ -121,7 +121,7 @@ fi
 cd "$BUILD_DIRECTORY" 
 
 # sudo apt update
-sudo apt install -y libssl-dev libboost-all-dev cmake libpcre2-dev libgtest-dev
+sudo apt install -y libssl-dev cmake libpcre2-dev libgtest-dev
 
 # Check if pugixml is installed
 if pkg-config --exists pugixml; then

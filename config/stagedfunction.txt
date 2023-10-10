@@ -9,7 +9,7 @@ int LogService::zipAndEmptyFile(const string filePath)
     // Empty the original file
     std::ofstream file(filePath, std::ios::out | std::ios::trunc);
     file.close();
-    AgentUtils::writeLog("File [ " + filePath + " ]" + "zipped to [ " + zipFilePath + " ]", SUCCESS);
+    agent_utils::write_log("File [ " + filePath + " ]" + "zipped to [ " + zipFilePath + " ]", SUCCESS);
     return SUCCESS;
 }
 
@@ -133,14 +133,14 @@ int LogService::addToZip(const std::string zipPath, const std::string filePath)
     gzFile zipFile = gzopen(zipPath.c_str(), "ab");
     if (!zipFile)
     {
-        AgentUtils::writeLog("Error opening zip file.", FAILED);
+        agent_utils::write_log("Error opening zip file.", FAILED);
         return FAILED;
     }
 
     fstream inputFile(filePath, std::ios::binary);
     if (!inputFile)
     {
-        AgentUtils::writeLog("Error opening input file.", FAILED);
+        agent_utils::write_log("Error opening input file.", FAILED);
         gzclose(zipFile);
         return FAILED;
     }
@@ -155,7 +155,7 @@ int LogService::addToZip(const std::string zipPath, const std::string filePath)
 
     std::ofstream file(filePath, std::ios::out | std::ios::trunc);
     file.close();
-    AgentUtils::writeLog("File [ " + filePath + " ]" + "zipped to [ " + zipPath + " ]", SUCCESS);
+    agent_utils::write_log("File [ " + filePath + " ]" + "zipped to [ " + zipPath + " ]", SUCCESS);
     return SUCCESS;
 }
 
@@ -164,23 +164,23 @@ int LogService::isZipExist(string zipPath)
     gzFile zipFile = gzopen(zipPath.c_str(), "ab");
     if (!zipFile)
     {
-        AgentUtils::writeLog("Zip File not Exist it will create new zip file name: " + zipPath);
+        agent_utils::write_log("Zip File not Exist it will create new zip file name: " + zipPath);
     }
     
     gzFile newZipFile = gzopen(zipPath.c_str(), "wb");
     if (!newZipFile)
     {
-        AgentUtils::writeLog("Cannot create Zip File: " + zipPath, FAILED);
+        agent_utils::write_log("Cannot create Zip File: " + zipPath, FAILED);
         return FAILED;
     }
-    AgentUtils::writeLog("Zip File created: " + zipPath, SUCCESS);
+    agent_utils::write_log("Zip File created: " + zipPath, SUCCESS);
     gzclose(newZipFile);
     return SUCCESS;
 }
 
 int LogService::checkFileSize(const string filePath)
 {
-    string zipPath = filePath + "_" + AgentUtils::getCurrentTime().substr(0, 10) + "-"+ AgentUtils::getCurrentTime().substr(10)+".zip";
+    string zipPath = filePath + "_" + agent_utils::get_current_time().substr(0, 10) + "-"+ agent_utils::get_current_time().substr(10)+".zip";
     std::ifstream file(filePath, std::ios::binary | std::ios::ate);
     if (!file)
     {
@@ -197,7 +197,7 @@ int LogService::checkFileSize(const string filePath)
     {
         return SUCCESS;
     }
-    AgentUtils::writeLog("File [ " + filePath + " ]" + " exceeds the size limit. Zipping and emptying the file...");
+    agent_utils::write_log("File [ " + filePath + " ]" + " exceeds the size limit. Zipping and emptying the file...");
     if (isZipExist(zipPath) == FAILED)
         return FAILED;
     cout << "Zip Exist" << endl;
@@ -212,7 +212,7 @@ int LogService::processFiles(string directoryPath)
     dirent *entry = NULL;
     if (dir == NULL)
     {
-        AgentUtils::writeLog("Invalid directory [ " + directoryPath + " ]", FAILED);
+        agent_utils::write_log("Invalid directory [ " + directoryPath + " ]", FAILED);
         return FAILED;
     } 
 
@@ -244,7 +244,7 @@ int LogService::getSysLog(Json::Value &json, vector<string> names, const string 
     fstream file(path, std::ios::in);
     if (!file)
     {
-        AgentUtils::writeLog("Failed to read " + path + " check file path and file permission", FAILED);
+        agent_utils::write_log("Failed to read " + path + " check file path and file permission", FAILED);
         return FAILED;
     }
 
@@ -266,7 +266,7 @@ int LogService::getSysLog(Json::Value &json, vector<string> names, const string 
                     timestamp += " " + token;
                     index++;
                 }
-                if (AgentUtils::convertTimeFormat(timestamp, formattedTime) == SUCCESS)
+                if (agent_utils::convert_time_format(timestamp, formattedTime) == SUCCESS)
                 {
                     log += formattedTime;
                     index = 1;
@@ -295,10 +295,10 @@ int LogService::getSysLog(Json::Value &json, vector<string> names, const string 
         }
     }
 
-    AgentUtils::writeLog("Syslog collected", SUCCESS);
-    if (splitLineToVector(logs[0], sep[0]).size() < names.size())
+    agent_utils::write_log("Syslog collected", SUCCESS);
+    if (splitLineto_vector(logs[0], sep[0]).size() < names.size())
     {
-        AgentUtils::writeLog("Invalid Log Attributes configured for syslog", FAILED);
+        agent_utils::write_log("Invalid Log Attributes configured for syslog", FAILED);
         return FAILED;
     }
     return saveLog(json, writePath, logs, names, sep[0]);
@@ -311,7 +311,7 @@ int LogService::getAppLog(Json::Value &json, vector<string> names, const string 
     string line;
     if (!file)
     {
-        AgentUtils::writeLog("Reading App Log Invalid configuration Path [ " + path + " ]", FAILED);
+        agent_utils::write_log("Reading App Log Invalid configuration Path [ " + path + " ]", FAILED);
         return FAILED;
     }
 
@@ -324,10 +324,10 @@ int LogService::getAppLog(Json::Value &json, vector<string> names, const string 
             logs.push_back(line);
     }
     file.close();
-    AgentUtils::writeLog("Applog collected from " + path, SUCCESS);
-    if (splitLineToVector(logs[0], delimeter).size() < names.size())
+    agent_utils::write_log("Applog collected from " + path, SUCCESS);
+    if (splitLineto_vector(logs[0], delimeter).size() < names.size())
     {
-        AgentUtils::writeLog("Invalid Log Attributes configured for Applog", FAILED);
+        agent_utils::write_log("Invalid Log Attributes configured for Applog", FAILED);
         return FAILED;
     }
     return saveLog(json, writePath, logs, names, delimeter);
@@ -351,9 +351,9 @@ bool isPriorityLog(const std::string &line)
     // logLevel["warning"] = 3;
     // logLevel["error"] = 4;
     // logLevel["critical"] = 5;
-    Monitor::SYS_PROPERTIES MonitorService::getSystemProperties()
+    Monitor::SYS_PROPERTIES monitor_service::get_system_properties()
 {
-    AgentUtils::writeLog("Request for collecting System Properties");
+    agent_utils::write_log("Request for collecting System Properties");
     struct Monitor::SYS_PROPERTIES properties;
     struct sysinfo info;
     struct statvfs stat;
@@ -362,7 +362,7 @@ bool isPriorityLog(const std::string &line)
     properties.ram = (double)info.totalram * info.mem_unit;
     properties.disk = stat.f_blocks * stat.f_frsize;
     properties.cpu = (double)sysconf(_SC_NPROCESSORS_ONLN);
-    AgentUtils::writeLog("System Properties collected");
+    agent_utils::write_log("System Properties collected");
     return properties;
 }
 
@@ -419,11 +419,11 @@ int main() {
     return 0;
 }
 
-        // Queue queue(configTable["rabbitmq"]["ca_pem"], configTable["rabbitmq"]["client_pem"], configTable["rabbitmq"]["client_key"]);
-        // if (queue.send(writePath, configTable[sysLogName]["queue"]) == SUCCESS)
+        // Queue queue(config_table["rabbitmq"]["ca_pem"], config_table["rabbitmq"]["client_pem"], config_table["rabbitmq"]["client_key"]);
+        // if (queue.send(writePath, config_table[sysLogName]["queue"]) == SUCCESS)
         // {
         //     cout << "Queue Published successfully" << endl;
-        //     _configService.cleanFile(writePath);
+        //     _config_service.clean_file(writePath);
         //     return SUCCESS;
         // }
 
@@ -444,40 +444,40 @@ int main() {
 //         std::this_thread::sleep_for(std::chrono::seconds(waitingTime));
 //         if (processName == "monitor")
 //         {
-//             if (_monitorController.getMonitorLog(_configTable) == SUCCESS)
+//             if (_monitor_controller.getMonitorLog(_config_table) == SUCCESS)
 //             {
 //                 cout << "Monitor Log collected successfully." << endl;
 //             }
 //             else
 //             {
-//                 AgentUtils::writeLog("Reading Process details operation stopped");
+//                 agent_utils::write_log("Reading Process details operation stopped");
 //             }
 //         }
 //         else if (processName == "applog")
 //         {
-//             if (_logController.appLogManager(_configTable) == SUCCESS)
+//             if (_logController.appLogManager(_config_table) == SUCCESS)
 //             {
 //                 cout << "Applog operation done" << endl;
 //             }
 //             else
 //             {
-//                 AgentUtils::writeLog("Reading AppLog process stopped");
+//                 agent_utils::write_log("Reading AppLog process stopped");
 //             }
 //         }
 //         else if (processName == "syslog")
 //         {
-//             if (_logController.getSysLog(_configTable) == SUCCESS)
+//             if (_logController.getSysLog(_config_table) == SUCCESS)
 //             {
 //                 cout << "Syslog operation done" << endl;
 //             }
 //             else
 //             {
-//                 AgentUtils::writeLog("Reading SysLog process stopped");
+//                 agent_utils::write_log("Reading SysLog process stopped");
 //             }
 //         }
 //         else if (processName == "firmware")
 //         {
-//             if (_fController.start(_configTable) == SUCCESS)
+//             if (_fController.start(_config_table) == SUCCESS)
 //             {
 //                 cout << "FirmWare operation done" << endl;
 //             }
@@ -495,7 +495,7 @@ int main() {
 //     if (!_isReadyToSchedule)
 //         return;
 //     vector<string> processes;
-//     map<string, string> schedular = _configTable["schedular"];
+//     map<string, string> schedular = _config_table["schedular"];
 //     for (const auto &process : schedular)
 //     {
 //         processes.push_back(process.first);

@@ -13,7 +13,7 @@ bool isDirectoryExist(const string directory)
 {
     if (!(std::filesystem::exists(directory) && std::filesystem::is_directory(directory)))
     {
-        AgentUtils::writeLog(INVALID_PATH + directory, FAILED);
+        agent_utils::write_log(INVALID_PATH + directory, FAILED);
         return false;
     }
     return true;
@@ -29,14 +29,14 @@ int WatchService::start(const string watchDirectory, const string backupDirector
     int fd = inotify_init();
     if (fd == -1)
     {
-        AgentUtils::writeLog("Failed to initialize inotify.", FAILED);
+        agent_utils::write_log("Failed to initialize inotify.", FAILED);
         return FAILED;
     }
 
     int wd = inotify_add_watch(fd, watchDirectory.c_str(), IN_CREATE | IN_MODIFY);
     if (wd == -1)
     {
-        AgentUtils::writeLog("Failed to add watch to the directory.", FAILED);
+        agent_utils::write_log("Failed to add watch to the directory.", FAILED);
         close(fd);
         return FAILED;
     }
@@ -46,7 +46,7 @@ int WatchService::start(const string watchDirectory, const string backupDirector
         int length = read(fd, buffer, EVENT_BUF_LEN);
         if (length <= 0)
         {
-            AgentUtils::writeLog("Failed to read inotify events.", FAILED);
+            agent_utils::write_log("Failed to read inotify events.", FAILED);
             result = FAILED;
             break;
         }
@@ -59,7 +59,7 @@ int WatchService::start(const string watchDirectory, const string backupDirector
             {
                 std::string fileName = event->name;
                 std::string filePath = watchDirectory + "/" + fileName;
-                AgentUtils::writeLog("Detected modification or creation of file: " + filePath);
+                agent_utils::write_log("Detected modification or creation of file: " + filePath);
                 try
                 {
                     std::string backupFilePath = backupDirectory + "/" + fileName + "_" + getFormattedTime();
@@ -73,7 +73,7 @@ int WatchService::start(const string watchDirectory, const string backupDirector
                 catch (const std::exception &e)
                 {
                     string error = e.what();
-                    AgentUtils::writeLog("Error during backup process: " + error, FAILED);
+                    agent_utils::write_log("Error during backup process: " + error, FAILED);
                     result = FAILED;
                 }
             }

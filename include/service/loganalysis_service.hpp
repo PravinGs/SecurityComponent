@@ -60,35 +60,35 @@ struct id_decoder
 /**
  * @brief A class for handling various log analysis operations.
  *
- * The LogAnalysis class provides a set of methods and functionality for
+ * The log_analysis class provides a set of methods and functionality for
  * performing various log analysis tasks, such as parsing, filtering, and
  * extracting insights from log data.
  */
 
-class LogAnalysis
+class log_analysis
 {
-public:
-    Config _configService;
-    vector<p_rule> _processingRules;
-    vector<int> _processedRules;
-    vector<id_rule> _idRules;
-    vector<string> decoder_cache;
-    std::unordered_map<string, std::unordered_map<int, AConfig>> _rules;
+private:
+    Config _config_service;
+    vector<p_rule> _processing_rules;
+    vector<int> _processed_rules;
+    vector<id_rule> _matched_rules;
+    vector<string> _decoder_cache;
+    std::unordered_map<string, std::unordered_map<int, aconfig>> _rules;
     std::unordered_map<string, decoder> _decoder_list;
 
 private:
-    bool isValidConfig = true;
-    int isRuleFound(const int ruleId);
-    void addMatchedRule(const id_rule & rule, const string& log);
-    string decodeGroup(log_event & logEvent);
+    bool _is_valid_config = true;
+    int is_rule_found(const int ruleId);
+    void add_matched_rule(const id_rule & rule, const string& log);
+    string decode_group(log_event & logEvent);
 
 public:
     /**
-     * @brief Default constructor for the LogAnalysis class.
+     * @brief Default constructor for the log_analysis class.
      *
-     * Initializes an instance of the LogAnalysis class with default settings.
+     * Initializes an instance of the log_analysis class with default settings.
      */
-    LogAnalysis();
+    log_analysis();
 
     /**
      * @brief Set the configuration file paths for decoder and rule files.
@@ -97,10 +97,10 @@ public:
      * for configuration. These file paths are used to initialize or update the
      * configuration members within the class.
      *
-     * @param decoderPath The path to the decoder configuration file.
+     * @param decoder_path The path to the decoder configuration file.
      * @param ruleDir The path to the directory containing rule configuration files.
      */   
-    void setConfigFile(const string &decoderPath, const string &ruledDir);
+    void set_config_file(const string &decoder_path, const string &rules_path);
 
     /**
      * @brief Validate a syslog entry based on its size.
@@ -115,7 +115,7 @@ public:
      *         - SUCCESS if the syslog entry is considered valid.
      *         - FAILED if the syslog entry is not valid due to its size.
      */
-    int isValidSysLog(const size_t size); 
+    int is_valid_syslog(const size_t size); 
 
     /**
      * @brief Decode a log entry and extract log attributes into a log_event structure.
@@ -129,9 +129,9 @@ public:
      *
      * @return A log_event structure containing extracted log attributes.
      */
-    log_event decodeLog(const string& log, const string& format);
+    log_event decode_log(const string& log, const string& format);
 
-    void addDecoderToCache(const string & decoder);
+    void add_decoder_cache(const string & decoder);
 
     /**
      * @brief Format a raw syslog line into a standardized format.
@@ -144,7 +144,7 @@ public:
      *
      * @return A string containing the syslog entry in the standardized format.
      */
-    string formatSysLog(const string& log, const string& format);
+    string format_syslog(const string& log, const string& format);
 
     /**
      * @brief Match a regular expression pattern against a log entry.
@@ -160,7 +160,7 @@ public:
      *         - 0 if the log entry does not match the pattern.
      *         - (-1) if an error occurred during the matching process.
      */
-    int regexMatch(const string& log, const string& pattern, string & match);
+    int regex_match(const string& log, const string& pattern, string & match);
     
     /**
      * @brief Match a PCRE2 regular expression pattern against an input string.
@@ -176,7 +176,7 @@ public:
      *         - 0 if the input string does not match the pattern.
      *         - (-1) if an error occurred during the matching process.
      */
-    int pcreMatch(const string& input, const string& pattern, string & match, size_t & position);
+    int pcre_match(const string& input, const string& pattern, string & match, size_t & position);
     
     /*
         read the rules one by one
@@ -205,9 +205,9 @@ public:
      */
     void match(log_event &logInfo);
 
-    void match(log_event & logInfo, AConfig & ruleInfo);
+    void match(log_event & logInfo, aconfig & ruleInfo);
 
-    void match(log_event &logInfo, std::unordered_map<int, AConfig>& ruleSet);
+    void match(log_event &logInfo, std::unordered_map<int, aconfig>& ruleSet);
 
     /**
      * @brief Analyze a log file by initiating log matching and managing the log matcher.
@@ -222,7 +222,7 @@ public:
      *         - SUCCESS if the analysis completed successfully.
      *         - FAILED if an error occurred during the analysis process.
      */
-    int analyseFile(const string& file);
+    int analyse_file(const string& file);
 
     /**
      * @brief Set up configuration files and start the log analysis process.
@@ -231,7 +231,7 @@ public:
      * specifying the paths to the decoder, rules directory, and read directory. After
      * configuring the analysis parameters, it initiates the log analysis process.
      *
-     * @param decoderPath The path to the decoder configuration file.
+     * @param decoder_path The path to the decoder configuration file.
      * @param rulesDir The path to the directory containing rule configuration files.
      * @param readDir The directory where log files are located for analysis.
      *
@@ -239,7 +239,7 @@ public:
      *         - SUCCESS if the log analysis process started successfully.
      *         - FAILED if an error occurred during setup or initiation.
      */
-    int start(const string& decoderPath, const string& rulesDir, const string & readDir);
+    int start(const string& decoder_path, const string& rulesDir, const string & readDir);
 
     /**
      * @brief Prepare matched data for all log matches after analysis.
@@ -254,44 +254,44 @@ public:
      *         - SUCCESS if the post-analysis completed successfully.
      *         - FAILED if an error occurred during the post-analysis process.
      */
-    int postAnalysis(const vector<log_event>& alerts);
+    int post_log_analysis(const vector<log_event>& alerts);
 
     /**
-     * @brief Get an AConfig structure representing an XML-based rule.
+     * @brief Get an aconfig structure representing an XML-based rule.
      *
-     * This function takes a group name and a rule ID as input and retrieves an AConfig
+     * This function takes a group name and a rule ID as input and retrieves an aconfig
      * structure that encapsulates an XML-based rule corresponding to the specified group
      * and rule ID.
      *
      * @param group The name of the group associated with the rule.
      * @param ruleId The unique identifier of the XML-based rule.
      *
-     * @return An AConfig structure representing the XML-based rule.
+     * @return An aconfig structure representing the XML-based rule.
      */
-    AConfig getRule(const string& group, const int ruleId);
+    aconfig get_rule(const string& group, const int ruleId);
 
     /**
      * @brief Print log and rule details for matched logs.
      *
-     * This function takes an AConfig structure representing an XML-based rule and a log_event
+     * This function takes an aconfig structure representing an XML-based rule and a log_event
      * structure representing a matched log entry. It prints the details of both the rule
      * and the log for reporting purpose.
      *
-     * @param ruleInfo An AConfig structure representing the XML-based rule.
+     * @param ruleInfo An aconfig structure representing the XML-based rule.
      * @param logInfo A log_event structure representing the matched log entry.
      *
      * @return An integer indicating the result of the printing operation:
      *         - SUCCESS if the printing completed successfully.
      *         - FAILED if an error occurred during the printing process.
      */
-    int printLogDetails(const AConfig& ruleInfo, const log_event& logInfo);
+    int print_log_details(const aconfig& ruleInfo, const log_event& logInfo);
 
     /**
-     * @brief Destructor for the LogAnalysis class.
+     * @brief Destructor for the log_analysis class.
      *
-     * Cleans up any resources or state associated with the LogAnalysis class.
+     * Cleans up any resources or state associated with the log_analysis class.
      */
-    ~LogAnalysis(){}
+    ~log_analysis(){}
 };
 
 #endif

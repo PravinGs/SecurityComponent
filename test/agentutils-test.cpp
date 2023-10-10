@@ -4,16 +4,16 @@
 TEST( Utilities, TrimSuccess )
 {
     string input = "  jhfyrwiu noijocwoir ";
-    string result = AgentUtils::trim(input);
+    string result = agent_utils::trim(input);
     EXPECT_STREQ(result.c_str(), "jhfyrwiu noijocwoir");
     input = " ";
-    result = AgentUtils::trim(input);
+    result = agent_utils::trim(input);
     EXPECT_STREQ(result.c_str(), "");
     input = "\tuncle tommy  \t";
-    result = AgentUtils::trim(input);
+    result = agent_utils::trim(input);
     EXPECT_STREQ(result.c_str(), "uncle tommy");
     input = "\t Aunty spotted  ";
-    result = AgentUtils::trim(input);
+    result = agent_utils::trim(input);
     EXPECT_STREQ(result.c_str(), "Aunty spotted");
 }
 

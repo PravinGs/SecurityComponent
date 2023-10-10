@@ -13,19 +13,19 @@
 #define TROJAN_SOURCE_FILE "/etc/scl/ids/rootkit_trojans.txt"
 #define SYS_SOURCE_FILE "/etc/scl/ids/rootkit_files.txt"
 
-class RootCheck
+class root_check
 {
     private:
         ICommand *command;
-        TrojenCheck trojanCheck;
-        SysCheck sysCheck;
-        ProcessCheck processCheck;
-        PortCheck portCheck;
-        DevCheck devCheck;
-        InterfaceCheck interfaceCheck;
-        string trojanSourceFile;
-        string sysSourceFile;
-        vector<string> reportCommands = {
+        trojan_check trojanCheck;
+        sys_check sys_check;
+        process_check process_check;
+        port_check port_check;
+        dev_check dev_check;
+        interface_check interface_check;
+        string trojan_source_file;
+        string sys_source_file;
+        vector<string> report_commands = {
                                             "ApparmorStatus:aa-status",
                                             "PortDetails:netstat -tuln",
                                             "NetworkConnection:lsof -i -P",
@@ -33,13 +33,13 @@ class RootCheck
         };
 
     private:
-        void executeCommands(Json::Value & json)
+        void execute_commands(Json::Value & json)
         {
-            for (const string& s: reportCommands)
+            for (const string& s: report_commands)
             {
                 vector<string> output;
                 size_t mid = s.find_first_of(':');
-                command->readCommand(s.substr(mid+1), output);
+                command->read_command(s.substr(mid+1), output);
                 string name = s.substr(0, mid);
                 json[name] = Json::Value(Json::arrayValue);
                 for (string line: output){
@@ -49,123 +49,123 @@ class RootCheck
         }
 
     public:
-        RootCheck()
+        root_check()
         {
             command = new Command();
-            this->trojanSourceFile = TROJAN_SOURCE_FILE;
-            this->sysSourceFile    = SYS_SOURCE_FILE;
+            this->trojan_source_file = TROJAN_SOURCE_FILE;
+            this->sys_source_file    = SYS_SOURCE_FILE;
         }
 
-        RootCheck(string trojanSourceFile, string sysSourceFile)
+        root_check(const string& trojan_source_file, const string& sys_source_file)
         {
-            this->trojanSourceFile = trojanSourceFile;
-            this->sysSourceFile    = sysSourceFile; 
+            this->trojan_source_file = trojan_source_file;
+            this->sys_source_file    = sys_source_file; 
         }
 
         
 
         int start()
         {
-            AgentUtils::writeLog("Starting trojan root check.", DEBUG);
-            Json::Value rootCheck;
+            agent_utils::write_log("Starting trojan root check.", DEBUG);
+            Json::Value root_check;
             vector<string> reports;
-            Json::StreamWriterBuilder writerBuilder;
-            if (trojanCheck.check(trojanSourceFile, reports))
+            Json::StreamWriterBuilder writer_builder;
+            if (trojanCheck.check(trojan_source_file, reports))
             {
-                rootCheck["TrojanCheck"] = Json::Value(Json::arrayValue);
+                root_check["TrojanCheck"] = Json::Value(Json::arrayValue);
                 for (string report: reports)
                 {
                     Json::Value json;
                     size_t mid = report.find_first_of(',');
                     json["location"] = report.substr(0, mid);
                     json["pattern"]  = report.substr(mid + 1);
-                    rootCheck["TrojanCheck"].append(json);
+                    root_check["TrojanCheck"].append(json);
                 }
                 reports.clear();
-                AgentUtils::writeLog("Trojan root check completed successfully.", SUCCESS);
+                agent_utils::write_log("Trojan root check completed successfully.", SUCCESS);
             }
             else
             {
-                AgentUtils::writeLog("Trojan root check failed", FAILED);
+                agent_utils::write_log("Trojan root check failed", FAILED);
             }
-            AgentUtils::writeLog("Completed trojan root check.", DEBUG);
-            AgentUtils::writeLog("Starting sysfiles root check.");
-            if (sysCheck.check(sysSourceFile, reports))
+            agent_utils::write_log("Completed trojan root check.", DEBUG);
+            agent_utils::write_log("Starting sysfiles root check.");
+            if (sys_check.check(sys_source_file, reports))
             {
-                rootCheck["SysFileCheck"] = Json::Value(Json::arrayValue);
+                root_check["SysFileCheck"] = Json::Value(Json::arrayValue);
                 for (string report: reports)
                 {
                     Json::Value json;
                     size_t mid = report.find_first_of(',');
                     json["name"]  = report.substr(mid + 1);
                     json["location"] = report.substr(0, mid);
-                    rootCheck["SysFileCheck"].append(json);
+                    root_check["SysFileCheck"].append(json);
                 }
                 reports.clear();
-                AgentUtils::writeLog("SysFiles root check completed successfully.", SUCCESS);
+                agent_utils::write_log("SysFiles root check completed successfully.", SUCCESS);
             }
             else
             {
-                AgentUtils::writeLog("Sysfiles root check failed", FAILED);
+                agent_utils::write_log("Sysfiles root check failed", FAILED);
             }
-            AgentUtils::writeLog("Completed sysfiles root check.", DEBUG);
-            AgentUtils::writeLog("Starting network interface root check.", DEBUG);
-            if (interfaceCheck.check(reports))
+            agent_utils::write_log("Completed sysfiles root check.", DEBUG);
+            agent_utils::write_log("Starting network interface root check.", DEBUG);
+            if (interface_check.check(reports))
             {
-                rootCheck["PromiscuousCheck"] = Json::Value(Json::arrayValue);
+                root_check["PromiscuousCheck"] = Json::Value(Json::arrayValue);
                 for (string report: reports)
                 {
                     Json::Value json;
                     json["interface"] = report;
-                    rootCheck["PromiscuousCheck"].append(json);
+                    root_check["PromiscuousCheck"].append(json);
                 }
                 reports.clear();
-                AgentUtils::writeLog("network interface  root check completed successfully.", SUCCESS);
+                agent_utils::write_log("network interface  root check completed successfully.", SUCCESS);
             }
             else
             {
-                AgentUtils::writeLog("network interface root check failed", FAILED);
+                agent_utils::write_log("network interface root check failed", FAILED);
             }
-            AgentUtils::writeLog("Completed network interface root Check.", DEBUG);
-            AgentUtils::writeLog("Starting dev root check.", DEBUG);
-            if (devCheck.check(reports))
+            agent_utils::write_log("Completed network interface root Check.", DEBUG);
+            agent_utils::write_log("Starting dev root check.", DEBUG);
+            if (dev_check.check(reports))
             {
-                rootCheck["HiddenFileCheck"] = Json::Value(Json::arrayValue);
+                root_check["HiddenFileCheck"] = Json::Value(Json::arrayValue);
                 for (string report: reports)
                 {
                     Json::Value json;
                     json["path"] = report;
-                    rootCheck["HiddenFileCheck"].append(json);
+                    root_check["HiddenFileCheck"].append(json);
                 }
                 reports.clear();
-                AgentUtils::writeLog("dev root check completed successfully.", SUCCESS);
+                agent_utils::write_log("dev root check completed successfully.", SUCCESS);
             }
             else
             {
-                AgentUtils::writeLog("dev root check failed", FAILED);
+                agent_utils::write_log("dev root check failed", FAILED);
             }
-            AgentUtils::writeLog("Completed dev root check.", DEBUG);
-            executeCommands(rootCheck);
-            std::fstream file("/home/champ/SecurityComponent/syscheckreport.json", std::ios::out);
-            std::unique_ptr<Json::StreamWriter> writer(writerBuilder.newStreamWriter());
-            writer->write(rootCheck, &file);
+            agent_utils::write_log("Completed dev root check.", DEBUG);
+            execute_commands(root_check);
+            std::fstream file("/home/champ/SecurityComponent/sys_checkreport.json", std::ios::out);
+            std::unique_ptr<Json::StreamWriter> writer(writer_builder.newStreamWriter());
+            writer->write(root_check, &file);
             file.close();
-            /*AgentUtils::writeLog("Starting process root check", DEBUG);
-            AgentUtils::writeLog("This process might take more time", DEBUG);
-            if (processCheck.check())
+            /*agent_utils::write_log("Starting process root check", DEBUG);
+            agent_utils::write_log("This process might take more time", DEBUG);
+            if (process_check.check())
             {
-                AgentUtils::writeLog("Process root check completed successfully.", SUCCESS);
+                agent_utils::write_log("Process root check completed successfully.", SUCCESS);
             }
             else
             {
-                 AgentUtils::writeLog("Process root check failed", FAILED);
+                 agent_utils::write_log("Process root check failed", FAILED);
             }
             */
-            AgentUtils::writeLog("Completed process root check", INFO);
+            agent_utils::write_log("Completed process root check", INFO);
             return SUCCESS;
         }
 
-        ~RootCheck(){
+        ~root_check(){
             delete command;
         }
 

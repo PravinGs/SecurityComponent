@@ -1,54 +1,57 @@
-#ifndef MAINCONTROLLER_HPP
-#define MAINCONTROLLER_HPP
+#ifndef main_controller_HPP
+#define main_controller_HPP
 
 #include "controller/schedular_controller.hpp"
 // #include "controller/watchFileController.hpp"
 #include "service/config_service.hpp"
 
+const string SYSLOG  { "syslog"  };
+const string APPLOG  { "applog"  };
+const string PATCH   { "patch"   };
+const string MONITOR { "monitor" };
 /**
  * @brief Main Controller
  *
- * The `MainController` class serves as the central controller for the agent application. It is responsible for reading
+ * The `main_controller` class serves as the central controller for the agent application. It is responsible for reading
  * the configuration file to initialize the application and start various activities. This controller acts as the
  * entry point for coordinating and managing the core functionalities of the agent.
  */
-class MainController
+class main_controller
 {
 private:
     bool isReady = true; /**< A private variable for configuration file status*/
     Config _config; /**< A private instance of IniConfig for configuration management. */
     map<string, map<string, string>> _table; /**< A private map<string, map<string, string>> to store configuration data. */
-    Schedule *schedule; /**< A private instance of the Schedule class. */
+    schedule *_schedule; /**< A private instance of the schedule class. */
 
 public:
 
     /**
      * @brief Main Controller Constructor
      *
-     * The `MainController` constructor initializes the global time for the agent, ensuring that the time reference is set
+     * The `main_controller` constructor initializes the global time for the agent, ensuring that the time reference is set
      * whenever an instance of this class is created. It also performs validation on the provided configuration file
      * (`configFile`) to ensure its validity for further use in the agent application.
      *
      * @param[in] configFile The path to the configuration file to be validated and used for agent settings.
      */
-    MainController(const string& configFile)
+    main_controller(const string& configFile)
     {
-        if (_config.readIniConfigFile(configFile, _table) != SUCCESS)
+        if (_config.read_ini_config_file(configFile, _table) != SUCCESS)
         {
             isReady = false;
         }
         if (isReady){
             const string scheduar_config_file = _table["schedule"]["config_file"];
-            schedule = new Schedule(scheduar_config_file);
+            _schedule = new schedule(scheduar_config_file);
         }
         auto today = std::chrono::system_clock::now();
         auto timeInfo = std::chrono::system_clock::to_time_t(today);
         std::tm *tm_info = std::localtime(&timeInfo);
         int day = tm_info->tm_mday;
-        OS::CurrentDay = day; /* Current day at the application starting date. */
-        OS::CurrentMonth = tm_info->tm_mon;
-        OS::CurrentYear = tm_info->tm_year+1900;
-    
+        os::current_day = day; /* Current day at the application starting date. */
+        os::current_month = tm_info->tm_mon;
+        os::current_year = tm_info->tm_year+1900;
     }
 
     /**
@@ -77,12 +80,12 @@ public:
                 threads[i] = std::thread([&, processName]()
                                          { run(processName); });
 
-                AgentUtils::writeLog("[Agent] New thread creation for " + processName, DEBUG);
+                agent_utils::write_log("[Agent] New thread creation for " + processName, DEBUG);
             }
             catch (const std::exception &e)
             {
                 string error = e.what();
-                AgentUtils::writeLog(error, ERROR);
+                agent_utils::write_log(error, ERROR);
             }
         }
 
@@ -106,8 +109,8 @@ public:
        
         if (processName == "schedule")
         {
-            //Schedule schedule(_table[processName]["config_file"]);
-            schedule->start();
+            //schedule schedule(_table[processName]["config_file"]);
+            _schedule->start();
         }
         /*else if (processName == "watcher")
         {
@@ -121,20 +124,42 @@ public:
         }
         else
         {
-            AgentUtils::writeLog("Invalid Process Name", FAILED);
+            agent_utils::write_log("Invalid Process Name", FAILED);
         }
         else if (processName = "tls") {cout << "Does not implemented yet" << endl;}
         */
     }
 
-    /**
-     * @brief Destructor for MainController.
-     *
-     * The destructor performs cleanup tasks for the `MainController` class.
-     */
-    ~MainController()
+    void mqtt_handler(Json::Value & json)
     {
-        delete schedule;
+        string process_name = json["process"].asString();
+
+        if (process_name == SYSLOG)
+        {
+            // Do something
+        }
+        else if (process_name == APPLOG)
+        {
+            // Do something
+        }
+        else if (process_name == MONITOR)
+        {
+            // Do something
+        }
+        else if (process_name == PATCH)
+        {
+            // Do something
+        }
+    }
+
+    /**
+     * @brief Destructor for main_controller.
+     *
+     * The destructor performs cleanup tasks for the `main_controller` class.
+     */
+    ~main_controller()
+    {
+        delete _schedule;
     }
 };
 #endif

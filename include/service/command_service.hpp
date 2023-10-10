@@ -1,5 +1,5 @@
-#ifndef COMMAND_SERVICE
-#define COMMAND_SERVICE
+#ifndef cOMMAND_SERVICE
+#define cOMMAND_SERVICE
 #include "common.hpp"
 
 /**
@@ -9,7 +9,7 @@
 class ICommand
 {
 public:
-    virtual int readCommand(const string& command, vector<string> & processName) = 0;
+    virtual int read_command(const string& command, vector<string> & process_name) = 0;
     virtual ~ICommand() {}
 };
 /**
@@ -20,31 +20,19 @@ public:
  * @cond HIDE_THIS_CLASS
  * @brief This class is for internal use only and should not be documented.
  */
-class Command : public ICommand
+class command : public ICommand
 {
 private:
-    int validateCommand(const string command);
+    int validate_command(const string command);
 
 public:
-    Command(){}
-    // int readCommand(const string command, const string processName);
-    int readCommand(const string& command, vector<string> &logs);
+    command(){}
+    // int read_command(const string command, const string process_name);
+    int read_command(const string& command, vector<string> &logs);
 };
 /**
  * @endcond
  */
 
-/**
- * @cond HIDE_THIS_CLASS
- * @brief This class is for internal use only and should not be documented.
- */
-class Threshold
-{
-public:
-    static int MinFailedLoginAttempts;
-    static int MaxFailedLoginAttempts;
-};
-/**
- * @endcond
- */
+
 #endif

@@ -38,10 +38,10 @@ public:
 
         if (bind(serverSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
         {
-            AgentUtils::writeLog("Error binding socket to port.", FAILED);
+            agent_utils::write_log("Error binding socket to port.", FAILED);
             close(serverSocket);
         }
-        AgentUtils::writeLog("Binding successfule");
+        agent_utils::write_log("Binding successfule");
         return serverSocket;
     }
 
@@ -66,7 +66,7 @@ public:
                                          (struct sockaddr *)&clientAddr, &length);
             if (recvBytes == -1)
             {
-                AgentUtils::writeLog("Error receiving data.", FAILED);
+                agent_utils::write_log("Error receiving data.", FAILED);
                 close(serverSocket);
                 return FAILED;
             }

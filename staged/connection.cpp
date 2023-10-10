@@ -10,7 +10,7 @@ TlsConnection::TlsConnection(string port, string caKey, string serverCert, strin
 
 SSL_CTX *TlsConnection::_getServerContext(const string caKey, const string serverCert, const string serverKey)
 {
-    AgentUtils::writeLog("Request to create a server context");
+    agent_utils::write_log("Request to create a server context");
     SSL_CTX *ctx = nullptr;
     SSL_library_init();
     SSL_load_error_strings();
@@ -62,14 +62,14 @@ SSL_CTX *TlsConnection::_getServerContext(const string caKey, const string serve
     {
         SSL_CTX_free(ctx);
         string error = e.what();
-        AgentUtils::writeLog(error, FAILED);
+        agent_utils::write_log(error, FAILED);
     }
     return ctx;
 }
 
 int TlsConnection::_get_socket(int port_num)
 {
-    AgentUtils::writeLog("Server socket creation");
+    agent_utils::write_log("Server socket creation");
     int sock, val = 1;
     struct sockaddr_in sin;
 
@@ -77,7 +77,7 @@ int TlsConnection::_get_socket(int port_num)
     {
         if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
         {
-            AgentUtils::writeLog("Cannot create a socket", FAILED);
+            agent_utils::write_log("Cannot create a socket", FAILED);
             return -1;
         }
 
@@ -101,21 +101,21 @@ int TlsConnection::_get_socket(int port_num)
             throw std::invalid_argument("Failed to listen on this socket");
         }
 
-        AgentUtils::writeLog("Server socket created listening to port " + std::to_string(port_num));
+        agent_utils::write_log("Server socket created listening to port " + std::to_string(port_num));
     }
     catch (const std::exception &e)
     {
         close(sock);
         sock = -1;
         string error = e.what();
-        AgentUtils::writeLog(error, FAILED);
+        agent_utils::write_log(error, FAILED);
     }
     return sock;
 }
 
 int TlsConnection::start()
 {
-    AgentUtils::writeLog("Starting server...");
+    agent_utils::write_log("Starting server...");
     SSL_CTX *ctx = nullptr;
     SSL *ssl = nullptr;
     int port_num, listen_fd, net_fd, rc;
@@ -128,7 +128,7 @@ int TlsConnection::start()
         port_num = std::stoi(_port);
         if (port_num < 1 || port_num > 65535)
         {
-            AgentUtils::writeLog("Invalid port number: " + _port, FAILED);
+            agent_utils::write_log("Invalid port number: " + _port, FAILED);
             return FAILED;
         }
 
@@ -150,7 +150,7 @@ int TlsConnection::start()
                 std::invalid_argument("Failed to accept connection");
                 continue;
             }
-            AgentUtils::writeLog("Client connection accepted");
+            agent_utils::write_log("Client connection accepted");
 
             if (!(ssl = SSL_new(ctx)))
             {
@@ -171,7 +171,7 @@ int TlsConnection::start()
                 SSL_free(ssl);
             }
             string clientAddress = inet_ntoa(sin.sin_addr);
-            AgentUtils::writeLog("SSL Handshake successful with [ " + clientAddress + " ] with port " + _port);
+            agent_utils::write_log("SSL Handshake successful with [ " + clientAddress + " ] with port " + _port);
 
             char buffer[1024];
             int received = SSL_read(ssl, buffer, sizeof(buffer));
@@ -198,7 +198,7 @@ int TlsConnection::start()
         result = FAILED;
         SSL_CTX_free(ctx);
         string error = e.what();
-        AgentUtils::writeLog(error, FAILED);
+        agent_utils::write_log(error, FAILED);
     }
     return result;
 }

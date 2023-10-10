@@ -34,16 +34,10 @@ public:
      */
     Config() = default;
 
-    AConfig getAConfigById(const int ruleId)
-    {
-        AConfig config;
-        return config;
-    }
-
     /**
      * @brief Convert String to Integer with Error Handling
      *
-     * The `isDigit` function is used to convert a string representing a number into an integer, while also providing error
+     * The `is_digit` function is used to convert a string representing a number into an integer, while also providing error
      * handling for cases where the conversion fails due to invalid input.
      *
      * @param[in] number The input string to be converted to an integer.
@@ -51,7 +45,7 @@ public:
      *         - The converted integer value if the conversion was successful.
      *         - -1 if the input string is not a valid integer or conversion fails.
      */
-    int isDigit(string number)
+    int is_digit(const string&  number)
     {
         if (number.empty()) return -1;
         int digit;
@@ -67,7 +61,7 @@ public:
         return digit;
     }
 
-    int parseToDecoder(const string & fileName, std::unordered_map<string, decoder>& table)
+    int read_decoder(const string & file_name, std::unordered_map<string, decoder>& table)
     {   
         /*
             for (const auto& d: decoders)
@@ -83,64 +77,64 @@ public:
                 cout << "   <pcre2_offset> " << s.pcre2_offset << " </pcre2_offset>\n";
             }
         */     
-        pugi::xml_parse_result result = doc.load_file(fileName.c_str());
+        pugi::xml_parse_result result = doc.load_file(file_name.c_str());
         int index = 0;
         if (!result)
         {
             string error = result.description();
-            AgentUtils::writeLog(FILE_ERROR + fileName, FAILED);
+            agent_utils::write_log(FILE_ERROR + file_name, FAILED);
             return FAILED;
         }
         pugi::xml_node root = doc.child("root");
-        for (pugi::xml_node groupNode = root.child("decoder"); groupNode; groupNode = groupNode.next_sibling("decoder"))
+        for (pugi::xml_node group_node = root.child("decoder"); group_node; group_node = group_node.next_sibling("decoder"))
         {
             index++;
             decoder d;
-            std::string currentSection = groupNode.attribute("name").value();
-            if (!currentSection.empty())
+            std::string current_section = group_node.attribute("name").value();
+            if (!current_section.empty())
             {
-                d.decode=currentSection;
+                d.decode=current_section;
             }
-            currentSection = groupNode.child_value("parent");
-            if (!currentSection.empty())
+            current_section = group_node.child_value("parent");
+            if (!current_section.empty())
             {
-                d.parent=currentSection;
+                d.parent=current_section;
             }
-            currentSection = groupNode.child_value("program_name_pcre2");
-            if (!currentSection.empty())
+            current_section = group_node.child_value("program_name_pcre2");
+            if (!current_section.empty())
             {
-                d.program_name_pcre2=currentSection;
+                d.program_name_pcre2=current_section;
             }
-            if (currentSection == "^kernel") { cout << d.decode << "\n";}
-            currentSection = groupNode.child_value("pcre2");
-            if (!currentSection.empty())
+            if (current_section == "^kernel") { cout << d.decode << "\n";}
+            current_section = group_node.child_value("pcre2");
+            if (!current_section.empty())
             {
-                d.pcre2=currentSection;
+                d.pcre2=current_section;
             }
-            currentSection = groupNode.child("pcre2").attribute("offset").value();
-            if (!currentSection.empty())
+            current_section = group_node.child("pcre2").attribute("offset").value();
+            if (!current_section.empty())
             {
-                d.pcre2_offset=currentSection;
+                d.pcre2_offset=current_section;
             }
-            currentSection = groupNode.child_value("prematch_pcre2");
-            if (!currentSection.empty())
+            current_section = group_node.child_value("prematch_pcre2");
+            if (!current_section.empty())
             {
-                d.prematch_pcre2=currentSection;
+                d.prematch_pcre2=current_section;
             }
-            currentSection = groupNode.child("prematch_pcre2").attribute("offset").value();
-            if (!currentSection.empty())
+            current_section = group_node.child("prematch_pcre2").attribute("offset").value();
+            if (!current_section.empty())
             {
-                d.prematch_offset=currentSection;
+                d.prematch_offset=current_section;
             }
-            currentSection = groupNode.child_value("order");
-            if (!currentSection.empty())
+            current_section = group_node.child_value("order");
+            if (!current_section.empty())
             {
-                d.order=currentSection;
+                d.order=current_section;
             }
-            currentSection = groupNode.child_value("fts");
-            if (!currentSection.empty())
+            current_section = group_node.child_value("fts");
+            if (!current_section.empty())
             {
-                d.fts=currentSection;
+                d.fts=current_section;
             }
             if (table.find(d.decode) != table.end())
             {
@@ -154,58 +148,58 @@ public:
             // cout << "Index [" << sec << "] : " << index << "  size : " << table.size() << "\n";
             
         }
-        AgentUtils::writeLog("XML parsing success for " + fileName, DEBUG);
+        agent_utils::write_log("XML parsing success for " + file_name, DEBUG);
         return SUCCESS;
     }
 
-    void extractRuleAttributes(pugi::xml_node & root, std::unordered_map<string, std::unordered_map<int, AConfig>> &table)
+    void extract_rule_attributes(pugi::xml_node & root, std::unordered_map<string, std::unordered_map<int, aconfig>> &table)
     {
-        for (pugi::xml_node groupNode = root; groupNode; groupNode = groupNode.next_sibling("group"))
+        for (pugi::xml_node group_node = root; group_node; group_node = group_node.next_sibling("group"))
         {
-            std::string currentSection = groupNode.attribute("name").value();
+            std::string current_section = group_node.attribute("name").value();
 
-            for (pugi::xml_node ruleNode = groupNode.child("rule"); ruleNode; ruleNode = ruleNode.next_sibling("rule"))
+            for (pugi::xml_node rule_node = group_node.child("rule"); rule_node; rule_node = rule_node.next_sibling("rule"))
             {
                 int digit;
                 string str;
-                AConfig rule;
-                if (!currentSection.empty())
+                aconfig rule;
+                if (!current_section.empty())
                 {
-                    rule.group = currentSection; /*Need clarity about this group assignation*/
+                    rule.group = current_section; /*Need clarity about this group assignation*/
                 }
-                digit = isDigit(ruleNode.attribute("id").value());
+                digit = is_digit(rule_node.attribute("id").value());
                 if (digit != -1)
                 {
                     rule.id = digit;
                 }
                 digit = -1;
 
-                digit = isDigit(ruleNode.attribute("level").value());
+                digit = is_digit(rule_node.attribute("level").value());
                 if (digit != -1)
                 {
                     rule.level = digit;
                 }
                 digit = -1;
-                digit = isDigit(ruleNode.attribute("frequency").value());
+                digit = is_digit(rule_node.attribute("frequency").value());
                 if (digit != -1)
                 {
                     rule.frequency = digit;
                 }
                 digit = -1;
-                digit = isDigit(ruleNode.attribute("timeframe").value());
+                digit = is_digit(rule_node.attribute("timeframe").value());
                 if (digit != -1)
                 {
                     rule.timeframe = digit;
                 }
                 digit = -1;
-                digit = isDigit(ruleNode.attribute("ignore").value());
+                digit = is_digit(rule_node.attribute("ignore").value());
                 if (digit != -1)
                 {
                     rule.ignore = digit;
                 }
                 digit = -1;
 
-                digit = isDigit(ruleNode.child_value("if_matched_sid"));
+                digit = is_digit(rule_node.child_value("if_matched_sid"));
                 // cout << "Match Id: " << digit;
                 if (digit != -1)
                 {
@@ -213,30 +207,30 @@ public:
                 }
                 digit = -1;
 
-                digit = isDigit(ruleNode.child_value("if_sid"));
+                digit = is_digit(rule_node.child_value("if_sid"));
                 if (digit != -1)
                 {
                     rule.if_sid = digit;
                 }
                 digit = -1;
-                digit = isDigit(ruleNode.child_value("same_source_ip"));
+                digit = is_digit(rule_node.child_value("same_source_ip"));
                 if (digit != -1){
                     rule.same_source_ip = 1;
                 }
                 digit = -1;
-                str = ruleNode.child_value("status_pcre2");
+                str = rule_node.child_value("status_pcre2");
                 if (!str.empty())
                 {
                     rule.status_pcre2 = str;
                 }
 
-                str = ruleNode.child_value("id_pcre2");
+                str = rule_node.child_value("id_pcre2");
                 if (!str.empty())
                 {
                     rule.id_pcre2 = str;
                 }
 
-                str = ruleNode.child_value("extra_data_pcre2");
+                str = rule_node.child_value("extra_data_pcre2");
                 if (!str.empty())
                 {
                     rule.extra_data_pcre2 = str;
@@ -244,79 +238,79 @@ public:
 
                 // Iterate through the child nodes of <rule> to find <pcre2> elements
 
-                /*str = ruleNode.child_value("pcre2");
+                /*str = rule_node.child_value("pcre2");
                 if (!str.empty())
                 {
                     rule.pcre2 = str;
                 }*/
 
-                str = ruleNode.child_value("program_name_pcre2");
+                str = rule_node.child_value("program_name_pcre2");
                 if (!str.empty())
                 {
                     rule.program_name_pcre2 = str;
                 }
 
-                str = ruleNode.child_value("scrip"); /*Not sure */
+                str = rule_node.child_value("scrip"); /*Not sure */
                 if (!str.empty())
                 {
                     rule.script = str;
                 }
 
-                str = ruleNode.child_value("group");
+                str = rule_node.child_value("group");
                 if (!str.empty())
                 {
                     rule.group = str;
                 }
 
-                str = ruleNode.child_value("description");
+                str = rule_node.child_value("description");
                 if (!str.empty())
                 {
                     rule.description = str;
                 }
 
-                str = ruleNode.child_value("decoded_as");
+                str = rule_node.child_value("decoded_as");
                 if (!str.empty())
                 {
                     rule.decoded_as = str;
                 }
 
-                str = ruleNode.child_value("category"); /*check*/
+                str = rule_node.child_value("category"); /*check*/
                 if (!str.empty())
                 {
                     rule.categories = str;
                 }
 
-                str = ruleNode.child_value("action");
+                str = rule_node.child_value("action");
                 if (!str.empty())
                 {
                     rule.action = str;
                 }
 
-                str = ruleNode.child_value("options");
+                str = rule_node.child_value("options");
                 if (!str.empty())
                 {
                     rule.options = str;
                 }
 
-                str = ruleNode.child_value("url_pcre2");
+                str = rule_node.child_value("url_pcre2");
                 if (!str.empty())
                 {
                     rule.url_pcre2 = str;
                 }
 
-                str = ruleNode.child_value("compiled_rule");
+                str = rule_node.child_value("compiled_rule");
                 if (!str.empty())
                 {
                     rule.compiled_rule = str;
                 }
 
-                str = ruleNode.child_value("hostname_pcre2");
+                str = rule_node.child_value("hostname_pcre2");
                 if (!str.empty())
                 {
 
                     rule.hostname_pcre2 = str;
                 }
-                for (pugi::xml_node pcre2_node = ruleNode.child("pcre2"); pcre2_node; pcre2_node = pcre2_node.next_sibling("pcre2")) 
+                for (pugi::xml_node pcre2_node = rule_node.child("pcre2"); pcre2_node; pcre2_node = pcre2_node.next_sibling("pcre2")) 
                 {
                     string s = pcre2_node.text().as_string();
                     if (!s.empty()) {
@@ -324,58 +318,58 @@ public:
                     }
                 }
 
-                table[currentSection][rule.id] = rule;
+                table[current_section][rule.id] = rule;
             }
         }
     }
 
     /**
-     * @brief Parse XML Nodes into AConfig Table
+     * @brief Parse XML Nodes into aconfig Table
      *
-     * The `parseToAConfig` function is used to parse XML nodes from a specified XML file and populate a structured table of
-     * `AConfig` objects. Each XML node represents configuration data, and the parsed data is organized within the table.
+     * The `read_aconfig` function is used to parse XML nodes from a specified XML file and populate a structured table of
+     * `aconfig` objects. Each XML node represents configuration data, and the parsed data is organized within the table.
      *
-     * @param[in] fileName The file name of the XML file containing configuration nodes.
+     * @param[in] file_name The file name of the XML file containing configuration nodes.
      * @param[out] table A reference to a map for storing the parsed configuration data. The map is structured as follows:
      *                  - The keys represent unique identifiers for each configuration.
      *                  - The values are maps containing configuration settings organized by integer keys.
      * @return An integer result code:
-     *         - SUCCESS: The XML nodes were successfully parsed and populated into the AConfig table.
+     *         - SUCCESS: The XML nodes were successfully parsed and populated into the aconfig table.
      *         - FAILED: The operation encountered errors and failed to parse or populate the configuration data.
      */
-    int parseToAConfig(string fileName, std::unordered_map<string, std::unordered_map<int, AConfig>> &table)
+    int read_aconfig(string file_name, std::unordered_map<string, std::unordered_map<int, aconfig>> &table)
     {
-        pugi::xml_parse_result result = doc.load_file(fileName.c_str());
+        pugi::xml_parse_result result = doc.load_file(file_name.c_str());
 
         if (!result)
         {
             string error = result.description();
-            AgentUtils::writeLog(FILE_ERROR + fileName, FAILED);
+            agent_utils::write_log(FILE_ERROR + file_name, FAILED);
             return FAILED;
         }
 
         pugi::xml_node root = doc.child("root");
         if (root)
         {
-            for (pugi::xml_node groupNode = root.child("group"); groupNode; groupNode = groupNode.next_sibling("group"))
+            for (pugi::xml_node group_node = root.child("group"); group_node; group_node = group_node.next_sibling("group"))
             {
-                extractRuleAttributes(groupNode, table);
+                extract_rule_attributes(group_node, table);
             }
         }
         else
         {
             root = doc.child("group");
-            extractRuleAttributes(root, table);
+            extract_rule_attributes(root, table);
         }
         
-        AgentUtils::writeLog("XML parsing success for " + fileName, DEBUG);
+        agent_utils::write_log("XML parsing success for " + file_name, DEBUG);
         return SUCCESS;
     }
 
     /**
      * @brief Clean or Truncate a File
      *
-     * The `cleanFile` function is used to truncate or clean the contents of a file located at the specified file path.
+     * The `clean_file` function is used to truncate or clean the contents of a file located at the specified file path.
      * This operation removes all data from the file, effectively resetting it to an empty state.
      *
      * @param[in] filePath The file path of the file to be cleaned or truncated.
@@ -383,12 +377,12 @@ public:
      *         - SUCCESS: The file was successfully cleaned or truncated.
      *         - FAILED: The operation encountered errors and failed to clean or truncate the file.
      */
-    int cleanFile(const string& filePath)
+    int clean_file(const string& filePath)
     {
         std::ofstream file(filePath, std::ios::trunc);
         if (file.is_open())
         {
-            AgentUtils::writeLog(CLEAN_FILE + " <" + filePath + ">", SUCCESS);
+            agent_utils::write_log(CLEAN_FILE + " <" + filePath + ">", SUCCESS);
             file.close();
             return SUCCESS;
         }
@@ -420,13 +414,13 @@ public:
     /**
      * @brief Convert Comma-Separated String to Vector
      *
-     * The `toVector` function is used to convert a comma-separated string of fields into a vector of individual strings.
+     * The `to_vector` function is used to convert a comma-separated string of fields into a vector of individual strings.
      *
      * @param[in] columns The input string containing comma-separated fields.
      * @param[in] sep The character used as the separator between fields (typically a comma ',' in this case).
      * @return A vector of strings, where each string represents an individual field from the input string.
      */
-    vector<string> toVector(string columns, const char sep)
+    vector<string> to_vector(string columns, const char sep)
     {
         vector<string> names;
         std::stringstream iss(columns);
@@ -441,14 +435,14 @@ public:
     /**
      * @brief Validate INI Configuration Line
      *
-     * The `validateText` function is used to validate an INI configuration line to determine if it contains valid data or
+     * The `validate_ini_file_text` function is used to validate an INI configuration line to determine if it contains valid data or
      * should be considered as a comment or empty line. Valid lines are those that contain meaningful configuration data.
      *
      * @param[in,out] line The INI configuration line to be validated. If the line is not valid (comment or empty), it will
      *                    be modified to an empty string.
      * @return `true` if the line contains valid configuration data, `false` if it is a comment or empty line.
      */
-    bool validateText(string &line)
+    bool validate_ini_file_text(string &line)
     {
         size_t delimiter = line.find(';');
         bool result = true;
@@ -464,7 +458,7 @@ public:
     /**
      * @brief Read and Parse Decoder Configuration
      *
-     * The `readDecoderConfig` function is used to read decoder configuration data from an XML file located at the specified
+     * The `read_decoder_config` function is used to read decoder configuration data from an XML file located at the specified
      * file path and parse it into a structured table. The parsed configuration data is organized as a map, where each decoder
      * is associated with a unique identifier and its configuration details.
      *
@@ -476,20 +470,20 @@ public:
      *         - SUCCESS: The XML decoder configuration file was successfully read and parsed into the table.
      *         - FAILED: The operation encountered errors and failed to read or parse the configuration.
      */
-    int readDecoderConfig(const string& path, std::unordered_map<string, decoder>& table)
+    int read_decoder_config(const string& path, std::unordered_map<string, decoder>& table)
     {
-        AgentUtils::writeLog("Reading " + path, DEBUG);
+        agent_utils::write_log("Reading " + path, DEBUG);
         if (!std::filesystem::is_regular_file(path))
         {
-           AgentUtils::writeLog("Expected a file " + path, FATAL);
+           agent_utils::write_log("Expected a file " + path, FATAL);
         }
-        return parseToDecoder(path, table);
+        return read_decoder(path, table);
     }
 
     /**
      * @brief Read and Parse XML Rule Configuration
      *
-     * The `readXmlRuleConfig` function is used to read IDS (Intrusion Detection System) rules in XML format from the specified
+     * The `read_xml_rule_config` function is used to read IDS (Intrusion Detection System) rules in XML format from the specified
      * file path and parse them into a structured table. The parsed rules are organized in a `map` of rules, where each rule
      * is associated with a unique identifier and configuration details.
      *
@@ -501,41 +495,41 @@ public:
      *         - SUCCESS: The XML rule configuration was successfully read and parsed into the table.
      *         - FAILED: The operation encountered errors and failed to read or parse the configuration.
      */
-    int readXmlRuleConfig(const string path, std::unordered_map<string, std::unordered_map<int, AConfig>> &table)
+    int read_xml_rule_config(const string path, std::unordered_map<string, std::unordered_map<int, aconfig>> &table)
     {
-        AgentUtils::writeLog("Reading " + path, DEBUG);
+        agent_utils::write_log("Reading " + path, DEBUG);
         int result = SUCCESS;
         int isFile = 0;
-        if (OS::isDirExist(path) && std::filesystem::is_regular_file(path))
+        if (os::is_dir_exist(path) && std::filesystem::is_regular_file(path))
         {
             isFile = 1;
         }
 
         if (isFile)
         {
-            result = parseToAConfig(path, table);
+            result = read_aconfig(path, table);
         }
         else
         {
-            string currentFile = path;
+            string current_file = path;
             vector<string> files;
-            if (currentFile[currentFile.size() - 1] == '/')
+            if (current_file[current_file.size() - 1] == '/')
             {
-                currentFile = currentFile.substr(0, currentFile.find_last_of('/'));
+                current_file = current_file.substr(0, current_file.find_last_of('/'));
             }
-            result = OS::getRegularFiles(currentFile, files);
+            result = os::get_regular_files(current_file, files);
 
             if (result == FAILED)
                 return FAILED;
 
             if (files.size() == 0)
             {
-                AgentUtils::writeLog(INVALID_PATH + path, FAILED);
+                agent_utils::write_log(INVALID_PATH + path, FAILED);
                 return FAILED;
             }
             for (string file : files)
             {
-                result = parseToAConfig(file, table);
+                result = read_aconfig(file, table);
             }
         }
 
@@ -545,7 +539,7 @@ public:
     /**
      * @brief Read and Parse INI Configuration File
      *
-     * The `readIniConfigFile` function is used to read configuration settings from an INI format file located at the specified
+     * The `rea_ini_config_file` function is used to read configuration settings from an INI format file located at the specified
      * file path and parse them into a structured table format. The parsed configuration settings are organized as a map of maps,
      * providing a convenient way to access and manage configuration data.
      *
@@ -557,16 +551,16 @@ public:
      *         - SUCCESS: The INI configuration file was successfully read and parsed into the table.
      *         - FAILED: The operation encountered errors and failed to read or parse the configuration.
      */
-    int readIniConfigFile(const string path, map<string, map<string, string>> &table)
+    int read_ini_config_file(const string path, map<string, map<string, string>> &table)
     {
         int result = SUCCESS;
         fstream file(path, std::ios::in | std::ios::binary);
-        string line, currentSection;
+        string line, current_section;
         int index = 1;
 
         if (!file)
         {
-            AgentUtils::writeLog(INVALID_FILE + path, FAILED);
+            agent_utils::write_log(INVALID_FILE + path, FAILED);
             return FAILED;
         }
 
@@ -580,12 +574,12 @@ public:
             }
             else if (line[0] == '[' && line[line.size() - 1] == ']')
             {
-                currentSection = trim(line.substr(1, line.size() - 2));
+                current_section = trim(line.substr(1, line.size() - 2));
             }
             else if (line[0] == '[' && line[line.size() - 1] != ']')
             {
-                AgentUtils::writeLog(INVALID_FILE + path, FAILED);
-                AgentUtils::writeLog("Invalid Config file : line number " + std::to_string(index), FAILED);
+                agent_utils::write_log(INVALID_FILE + path, FAILED);
+                agent_utils::write_log("Invalid Config file : line number " + std::to_string(index), FAILED);
                 result = FAILED;
                 break;
             }
@@ -595,15 +589,15 @@ public:
                 if (delimiter != string::npos)
                 {
                     string key = trim(line.substr(0, delimiter));
-                    if (!validateText(key))
+                    if (!validate_ini_file_text(key))
                     {
-                        AgentUtils::writeLog("Invalid Config file : line number " + std::to_string(index), FAILED);
+                        agent_utils::write_log("Invalid Config file : line number " + std::to_string(index), FAILED);
                         result = FAILED;
                         break;
                     }
                     string value = trim(line.substr(delimiter + 1));
-                    validateText(value);
-                    table[currentSection][key] = value;
+                    validate_ini_file_text(value);
+                    table[current_section][key] = value;
                 }
             }
             index++;

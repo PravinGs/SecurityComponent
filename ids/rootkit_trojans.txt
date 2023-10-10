@@ -1,5 +1,5 @@
 # rootkit_trojans.txt, (C) 2018 OSSEC Project
-# Imported from the rootcheck project.
+# Imported from the root_check project.
 # Some entries taken from the chkrootkit project.
 #
 # Released under the same license as OSSEC.

@@ -10,34 +10,34 @@
 /**
  * @brief Monitor Controller
  * 
- * The `MonitorController` class serves as the controler layer for managing and reading processes information. 
+ * The `monitor_controller` class serves as the controler layer for managing and reading processes information. 
  * It provides methoods fot initiating device monitoring operations and managing monitor related tasks.
  */
-class MonitorController
+class monitor_controller
 {
 private:
-    IMonitor *_monitorService = nullptr; /**< A private pointer to the IMonitor service. */
-    Config _configService; /**< A private instance of IniConfig for configuration management. */
+    IMonitor *_monitor_service = nullptr; /**< A private pointer to the IMonitor service. */
+    Config _config_service; /**< A private instance of IniConfig for configuration management. */
     Proxy proxy; /**< A private instance of the Proxy class. */
     const string monitor = "monitor"; /**< A private constant string for monito process name. */
 
 public:
     /**
-     * @brief Construct a new MonitorController object.
+     * @brief Construct a new monitor_controller object.
      *
-     * This constructor initializes the `MonitorController` and creates an instance of the `MonitorService`
+     * This constructor initializes the `monitor_controller` and creates an instance of the `monitor_service`
      * to be used for monitor.
      */
-    MonitorController() : _monitorService(new MonitorService()) {}
+    monitor_controller() : _monitor_service(new monitor_service()) {}
 
     /**
      * @brief Get Monitor Log
      *
-     * This function validates the configuration parameters provided in the `configTable` to ensure they meet the required
-     * criteria for monitoring. After validation, it invokes the `_monitorService->getData()` function to collect
+     * This function validates the configuration parameters provided in the `config_table` to ensure they meet the required
+     * criteria for monitoring. After validation, it invokes the `_monitor_service->get_monitor_data()` function to collect
      * information about every process running in the system. Finally, it sends the collected information to the cloud.
      *
-     * @param[in] configTable A map containing configuration data for monitoring.
+     * @param[in] config_table A map containing configuration data for monitoring.
      *                       The map should be structured as follows:
      *                       - The keys are configuration identifiers.
      *                       - The values are maps containing monitoring configuration settings.
@@ -45,30 +45,30 @@ public:
      *         - SUCCESS: The monitoring data was successfully collected and processed.
      *         - FAILED: The validation, data collection, or processing encountered errors.
      */    
-    int getMonitorLog(map<string, map<string, string>>& configTable)
+    int getMonitorLog(map<string, map<string, string>>& config_table)
     {
         int result = SUCCESS;
-        string writePath = configTable[monitor]["write_path"];
-        string postUrl = configTable["cloud"]["monitor_url"];
-        string attributeName = configTable["cloud"]["form_name"];
+        string writePath = config_table[monitor]["write_path"];
+        string postUrl = config_table["cloud"]["monitor_url"];
+        string attributeName = config_table["cloud"]["form_name"];
 
-        if (_monitorService->getData() == FAILED)
+        if (_monitor_service->get_monitor_data() == FAILED)
             return FAILED;
 
-        // result = CurlHandler::post(postUrl, formName, jsonFile);
-        // _configService.cleanFile(writePath);
+        // result = curl_handler::post(postUrl, formName, jsonFile);
+        // _config_service.clean_file(writePath);
         return result;
     }
 
     /**
-     * @brief Destructor for MonitorController.
+     * @brief Destructor for monitor_controller.
      *
-     * The destructor performs cleanup tasks for the `MonitorController` class, which may include
-     * releasing resources and deallocating memory, such as deleting the `_monitorService` instance.
+     * The destructor performs cleanup tasks for the `monitor_controller` class, which may include
+     * releasing resources and deallocating memory, such as deleting the `_monitor_service` instance.
      */
-    virtual ~MonitorController()
+    virtual ~monitor_controller()
     {
-        delete _monitorService;
+        delete _monitor_service;
     }
 };
 

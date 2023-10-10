@@ -9,32 +9,32 @@
 /**
  * @brief Firmware Controller
  * 
- * The `FirmwareController` class serves as the controller layer for applications version management. 
+ * The `patch_controller` class serves as the controller layer for applications version management. 
  * It provides methods for initiating operations and managing related tasks.
  */
-class FirmwareController
+class patch_controller
 {
 private:
-    IFService *_fservice = nullptr; /**< A private pointer to the IFService service. */
+    Ipatch_service *_patch_service = nullptr; /**< A private pointer to the Ipatch_service service. */
     Proxy _proxy; /**< A private instance of the Proxy class. */
     const string firmware = "firmware"; /**< A private constant string for firmware component name. */
     
 public:
     /**
      * @brief Construct a new Firmware Controller object
-     * This constructor initializes the `FirmwareController` and creates an instance of the `FService`
+     * This constructor initializes the `patch_controller` and creates an instance of the `patch_service`
      * to be used for firmware management.
      */
-    FirmwareController() : _fservice(new FService()) {}
+    patch_controller() : _patch_service(new patch_service()) {}
 
     /**
      * @brief Start Path Management Operation
      *
-     * This function validates the configuration parameters provided in the `configTable` to ensure they meet the required
+     * This function validates the configuration parameters provided in the `config_table` to ensure they meet the required
      * criteria for path management. After successful validation, it initiates the operation to manage paths based on the
      * validated configuration.
      *
-     * @param[in] configTable A map containing configuration data for path management.
+     * @param[in] config_table A map containing configuration data for path management.
      *                       The map should be structured as follows:
      *                       - The keys are configuration identifiers.
      *                       - The values are maps containing path management settings.
@@ -42,16 +42,16 @@ public:
      *         - SUCCESS: The path management operation was successfully initiated.
      *         - FAILED: The validation or operation initiation encountered errors.
      */
-    int start(map<string, map<string, string>> &configTable)
+    int start(map<string, map<string, string>> &config_table)
     {
-        string application = configTable[firmware]["application"];
-        string rootDir     = configTable[firmware]["root_dir"];
+        string application = config_table[firmware]["application"];
+        string rootDir     = config_table[firmware]["root_dir"];
         if (application.empty()) //Precheck
         {
-            AgentUtils::writeLog("No Application configured for patch management.", WARNING);
+            agent_utils::write_log("No Application configured for patch management.", WARNING);
             return SUCCESS;
         }
-        int result = _fservice->start(configTable);
+        int result = _patch_service->start(config_table);
         while (result == SERVER_ERROR)
         {
 
@@ -60,21 +60,21 @@ public:
             std::chrono::system_clock::duration duration = executionTime - currentTime;
             int waitingTime = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
             std::this_thread::sleep_for(std::chrono::seconds(waitingTime));
-            result = _fservice->start(configTable);
+            result = _patch_service->start(config_table);
         }
 
         return result;
     }
     
     /**
-     * @brief Destructor for FirmwareController.
+     * @brief Destructor for patch_controller.
      *
-     * The destructor performs cleanup tasks for the `FirmwareController` class, which may include
-     * releasing resources and deallocating memory, such as deleting the `_fservice` instance.
+     * The destructor performs cleanup tasks for the `patch_controller` class, which may include
+     * releasing resources and deallocating memory, such as deleting the `_patch_service` instance.
      */
-    ~FirmwareController()
+    ~patch_controller()
     {
-        delete _fservice;
+        delete _patch_service;
     }
 };
 

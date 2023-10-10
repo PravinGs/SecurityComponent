@@ -5,11 +5,11 @@
 /**
  * @brief Curl Handler
  *
- * The `CurlHandler` class is responsible for managing all API-related activities within the application. It serves as
+ * The `curl_handler` class is responsible for managing all API-related activities within the application. It serves as
  * a central component for making HTTP requests, handling responses, and interacting with external services through APIs.
  * This class plays a crucial role in facilitating communication with external systems and services.
  */
-class CurlHandler
+class curl_handler
 {
 public:
     static size_t writeCallback(char *data, size_t size, size_t nmemb, std::string *response)
@@ -58,17 +58,18 @@ public:
     static long post(const string& postUrl, const string& formName, const string& logName)
     {
         CURLcode res;
-        const char *contentType = "application/json";
+        const char *content_type = "application/json";
         std::string response;
         long httpCode = 0;
         curl_global_init(CURL_GLOBAL_DEFAULT);
 
         CURL *curl = curl_easy_init();
-        vector<string> jsonFiles;
-        int result = OS::readRegularFiles(jsonFiles);
+        vector<string> json_files;
+        string path = BASE_LOG_DIR;
+        int result = os::get_regular_files(path + "json/", json_files);
         if (result == FAILED)
         {
-            AgentUtils::writeLog(FILE_ERROR + logName, FAILED);
+            agent_utils::write_log(FILE_ERROR + logName, FAILED);
             return FAILED;
         }
 
@@ -84,13 +85,13 @@ public:
 
             // Set the request as a POST
             curl_easy_setopt(curl, CURLOPT_POST, 1L);
-            for (string jsonFile : jsonFiles)
+            for (string jsonFile : json_files)
             {
 
                 // Set the request as multipart/form-data
                 struct curl_httppost *form = nullptr;
                 struct curl_httppost *last = nullptr;
-                curl_formadd(&form, &last, CURLFORM_COPYNAME, formName.c_str(), CURLFORM_FILE, jsonFile.c_str(), CURLFORM_CONTENTTYPE, contentType, CURLFORM_END);
+                curl_formadd(&form, &last, CURLFORM_COPYNAME, formName.c_str(), CURLFORM_FILE, jsonFile.c_str(), CURLFORM_CONTENTTYPE, content_type, CURLFORM_END);
                 curl_easy_setopt(curl, CURLOPT_HTTPPOST, form);
 
                 curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
@@ -108,23 +109,23 @@ public:
                 res = curl_easy_perform(curl);
                 if (res == CURLE_OK)
                 {
-                    AgentUtils::writeLog("Request successful");
-                    AgentUtils::writeLog("HTTP Status Code: " + std::to_string(httpCode), SUCCESS);
+                    agent_utils::write_log("Request successful");
+                    agent_utils::write_log("HTTP Status Code: " + std::to_string(httpCode), SUCCESS);
                     std::cout << "Response: " << response << "\n";
                 }
                 else
                 {
                     string error = curl_easy_strerror(res);
-                    AgentUtils::writeLog("Request failed: " + error, FAILED);
+                    agent_utils::write_log("Request failed: " + error, FAILED);
                 }
 
                 if (httpCode == POST_SUCCESS)
                 {
-                    OS::deleteFile(jsonFile);
+                    os::delete_file(jsonFile);
                 }
                 else
                 {
-                    AgentUtils::writeLog("Failed to send this file " + jsonFile, FAILED);
+                    agent_utils::write_log("Failed to send this file " + jsonFile, FAILED);
                 }
                 std::chrono::seconds sleepDuration(1);
                 std::this_thread::sleep_for(sleepDuration);

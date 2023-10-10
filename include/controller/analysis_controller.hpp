@@ -1,26 +1,26 @@
 #pragma once
 
-#include "agentUtils.hpp"
-#include "service/loganalysis_service.hpp"
+#include "agent_utils.hpp"
+#include "service/log_analysis_service.hpp"
 
 /**
  * @brief Analysis Controller
  *
- * The `AnalysisController` class is responsible for managing log analysis within the application. It serves as the
+ * The `analysis_controller` class is responsible for managing log analysis within the application. It serves as the
  * central component for processing and interpreting log data, providing insights, and facilitating data-driven decision-making.
  * This class plays a crucial role in extracting meaningful information from logs and enhancing application functionality.
  */
-class AnalysisController
+class analysis_controller
 {
     private:
-        LogAnalysis * _logAnalysis = nullptr; /**< A private pointer to the LogAnalysis service. */
+        log_analysis * _log_analysis = nullptr; /**< A private pointer to the log_analysis service. */
     public: 
         /**
          * @brief Construct a new Analysis Controller  object
-         * This constructor initializes the `AnalysisController` and creates an instance of the `LogAnalysis`
+         * This constructor initializes the `analysis_controller` and creates an instance of the `log_analysis`
          * to be used for firmware management.
          */
-        AnalysisController() : _logAnalysis(new LogAnalysis()) {} 
+        analysis_controller() : _log_analysis(new log_analysis()) {} 
 
         /**
          * @brief Start Log Analysis Operation
@@ -40,14 +40,14 @@ class AnalysisController
 
             if (decoderPath.empty() || rulesPath.empty()) return;
 
-            int result = _logAnalysis->start(decoderPath, rulesPath, readDir);
+            int result = _log_analysis->start(decoderPath, rulesPath, readDir);
         }
         /**
-         * @brief Destructor for AnalysisController.
+         * @brief Destructor for analysis_controller.
          *
-         * The destructor performs cleanup tasks for the `AnalysisController` class, which may include
-         * releasing resources and deallocating memory, such as deleting the `_logAnalysis` instance.
+         * The destructor performs cleanup tasks for the `analysis_controller` class, which may include
+         * releasing resources and deallocating memory, such as deleting the `_log_analysis` instance.
          */
-        virtual ~AnalysisController() {delete _logAnalysis;}
+        virtual ~analysis_controller() {delete _log_analysis;}
 
 };

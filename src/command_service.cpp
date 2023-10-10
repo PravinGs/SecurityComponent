@@ -3,7 +3,7 @@
 vector<string> whitelist = {"netstat -tan | grep LISTEN | egrep -v '(127.0.0.1|::1)' | sort", "df -P", "last -n 5"};
 
 
-int Command::validateCommand(const string command)
+int command::validate_command(const string command)
 {
     int result = FAILED;
     for (string s : whitelist)
@@ -17,11 +17,11 @@ int Command::validateCommand(const string command)
     return result;
 }
 
-// int Command::readCommand(const string command, const string processName)
+// int command::read_command(const string command, const string processName)
 // {
 //     int result = SUCCESS;
 //     string logs;
-//     result = readCommand(command, logs);
+//     result = read_command(command, logs);
 //     if (result == FAILED)
 //     {
 //         return FAILED;
@@ -29,9 +29,9 @@ int Command::validateCommand(const string command)
 //     return SUCCESS;
 // }
 
-int Command::readCommand(const string& command, vector<string> &logs)
+int command::read_command(const string& command, vector<string> &logs)
 {
-    // if (validateCommand(command) == FAILED)
+    // if (validate_command(command) == FAILED)
     //     return FAILED;
 
     FILE *process = popen(command.c_str(), "r");
@@ -40,7 +40,7 @@ int Command::readCommand(const string& command, vector<string> &logs)
 
     if (!process)
     {
-        AgentUtils::writeLog("Failed to open this process for " + command, FAILED);
+        agent_utils::write_log("Failed to open this process for " + command, FAILED);
         return FAILED;
     }
 

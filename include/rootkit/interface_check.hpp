@@ -12,7 +12,7 @@
     steps    :: Get all the available interfaces.
 */
 
-class InterfaceCheck
+class interface_check
 {
 private:
     vector<string> promiscuousInterfaces;
@@ -39,12 +39,12 @@ public:
     
     int check(vector<string> & reports)
     {
-        AgentUtils::writeLog("Checking Network Interfaces starting", INFO);
+        agent_utils::write_log("Checking Network Interfaces starting", INFO);
         fd = socket(AF_INET, SOCK_DGRAM, 0);
 
         if (fd < 0)
         {
-            AgentUtils::writeLog("Error checking interfaces (socket)", FAILED);
+            agent_utils::write_log("Error checking interfaces (socket)", FAILED);
             return FAILED;
         }
 
@@ -55,7 +55,7 @@ public:
         if (ioctl(fd, SIOCGIFCONF, &_if) < 0)
         {
             close(fd);
-            AgentUtils::writeLog("Error checking interfaces (ioctl)", FAILED);
+            agent_utils::write_log("Error checking interfaces (ioctl)", FAILED);
             return FAILED;
         }
 
@@ -88,14 +88,14 @@ public:
                          "(probably trojaned).", _ifr.ifr_name);
                 }
                 reports.push_back(_ifr.ifr_name);
-                AgentUtils::writeLog(op_msg, FAILED);
+                agent_utils::write_log(op_msg, FAILED);
                 errors++;
             }
         }
         close(fd);
 
         if (errors == 0) {
-            AgentUtils::writeLog("No problem detected on ifconfig/ifs. Analyzed " + std::to_string(total) + " interfaces", INFO);
+            agent_utils::write_log("No problem detected on ifconfig/ifs. Analyzed " + std::to_string(total) + " interfaces", INFO);
         }
 
         return SUCCESS;

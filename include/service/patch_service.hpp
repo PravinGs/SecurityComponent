@@ -61,10 +61,10 @@ struct sftp_data
 /**
  * @brief Interface for Firmware Download Service
  *
- * The `IFService` interface defines a set of functions for starting a firmware download service. Classes that implement
+ * The `Ipatch_service` interface defines a set of functions for starting a firmware download service. Classes that implement
  * this interface are responsible for downloading firmware based on the provided configuration table.
  */
-class IFService
+class Ipatch_service
 {
 public:
     /**
@@ -73,33 +73,33 @@ public:
      * The `start` function is a pure virtual method that starts the firmware download service based on a configuration
      * table. Derived classes must implement this method to provide specific functionality for firmware downloads.
      *
-     * @param[in] configTable A map containing configuration data for firmware downloads.
+     * @param[in] config_table A map containing configuration data for firmware downloads.
      *                       The map should be structured to specify download parameters.
      * @return An integer result code indicating the success or failure of the firmware download operation.
      */
-    virtual int start(map<string, map<string, string>>& configTable) = 0;
+    virtual int start(map<string, map<string, string>>& config_table) = 0;
 
     /**
      * @brief Destructor
      *
-     * The virtual destructor for the `IFService` interface is provided to ensure proper cleanup when derived classes
+     * The virtual destructor for the `Ipatch_service` interface is provided to ensure proper cleanup when derived classes
      * are destroyed.
      */
-    virtual ~IFService() {}
+    virtual ~Ipatch_service() {}
 };
 
 /**
  * @brief Firmware Download Service Implementation
  *
- * The `FService` class is an implementation of the `IFService` interface. It provides functionality to start a firmware
+ * The `patch_service` class is an implementation of the `Ipatch_service` interface. It provides functionality to start a firmware
  * download service based on the provided configuration table.
  */
-class FService : public IFService
+class patch_service : public Ipatch_service
 {
 private:
     CURL *curl = nullptr;
-    long fileSize = 0L;
-    download_props dProperties;
+    long file_size = 0L;
+    download_props d_properties;
     string username, password;
 
 private:
@@ -117,7 +117,7 @@ private:
     /**
      * @brief Create Download Properties from Configuration Table
      *
-     * The `createDProps` function is used to construct a `download_props` structure by extracting firmware section details
+     * The `create_download_property` function is used to construct a `download_props` structure by extracting firmware section details
      * from the provided configuration table. It populates the `download_props` structure with values specified in the
      * configuration table.
      *
@@ -126,18 +126,18 @@ private:
      *         - SUCCESS: The `download_props` structure was successfully created and populated.
      *         - FAILED: The operation encountered errors and failed to create or populate the structure.
      */
-    int createDProps(map<string, map<string, string>>& table);
+    int create_download_property(map<string, map<string, string>>& table);
 
     /**
      * @brief Extract File Name from URL
      *
-     * The `extractFileName` function is used to extract the file name from a given URL. It parses the URL and retrieves the
+     * The `extract_ile_name` function is used to extract the file name from a given URL. It parses the URL and retrieves the
      * name of the file that is going to be downloaded.
      *
      * @param[in] url The URL from which the file name needs to be extracted.
      * @return A string representing the extracted file name.
      */
-    string extractFileName(const string &url);
+    string extract_ile_name(const string &url);
     
     /**
      * @brief Download File via HTTPS Protocol
@@ -165,12 +165,12 @@ private:
 public:
 
     /**
-     * @brief Constructor for FService
+     * @brief Constructor for patch_service
      *
-     * The constructor for the `FService` class initializes an instance of the class. It sets up the necessary resources
+     * The constructor for the `patch_service` class initializes an instance of the class. It sets up the necessary resources
      * and configurations for the firmware download service.
      */
-    FService(); 
+    patch_service(); 
 
     /**
      * @brief Start Firmware Download
@@ -178,19 +178,19 @@ public:
      * The `start` function is implemented to start the firmware download service based on the provided configuration
      * table. It handles the firmware download process according to the specified parameters.
      *
-     * @param[in] configTable A map containing configuration data for firmware downloads.
+     * @param[in] config_table A map containing configuration data for firmware downloads.
      *                       The map should be structured to specify download parameters.
      * @return An integer result code indicating the success or failure of the firmware download operation.
      */
-    int start(map<string, map<string, string>>& configTable);
+    int start(map<string, map<string, string>>& config_table);
     
     /**
-     * @brief Destructor for FService
+     * @brief Destructor for patch_service
      *
-     * The destructor for the `FService` class performs cleanup and resource release when an instance of the class is
+     * The destructor for the `patch_service` class performs cleanup and resource release when an instance of the class is
      * destroyed. It ensures that any allocated resources are properly released.
      */
-    ~FService();
+    ~patch_service();
 };
 
 #endif

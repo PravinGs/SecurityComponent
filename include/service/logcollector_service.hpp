@@ -1,5 +1,5 @@
-#ifndef LOGSERVICE_HPP
-#define LOGSERVICE_HPP
+#ifndef log_service_HPP
+#define log_service_HPP
 #pragma once
 
 #include "common.hpp"
@@ -8,7 +8,7 @@
 
 typedef struct standard_log_attrs standard_log_attrs;
 
-static map<string, int> LogCategory{{"sys", 2}, {"network", 3}, {"ufw", 4}};
+static map<string, int> LogCategory {{"sys", 2}, {"network", 3}, {"ufw", 4}};
 
 struct standard_log_attrs
 {
@@ -67,24 +67,24 @@ public:
      * This pure virtual function is meant to be implemented by derived classes. It defines the contract for retrieving
      * syslog data based on the provided parameters.
      *
-     * @param[in] appName The name of the application for which syslog data is requested.
+     * @param[in] app_name The name of the application for which syslog data is requested.
      * @param[in] json A JSON object to store syslog information.
-     * @param[in] names A vector of names specifying the cetralized attributes to retrieve. (TimeGenerated,UserLoginId,LogLevel,Priority,Message)
-     * @param[in] path The path to the syslog file.
-     * @param[in,out] previousTime The timestamp indicating the last read time of the syslog file.
-     * @param[in] levels A vector of log levels to filter syslog entries.(customizable levels to read)
+     * @param[in] log_attributes A vector of log_attributes specifying the cetralized log_attributes to retrieve. (TimeGenerated,UserLoginId,LogLevel,Priority,Message)
+     * @param[in] read_path The read_path to the syslog file.
+     * @param[in,out] last_read_time The timestamp indicating the last read time of the syslog file.
+     * @param[in] log_levels A vector of log log_levels to filter syslog entries.(customizable log_levels to read)
      * @param[in] remote A character indicating whether a remote connection is established ('Y' for yes, 'N' for no).
      * @return An integer result code:
      *         - SUCCESS: The syslog retrieval operation was successful.
      *         - FAILED: The syslog retrieval operation encountered errors.
      */
-    virtual int getSysLog(
-        const string& appName,
+    virtual int get_syslog(
+        const string& app_name,
         Json::Value &json,
-        const vector<string>& names,
-        const string& path,
-        string &previousTime,
-        const vector<string>& levels,
+        const vector<string>& log_attributes,
+        const string& read_path,
+        string &last_read_time,
+        const vector<string>& log_levels,
         const char& remote) = 0;
 
     /**
@@ -94,23 +94,23 @@ public:
      * application log data based on the provided parameters.
      *
      * @param[in] json A JSON object to store application log information.
-     * @param[in] names A vector of names specifying the application log entries to retrieve. (log attributes)
-     * @param[in] readDir The directory where application log files are located.
-     * @param[in] writePath The path to write processed application log data.
-     * @param[in,out] previousTime The timestamp indicating the last read time of the log files.
-     * @param[in] levels A vector of log levels to filter application log entries.
+     * @param[in] log_attributes A vector of log_attributes specifying the application log entries to retrieve. (log log_attributes)
+     * @param[in] read_path The directory where application log files are located.
+     * @param[in] write_path The read_path to write processed application log data.
+     * @param[in,out] last_read_time The timestamp indicating the last read time of the log files.
+     * @param[in] log_levels A vector of log log_levels to filter application log entries.
      * @param[in] delimiter A character delimiter for parsing log entries.
      * @return An integer result code:
      *         - SUCCESS: The application log retrieval operation was successful.
      *         - FAILED: The application log retrieval operation encountered errors.
      */
-    virtual int getAppLog(
+    virtual int get_applog(
         Json::Value &json,
-        const vector<string>& names,
-        const string& readDir,
-        const string& writePath,
-        string &previousTime,
-        const vector<string>& levels,
+        const vector<string>& log_attributes,
+        const string& read_path,
+        const string& write_path,
+        string &last_read_time,
+        const vector<string>& log_levels,
         const char& delimeter) = 0;
     
     /**
@@ -124,26 +124,26 @@ public:
 /**
  * @brief Log Service Implementation
  *
- * The `LogService` class is a concrete implementation of the `ILog` interface. It provides functionality for
+ * The `log_service` class is a concrete implementation of the `ILog` interface. It provides functionality for
  * retrieving and managing log data, including syslog and application logs. This class is responsible for
  * implementing the log-related operations defined in the `ILog` interface.
  */
-class LogService : public ILog
+class log_service : public ILog
 {
 private:
-    Config _configService; /**< A private instance of IniConfig for configuration management. */
+    Config _config_service; /**< A private instance of IniConfig for configuration management. */
     map<string, int> _logLevel{{"none", 0}, {"trace", 1}, {"debug", 2}, {"warning", 3}, {"error", 4}, {"critical", 5}}; /**< A private constant map<string, int> for system log name. */
     
 private:
     /**
      * @brief Save Log Data as JSON
      *
-     * The `_saveAsJSON` function is a private method used to create a JSON file and store processed log data in it. It takes the provided `json`
+     * The `_save_json` function is a private method used to create a JSON file and store processed log data in it. It takes the provided `json`
      * object, log data from the `logs` vector, and column information from the `columns` vector to create the JSON file at
-     * the specified `path`. The `delimeter` parameter is used as a separator in the log data when constructing the JSON.
+     * the specified `read_path`. The `delimeter` parameter is used as a separator in the log data when constructing the JSON.
      *
      * @param[in] json A JSON object to store the log data.
-     * @param[in] path The path where the JSON file will be created and saved.
+     * @param[in] read_path The read_path where the JSON file will be created and saved.
      * @param[in] logs A vector of log entries to be included in the JSON.
      * @param[in] columns A vector of column information for the JSON structure.
      * @param[in] delimeter The character delimiter used to separate log data.
@@ -151,129 +151,129 @@ private:
      *         - SUCCESS: The log data was successfully saved as a JSON file.
      *         - FAILED: The operation encountered errors and failed to save the JSON file.
      */
-    int _saveAsJSON(Json::Value &json, const string& path, const vector<string>& logs, const vector<string>& columns, const char& delimeter);
+    int save_json(Json::Value &json, const string& read_path, const vector<string>& logs, const vector<string>& columns, const char& delimeter);
 
     /**
      * @brief Read Syslog File
      *
-     * The `_readSysLog` function is a private method used to read a syslog file located at the specified `path`. It splits
-     * the raw log lines into formatted log entries, which are stored in the `logs` parameter as a vector. The `delimeter` parameter is used as a separator when parsing log lines. The `previousTime`
+     * The `read_syslog_file` function is a private method used to read a syslog file located at the specified `read_path`. It splits
+     * the raw log lines into formatted log entries, which are stored in the `logs` parameter as a vector. The `delimeter` parameter is used as a separator when parsing log lines. The `last_read_time`
      * parameter is used to specify the last read time of the log file, and the `flag` parameter is set to `true` if the end
-     * of the file is reached. Log entries are filtered based on the specified `levels`. The `nextReadingTime` parameter is
+     * of the file is reached. Log entries are filtered based on the specified `log_levels`. The `next_log_reading_time` parameter is
      * updated to indicate the next time to read the log file.
      *
-     * @param[in] path The path to the syslog file.
+     * @param[in] read_path The read_path to the syslog file.
      * @param[in, out] logs A vector of formatted log entries.
      * @param[in] delimeter The character delimiter used to separate log data.
-     * @param[in] previousTime The last read time of the log file.
+     * @param[in] last_read_time The last read time of the log file.
      * @param[in, out] flag A boolean flag indicating log file read completed.
-     * @param[in] levels A vector of log levels to filter log entries.
-     * @param[in,out] nextReadingTime The timestamp indicating the next time to read the log file.
+     * @param[in] log_levels A vector of log log_levels to filter log entries.
+     * @param[in,out] next_log_reading_time The timestamp indicating the next time to read the log file.
      * @return An integer result code:
      *         - SUCCESS: The syslog reading operation was successful.
      *         - FAILED: The syslog reading operation encountered errors.
      */
-    int _readSysLog(const string& path, vector<string> &logs, const char& delimeter, const string &previousTime, bool &flag, const vector<string>& levels, string &nextReadingTime);
+    int read_syslog_file(const string& read_path, vector<string> &logs, const char& delimeter, const string &last_read_time, bool &flag, const vector<string>& log_levels, string &next_log_reading_time);
 
     /**
      * @brief Read Application Log File
      *
-     * The `_readAppLog` function is a private method used to read an application log file located at the specified `path`.
+     * The `read_applog_file` function is a private method used to read an application log file located at the specified `read_path`.
      * It splits the raw log lines into formatted log entries, which are stored in the `logs` parameter as a vector. The
-     * `delimeter` parameter is used as a separator when parsing log lines. The `previousTime` parameter is used to specify
+     * `delimeter` parameter is used as a separator when parsing log lines. The `last_read_time` parameter is used to specify
      * the last read time of the log file, and the `flag` parameter is set to `true` if the end of the file is reached.
-     * Log entries are filtered based on the specified `levels`. The `nextReadingTime` parameter is updated to indicate the
+     * Log entries are filtered based on the specified `log_levels`. The `next_log_reading_time` parameter is updated to indicate the
      * next time to read the log file.
      *
-     * @param[in] path The path to the application log file.
+     * @param[in] read_path The read_path to the application log file.
      * @param[in, out] logs A vector of formatted log entries.
      * @param[in] delimeter The character delimiter used to separate log data.
-     * @param[in] previousTime The last read time of the log file.
+     * @param[in] last_read_time The last read time of the log file.
      * @param[in, out] flag A boolean flag indicating if the end of the file is reached.
-     * @param[in] levels A vector of log levels to filter log entries.
-     * @param[in,out] nextReadingTime The timestamp indicating the next time to read the log file.
+     * @param[in] log_levels A vector of log log_levels to filter log entries.
+     * @param[in,out] next_log_reading_time The timestamp indicating the next time to read the log file.
      * @return An integer result code:
      *         - SUCCESS: The application log reading operation was successful.
      *         - FAILED: The application log reading operation encountered errors.
      */
-    int _readAppLog(const string& path, vector<string> &logs, const char& delimeter, const string &previousTime, bool &flag, const vector<string>& levels, string &nextReadingTime);
+    int read_applog_file(const string& read_path, vector<string> &logs, const char& delimeter, const string &last_read_time, bool &flag, const vector<string>& log_levels, string &next_log_reading_time);
     
     /**
      * @brief Get Files in Directory
      *
-     * The `_getDirFiles` function is a private method used to retrieve a list of regular files located in the specified `directory`.
+     * The `get_dir_files` function is a private method used to retrieve a list of regular files located in the specified `directory`.
      * It returns a vector containing `std::filesystem::directory_entry` objects representing the files found in the directory.
      *
-     * @param[in] directory The path to the directory from which to extract files.
+     * @param[in] directory The read_path to the directory from which to extract files.
      * @return A vector of `std::filesystem::directory_entry` objects representing the files in the directory.
      */
-    vector<std::filesystem::directory_entry> _getDirFiles(const string& directory);
+    vector<std::filesystem::directory_entry> get_dir_files(const string& directory);
 
     /**
      * @brief Save Logs to Local Storage
      *
-     * The `saveToLocal` function is a private method used to store collected logs from the provided `logs` vector to local storage.
-     * The logs are associated with the specified `appName`. This function is responsible for persisting log data
+     * The `save_read_logs` function is a private method used to store collected logs from the provided `logs` vector to local storage.
+     * The logs are associated with the specified `app_name`. This function is responsible for persisting log data
      * locally for further analysis or storage.
      *
      * @param[in] logs A vector of log entries to be saved to local storage.
-     * @param[in] appName The name of the application associated with the logs.
+     * @param[in] app_name The name of the application associated with the logs.
      * @return An integer result code:
      *         - SUCCESS: The log data was successfully saved to local storage.
      *         - FAILED: The operation encountered errors and failed to save the log data.
      */
-    int saveToLocal(const vector<string>& logs, const string& appName);
+    int save_read_logs(const vector<string>& logs, const string& app_name);
 
     /**
-     * @brief Verify JSON Path
+     * @brief Verify JSON read_path
      *
-     * The `verifyJsonPath` function is a private method used to verify the existence of a file specified by the provided `timestamp`.
-     * If the file does not exist, this function creates a new file at the specified path. It ensures that the path is
+     * The `get_json_write_path` function is a private method used to verify the existence of a file specified by the provided `timestamp`.
+     * If the file does not exist, this function creates a new file at the specified read_path. It ensures that the read_path is
      * available for storing JSON data.
      *
-     * @param[in,out] timestamp The path to the file to be verified or created. If the file does not exist, a new file
-     *                          will be created at this path.
+     * @param[in,out] timestamp The read_path to the file to be verified or created. If the file does not exist, a new file
+     *                          will be created at this read_path.
      * @return An integer result code:
-     *         - SUCCESS: The file path was verified, and the file exists or was successfully created.
-     *         - FAILED: The operation encountered errors, and the file path could not be verified or created.
+     *         - SUCCESS: The file read_path was verified, and the file exists or was successfully created.
+     *         - FAILED: The operation encountered errors, and the file read_path could not be verified or created.
      */
-    int verifyJsonPath(string &timestamp);
+    int get_json_write_path(string &timestamp);
 
     /**
      * @brief Categorize Log Entry
      *
      * The `categorize` function is a private method used to categorize a log entry specified by the `line` parameter into particular categories
-     * based on their data and the provided `levels`. This function is responsible for assigning a category or label to a log entry
+     * based on their data and the provided `log_levels`. This function is responsible for assigning a category or label to a log entry
      * to aid in log analysis or organization.
      *
      * @param[in, out] line The log entry to be categorized.
-     * @param[in] levels A vector of log levels used to determine the categorization criteria.
+     * @param[in] log_levels A vector of log log_levels used to determine the categorization criteria.
      */
-    void categorize(string &line, const vector<string>& levels);
+    void categorize(string &line, const vector<string>& log_levels);
     
     /**
      * @brief Read Dpkg Log File
      *
-     * The `readDpkgLog` function is a private method used to read a dpkg log file located at the specified `path`. It parses the
-     * log lines into individual log entries, which are stored in the `logs` vector. The `previousTime` parameter is used
-     * to specify the last read time of the log file. The `nextReadingTime` parameter is updated to indicate the next time
+     * The `read_dpkg_logfile` function is a private method used to read a dpkg log file located at the specified `read_path`. It parses the
+     * log lines into individual log entries, which are stored in the `logs` vector. The `last_read_time` parameter is used
+     * to specify the last read time of the log file. The `next_log_reading_time` parameter is updated to indicate the next time
      * to read the log file. The `flag` parameter is set to `true` if the end of the file is reached.
      *
-     * @param[in] path The path to the dpkg-formatted log file.
+     * @param[in] read_path The read_path to the dpkg-formatted log file.
      * @param[in, out] logs A vector of parsed log entries.
-     * @param[in, out] previousTime The last read time of the log file.
-     * @param[in, out] nextReadingTime The timestamp indicating the next time to read the log file.
+     * @param[in, out] last_read_time The last read time of the log file.
+     * @param[in, out] next_log_reading_time The timestamp indicating the next time to read the log file.
      * @param[in, out] flag A boolean flag indicating if the end of the file is reached.
      * @return An integer result code:
      *         - SUCCESS: The dpkg-formatted log reading operation was successful.
      *         - FAILED: The dpkg-formatted log reading operation encountered errors.
      */
-    int readDpkgLog(const string& path, vector<string> &logs, string &previousTime, string &nextReadingTime, bool &flag);
+    int read_dpkg_logfile(const string& read_path, vector<string> &logs, string &last_read_time, string &next_log_reading_time, bool &flag);
 
     /**
      * @brief Read Remote Syslog Data
      *
-     * The `readRemoteSysLog` function is used to read syslog data from a remote source connected through UDP. It retrieves
+     * The `read_remote_syslog` function is used to read syslog data from a remote source connected through UDP. It retrieves
      * syslog data from the `queue` and stores it in the `logs` vector. This function is responsible for reading logs
      * from a remote source when a remote connection is established.
      *
@@ -283,66 +283,66 @@ private:
      *         - SUCCESS: The remote syslog reading operation was successful.
      *         - FAILED: The remote syslog reading operation encountered errors.
      */
-    int readRemoteSysLog(UdpQueue &queue, vector<string> &logs);
+    int read_remote_syslog(UdpQueue &queue, vector<string> &logs);
 
 public:
     /**
      * @brief Default Constructor
      *
-     * The `LogService` class default constructor. It initializes a `LogService` object using the default constructor provided
+     * The `log_service` class default constructor. It initializes a `log_service` object using the default constructor provided
      * by the compiler.
      */
-    LogService() = default;
+    log_service() = default;
 
     /**
      * @brief Get Syslog Data
      *
-     * The `getSysLog` function is an overload of the pure virtual function defined in the `ILog` interface. It acts as a manager
-     * for collecting syslog data from various sources. This function retrieves syslog data from the specified `path` and processes
-     * it based on the provided criteria such as `appName`, `names`, `levels`, and `remote`. The `json` object is used to store the
-     * collected syslog data, and the `previousTime` parameter is utilized to keep track of the last read time.
+     * The `get_syslog` function is an overload of the pure virtual function defined in the `ILog` interface. It acts as a manager
+     * for collecting syslog data from various sources. This function retrieves syslog data from the specified `read_path` and processes
+     * it based on the provided criteria such as `app_name`, `log_attributes`, `log_levels`, and `remote`. The `json` object is used to store the
+     * collected syslog data, and the `last_read_time` parameter is utilized to keep track of the last read time.
      *
-     * @param[in] appName The name of the application for which syslog data is collected.
+     * @param[in] app_name The name of the application for which syslog data is collected.
      * @param[in] json A JSON object to store the collected syslog data.
-     * @param[in] names A vector of log file identifiers to filter syslog data.
-     * @param[in] path The path to the syslog file(s) to be read.
-     * @param[in,out] previousTime The last read time of the syslog file(s).
-     * @param[in] levels A vector of log levels to filter syslog entries.
+     * @param[in] log_attributes A vector of log file identifiers to filter syslog data.
+     * @param[in] read_path The read_path to the syslog file(s) to be read.
+     * @param[in,out] last_read_time The last read time of the syslog file(s).
+     * @param[in] log_levels A vector of log log_levels to filter syslog entries.
      * @param[in] remote A character indicating whether syslog data is collected remotely.
      * @return An integer result code:
      *         - SUCCESS: The syslog data was successfully collected and processed.
      *         - FAILED: The syslog data collection encountered errors.
      */
-    int getSysLog(const string& appName, Json::Value &json, const vector<string>& names, const string& path, string &previousTime, const vector<string>& levels, const char& remote); 
+    int get_syslog(const string& app_name, Json::Value &json, const vector<string>& log_attributes, const string& read_path, string &last_read_time, const vector<string>& log_levels, const char& remote); 
 
     /**
      * @brief Get Application Log Data
      *
-     * The `getAppLog` function is an implementation of a virtual function defined in the `ILog` interface. It retrieves
-     * application log data from the specified `readDir` and processes it based on the provided criteria such as `names`,
-     * `levels`, and `delimeter`. The `json` object is used to store the collected application log data, and the `previousTime`
-     * parameter is utilized to keep track of the last read time. The processed log data is written to the specified `writePath`.
+     * The `get_applog` function is an implementation of a virtual function defined in the `ILog` interface. It retrieves
+     * application log data from the specified `read_path` and processes it based on the provided criteria such as `log_attributes`,
+     * `log_levels`, and `delimeter`. The `json` object is used to store the collected application log data, and the `last_read_time`
+     * parameter is utilized to keep track of the last read time. The processed log data is written to the specified `write_path`.
      *
      * @param[in] json A JSON object to store the collected application log data.
-     * @param[in] names A vector of log file identifiers to filter application log data.
-     * @param[in] readDir The directory containing application log files to be read.
-     * @param[in] writePath The path where the processed log data will be written.
-     * @param[in,out] previousTime The last read time of the application log files.
-     * @param[in] levels A vector of log levels to filter application log entries.
+     * @param[in] log_attributes A vector of log file identifiers to filter application log data.
+     * @param[in] read_path The directory containing application log files to be read.
+     * @param[in] write_path The read_path where the processed log data will be written.
+     * @param[in,out] last_read_time The last read time of the application log files.
+     * @param[in] log_levels A vector of log log_levels to filter application log entries.
      * @param[in] delimeter The character delimiter used to separate log data.
      * @return An integer result code:
      *         - SUCCESS: The application log data was successfully collected and processed.
      *         - FAILED: The application log data collection encountered errors.
      */
-    int getAppLog(Json::Value &json, const vector<string>& names, const string& readDir, const string& writePath, string &previousTime, const vector<string>& levels, const char& delimeter);
+    int get_applog(Json::Value &json, const vector<string>& log_attributes, const string& read_path, const string& write_path, string &last_read_time, const vector<string>& log_levels, const char& delimeter);
 
      /**
-     * @brief Destructor for LogService.
+     * @brief Destructor for log_service.
      *
-     * The destructor performs cleanup tasks for the `LogService` class, which may include
+     * The destructor performs cleanup tasks for the `log_service` class, which may include
      * releasing resources and deallocating memory.
      */
-    ~LogService();
+    ~log_service();
 };
 
 #endif

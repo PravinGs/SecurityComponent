@@ -1,7 +1,7 @@
 #ifndef REPORT_GEN_HPP
 #define REPORT_GEN_HPP
 #pragma once
-#include "agentUtils.hpp"
+#include "agent_utils.hpp"
 
 class Report
 {
@@ -32,7 +32,7 @@ int Report::generateFromFile(string path)
         string program;
         string log;
         string ruleId;
-        AConfig config;
+        aconfig config;
         std::stringstream ss(line);
         std::getline(ss, timestamp, '|');
         std::getline(ss, user, '|');
@@ -46,8 +46,8 @@ int Report::generateFromFile(string path)
         jsonValue["log"] = log;
         jsonValue["ruleId"] = ruleId;
         /*Read stoi()
-        getAConfigById(ruleId) 
-        Aconfig and add decoded_as, description, level, group,*/
+        getaconfigById(ruleId) 
+        aconfig and add decoded_as, description, level, group,*/
         json["Alerts"].append(jsonValue);
     }
     
@@ -57,7 +57,7 @@ int Report::generateFromFile(string path)
     std::unique_ptr<Json::StreamWriter> writer(writerBuilder.newStreamWriter());
     writer->write(json, &ofile);
     ofile.close();
-    AgentUtils::writeLog("Log written to " + path, SUCCESS); 
+    agent_utils::write_log("Log written to " + path, SUCCESS); 
     return SUCCESS;
 }
 
