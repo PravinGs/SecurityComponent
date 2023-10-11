@@ -17,18 +17,6 @@ int command::validate_command(const string command)
     return result;
 }
 
-// int command::read_command(const string command, const string processName)
-// {
-//     int result = SUCCESS;
-//     string logs;
-//     result = read_command(command, logs);
-//     if (result == FAILED)
-//     {
-//         return FAILED;
-//     }
-//     return SUCCESS;
-// }
-
 int command::read_command(const string& command, vector<string> &logs)
 {
     // if (validate_command(command) == FAILED)

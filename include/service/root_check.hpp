@@ -16,8 +16,8 @@
 class root_check
 {
     private:
-        ICommand *command;
-        trojan_check trojanCheck;
+        ICommand *c_service;
+        trojan_check trojan_check;
         sys_check sys_check;
         process_check process_check;
         port_check port_check;
@@ -39,7 +39,7 @@ class root_check
             {
                 vector<string> output;
                 size_t mid = s.find_first_of(':');
-                command->read_command(s.substr(mid+1), output);
+                c_service->read_command(s.substr(mid+1), output);
                 string name = s.substr(0, mid);
                 json[name] = Json::Value(Json::arrayValue);
                 for (string line: output){
@@ -51,7 +51,7 @@ class root_check
     public:
         root_check()
         {
-            command = new Command();
+            c_service = new command();
             this->trojan_source_file = TROJAN_SOURCE_FILE;
             this->sys_source_file    = SYS_SOURCE_FILE;
         }
@@ -62,24 +62,22 @@ class root_check
             this->sys_source_file    = sys_source_file; 
         }
 
-        
-
         int start()
         {
             agent_utils::write_log("Starting trojan root check.", DEBUG);
             Json::Value root_check;
             vector<string> reports;
             Json::StreamWriterBuilder writer_builder;
-            if (trojanCheck.check(trojan_source_file, reports))
+            if (trojan_check.check(trojan_source_file, reports))
             {
-                root_check["TrojanCheck"] = Json::Value(Json::arrayValue);
+                root_check["Trojan_check"] = Json::Value(Json::arrayValue);
                 for (string report: reports)
                 {
                     Json::Value json;
                     size_t mid = report.find_first_of(',');
                     json["location"] = report.substr(0, mid);
                     json["pattern"]  = report.substr(mid + 1);
-                    root_check["TrojanCheck"].append(json);
+                    root_check["Trojan_check"].append(json);
                 }
                 reports.clear();
                 agent_utils::write_log("Trojan root check completed successfully.", SUCCESS);
@@ -166,7 +164,7 @@ class root_check
         }
 
         ~root_check(){
-            delete command;
+            delete c_service;
         }
 
 };

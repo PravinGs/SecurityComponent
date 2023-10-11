@@ -2,8 +2,10 @@
 #define main_controller_HPP
 
 #include "controller/schedular_controller.hpp"
-// #include "controller/watchFileController.hpp"
+#include "service/apparmor_service.hpp"
 #include "service/config_service.hpp"
+
+struct mqtt_connection_props;
 
 const string SYSLOG  { "syslog"  };
 const string APPLOG  { "applog"  };
@@ -23,7 +25,7 @@ private:
     Config _config; /**< A private instance of IniConfig for configuration management. */
     map<string, map<string, string>> _table; /**< A private map<string, map<string, string>> to store configuration data. */
     schedule *_schedule; /**< A private instance of the schedule class. */
-
+    apparmor_service a_service;
 public:
 
     /**

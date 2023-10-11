@@ -30,12 +30,17 @@
     #include <amqpcpp/libev.h>
     #include <ev.h>
 #endif
+#if MOSQUITTO
+    #include <mosquitto.h>
+#endif
 #include <fcntl.h>
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <openssl/bio.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 #include <csignal>
 #include <filesystem>
 #include <curl/curl.h>
