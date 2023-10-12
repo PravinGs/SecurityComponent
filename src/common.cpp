@@ -8,7 +8,6 @@ fstream agent_utils::logfp;
 std::mutex logMutex;
 bool agent_utils::debug = false;
 
-
 void agent_utils::setup_logger()
 {
     fstream file("/var/log/agent.log", std::ios::in | std::ios::binary);
@@ -275,6 +274,18 @@ int os::compress_file(const string& log_file)
         agent_utils::write_log(FDELETE_FAILED + current_file, FAILED);
     }
     return result;
+}
+
+bool os::is_file_exist(const string &file)
+{
+    fstream fp(file, std::ios::in | std::ios::binary);
+    if (!fp.is_open())
+    {
+        agent_utils::write_log(FILE_ERROR + file, CRITICAL);
+        return false;
+    }
+    fp.close();
+    return true;
 }
 
 string os::is_empty(string filename)

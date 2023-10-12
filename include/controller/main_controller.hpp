@@ -4,6 +4,7 @@
 #include "controller/schedular_controller.hpp"
 #include "service/apparmor_service.hpp"
 #include "service/config_service.hpp"
+#include "controller/mqtt_controller.hpp"
 
 struct mqtt_connection_props;
 
@@ -11,6 +12,7 @@ const string SYSLOG  { "syslog"  };
 const string APPLOG  { "applog"  };
 const string PATCH   { "patch"   };
 const string MONITOR { "monitor" };
+const string MQTT    { "mqtt"   };
 /**
  * @brief Main Controller
  *
@@ -24,8 +26,9 @@ private:
     bool isReady = true; /**< A private variable for configuration file status*/
     Config _config; /**< A private instance of IniConfig for configuration management. */
     map<string, map<string, string>> _table; /**< A private map<string, map<string, string>> to store configuration data. */
-    schedule *_schedule; /**< A private instance of the schedule class. */
+    schedule *_schedule = nullptr; /**< A private instance of the schedule class. */
     apparmor_service a_service;
+    mqtt_controller* m_controller = nullptr;
 public:
 
     /**
@@ -46,6 +49,7 @@ public:
         if (isReady){
             const string scheduar_config_file = _table["schedule"]["config_file"];
             _schedule = new schedule(scheduar_config_file);
+            m_controller = new mqtt_controller(std::move(_table));
         }
         auto today = std::chrono::system_clock::now();
         auto timeInfo = std::chrono::system_clock::to_time_t(today);
@@ -73,16 +77,16 @@ public:
         if (!isReady)
             return;
         vector<std::thread> threads(3);
-        vector<string> processes = {"schedule"};
+        vector<string> processes = {"schedule", "mqtt"};
         for (int i = 0; i < (int)processes.size(); i++)
         {
             try
             {
-                string processName = processes[i];
-                threads[i] = std::thread([&, processName]()
-                                         { run(processName); });
+                string process_name = processes[i];
+                threads[i] = std::thread([&, process_name]()
+                                         { run(process_name); });
 
-                agent_utils::write_log("[Agent] New thread creation for " + processName, DEBUG);
+                agent_utils::write_log("[Agent] New thread creation for " + process_name, DEBUG);
             }
             catch (const std::exception &e)
             {
@@ -101,38 +105,42 @@ public:
     /**
      * @brief Run Controller by Name
      *
-     * The `run` function takes the name of a controller, `processName`, and initiates the corresponding controller's
+     * The `run` function takes the name of a controller, `process_name`, and initiates the corresponding controller's
      * activities. It is responsible for creating and managing the controller's thread and associated tasks.
      *
-     * @param[in] processName The name of the controller to run.
+     * @param[in] process_name The name of the controller to run.
      */
-    void run(const string& processName)
+    void run(const string& process_name)
     {
        
-        if (processName == "schedule")
+        if (process_name == "schedule")
         {
-            //schedule schedule(_table[processName]["config_file"]);
+            //schedule schedule(_table[process_name]["config_file"]);
             _schedule->start();
         }
-        /*else if (processName == "watcher")
+        else if (process_name == MQTT)
         {
-            WatchController watcher(_table[processName]["watch_dir"], _table[processName]["backup_dir"]);
+            
+        }
+        /*else if (process_name == "watcher")
+        {
+            WatchController watcher(_table[process_name]["watch_dir"], _table[process_name]["backup_dir"]);
             watcher.start();
         }
-        else if (processName == "tls")
+        else if (process_name == "tls")
         {
-            TlsConnection connection(_table[processName]["port"], _table[processName]["ca_pem"], _table[processName]["server_cert"], _table[processName]["server_key"]);
+            TlsConnection connection(_table[process_name]["port"], _table[process_name]["ca_pem"], _table[process_name]["server_cert"], _table[process_name]["server_key"]);
             connection.start();
         }
         else
         {
             agent_utils::write_log("Invalid Process Name", FAILED);
         }
-        else if (processName = "tls") {cout << "Does not implemented yet" << endl;}
+        else if (process_name = "tls") {cout << "Does not implemented yet" << endl;}
         */
     }
 
-    void mqtt_handler(Json::Value & json)
+    void mqtt_handler()
     {
         string process_name = json["process"].asString();
 

@@ -3,6 +3,7 @@
 
 #include "service/apparmor_service.hpp"
 #include "service/mqtt_service.hpp"
+#include "service/curl_service.hpp"
 
 typedef struct mqtt_connection_props mqtt_connection_props;
 
@@ -23,17 +24,26 @@ struct mqtt_connection_props
 class mqtt_controller
 {   
     private:
-
+        const int APPARMOR_STATUS          = 0; 
+        const int APPARMOR_PROFILE_UPLOAD  = 1;
+        const int APPARMOR_PROFILE_DELETE  = 2;
+        const int APPARMOR_PROFILE_DISABLE = 3;
+        const int APPARMOR_PROFILE_ENABLE  = 4;
+        const int SECURITY_ANALYSIS_REPORT = 5;
+        const int PATCH_UPDATE             = 6;
+        const int LOG_ANALYSIS_REPORT      = 7;
+        // const int TPM_MANGEMENT            = 9;
+    private:
+        curl_handler curl;
+    private:
         SSL_CTX * ssl_context = nullptr;
         mosquitto * mosq = nullptr;
         const int PEER_VERIFICATION = 1;
         bool is_connection_alive = false; 
         int qos = 0;
+        map<string, map<string, string>> config_table;
     private:
-        mqtt_controller()
-        {
 
-        }
         int init()
         {
             mosquitto_lib_init();
@@ -180,8 +190,34 @@ class mqtt_controller
             return result;
         }
 
+        bool extract_json_string(const string& json_string, Json::value & root)
+        {
+            Json::CharReaderBuilder readerBuilder;
+            Json::CharReader* reader = readerBuilder.newCharReader();
 
+            // Parse the JSON string
+            std::istringstream iss(json_string);
+            std::string errs;
+            Json::parseFromStream(reader, iss, &root, &errs);
+
+            if (!errs.empty()) {
+                agent_utils::write_log("Failed to parse JSON: " +  errs, FAILED);
+                return false;
+            }
+
+            return true;
+        }
+
+        long post_response_status(Json::Value & json)
+        {
+            return 200L;
+        }
     public:
+
+        mqtt_controller(map<string, map<string, string>> & table) : config_table(table)
+        {   
+            //Do the data extraction.
+        }
 
         void set_qos(const int qos)
         {
@@ -209,36 +245,49 @@ class mqtt_controller
             
         }
         
-        void handle_message(const string & json_string)
+        bool handle_message(const string & json_string)
         {
-            Json::CharReaderBuilder readerBuilder;
-            Json::CharReader* reader = readerBuilder.newCharReader();
             Json::Value root;
+            bool result = extract_json_string(json_string, root);
+        
+            if (!result) return result;
 
-            // Parse the JSON string
-            std::istringstream iss(json_string);
-            std::string errs;
-            Json::parseFromStream(reader, iss, &root, &errs);
+            int work = json_string["work"].asInt();
 
-            if (!errs.empty()) {
-                std::cerr << "Error: Failed to parse JSON: " << errs << "\n";
-                return 1;
+            switch (work) 
+            {
+                case APPARMOR_STATUS:
+                    std::cout << "APPARMOR_STATUS selected.\n";
+                    break;
+                case APPARMOR_PROFILE_UPLOAD:
+                    std::cout << "APPARMOR_PROFILE_UPLOAD selected.\n";
+                    break;
+                case APPARMOR_PROFILE_DELETE:
+                    std::cout << "APPARMOR_PROFILE_DELETE selected.\n";
+                    break;
+                case APPARMOR_PROFILE_DISABLE:
+                    std::cout << "APPARMOR_PROFILE_DISABLE selected.\n";
+                    break;
+                case APPARMOR_PROFILE_ENABLE:
+                    std::cout << "APPARMOR_PROFILE_ENABLE selected.\n";
+                    break;
+                case SECURITY_ANALYSIS_REPORT:
+                    std::cout << "SECURITY_ANALYSIS_REPORT selected.\n";
+                    break;
+                case PATCH_UPDATE:
+                    std::cout << "PATCH_UPDATE selected.\n";
+                    break;
+                case LOG_ANALYSIS_REPORT:
+                    std::cout << "LOG_ANALYSIS_REPORT selected.\n";
+                    break;
+                default:
+                    std::cout << "Invalid input.\n";
+                    break;
             }
 
-            // Access the array under "ApparmorStatus"
-            const Json::Value& apparmorStatusArray = root["ApparmorStatus"];
 
-            // Ensure it's an array
-            if (!apparmorStatusArray.isArray()) {
-                std::cerr << "Error: ApparmorStatus is not an array\n";
-                return 1;
-            }
 
-            // Print the elements of the array
-            for (const auto& status : apparmorStatusArray) {
-                std::cout << status.asString() << "\n";
-            }
-            return;
+            
         }
 
 };

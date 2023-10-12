@@ -404,6 +404,8 @@ public:
 
     static string get_json_write_path(const string & type);
 
+    static bool is_file_exist(const string &file);
+
 };
 
 /**
