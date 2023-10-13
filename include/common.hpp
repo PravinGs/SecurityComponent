@@ -30,9 +30,7 @@
     #include <amqpcpp/libev.h>
     #include <ev.h>
 #endif
-#if MOSQUITTO
-    #include <mosquitto.h>
-#endif
+#include <mosquitto.h>
 #include <fcntl.h>
 #include <net/if.h>
 #include <sys/ioctl.h>
@@ -103,6 +101,7 @@ const string LOG_PATH = "/etc/scl/log/agent.log";
 #define BASE_CONFIG_TMP "tmp/"
 #define BASE_CONFIG_DIR "/etc/scl/config/"
 #define AGENT_CONFIG_DIRECTORY "/etc/scl/config/agent/agent.config"
+#define AGENT_TEMP_DIR "/etc/scl/tmp/"
 
 
 const vector<string> MONTHS = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};

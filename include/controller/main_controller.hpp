@@ -49,7 +49,7 @@ public:
         if (isReady){
             const string scheduar_config_file = _table["schedule"]["config_file"];
             _schedule = new schedule(scheduar_config_file);
-            m_controller = new mqtt_controller(std::move(_table));
+            m_controller = new mqtt_controller(_table);
         }
         auto today = std::chrono::system_clock::now();
         auto timeInfo = std::chrono::system_clock::to_time_t(today);
@@ -120,45 +120,7 @@ public:
         }
         else if (process_name == MQTT)
         {
-            
-        }
-        /*else if (process_name == "watcher")
-        {
-            WatchController watcher(_table[process_name]["watch_dir"], _table[process_name]["backup_dir"]);
-            watcher.start();
-        }
-        else if (process_name == "tls")
-        {
-            TlsConnection connection(_table[process_name]["port"], _table[process_name]["ca_pem"], _table[process_name]["server_cert"], _table[process_name]["server_key"]);
-            connection.start();
-        }
-        else
-        {
-            agent_utils::write_log("Invalid Process Name", FAILED);
-        }
-        else if (process_name = "tls") {cout << "Does not implemented yet" << endl;}
-        */
-    }
-
-    void mqtt_handler()
-    {
-        string process_name = json["process"].asString();
-
-        if (process_name == SYSLOG)
-        {
-            // Do something
-        }
-        else if (process_name == APPLOG)
-        {
-            // Do something
-        }
-        else if (process_name == MONITOR)
-        {
-            // Do something
-        }
-        else if (process_name == PATCH)
-        {
-            // Do something
+            m_controller->start();
         }
     }
 

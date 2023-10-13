@@ -17,12 +17,12 @@ class root_check
 {
     private:
         ICommand *c_service;
-        trojan_check trojan_check;
-        sys_check sys_check;
-        process_check process_check;
-        port_check port_check;
-        dev_check dev_check;
-        interface_check interface_check;
+        trojan_check t_check;
+        sys_check s_check;
+        process_check p_check;
+        port_check pt_check;
+        dev_check d_check;
+        interface_check if_check;
         string trojan_source_file;
         string sys_source_file;
         vector<string> report_commands = {
@@ -62,13 +62,12 @@ class root_check
             this->sys_source_file    = sys_source_file; 
         }
 
-        int start()
+        int start(Json::Value & root_check)
         {
-            agent_utils::write_log("Starting trojan root check.", DEBUG);
-            Json::Value root_check;
+            agent_utils::write_log("Starting trojan root check.", DEBUG);        
             vector<string> reports;
             Json::StreamWriterBuilder writer_builder;
-            if (trojan_check.check(trojan_source_file, reports))
+            if (t_check.check(trojan_source_file, reports))
             {
                 root_check["Trojan_check"] = Json::Value(Json::arrayValue);
                 for (string report: reports)
@@ -88,7 +87,7 @@ class root_check
             }
             agent_utils::write_log("Completed trojan root check.", DEBUG);
             agent_utils::write_log("Starting sysfiles root check.");
-            if (sys_check.check(sys_source_file, reports))
+            if (s_check.check(sys_source_file, reports))
             {
                 root_check["SysFileCheck"] = Json::Value(Json::arrayValue);
                 for (string report: reports)
@@ -108,7 +107,7 @@ class root_check
             }
             agent_utils::write_log("Completed sysfiles root check.", DEBUG);
             agent_utils::write_log("Starting network interface root check.", DEBUG);
-            if (interface_check.check(reports))
+            if (if_check.check(reports))
             {
                 root_check["PromiscuousCheck"] = Json::Value(Json::arrayValue);
                 for (string report: reports)
@@ -126,7 +125,7 @@ class root_check
             }
             agent_utils::write_log("Completed network interface root Check.", DEBUG);
             agent_utils::write_log("Starting dev root check.", DEBUG);
-            if (dev_check.check(reports))
+            if (d_check.check(reports))
             {
                 root_check["HiddenFileCheck"] = Json::Value(Json::arrayValue);
                 for (string report: reports)

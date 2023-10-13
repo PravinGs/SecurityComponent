@@ -2,8 +2,6 @@
 
 #include "common.hpp"
 
-std::mutex curl_mutex;
-
 /**
  * @brief Curl Handler
  *
@@ -13,11 +11,7 @@ std::mutex curl_mutex;
  */
 class curl_handler
 {
-private:
-    CURL *curl = nullptr;
-    const char *content_type = "application/json";
-    std::chrono::seconds wait_one_second(1);
-
+    
 public:
 
     static size_t writeCallback(char *data, size_t size, size_t nmemb, std::string *response)
@@ -52,23 +46,11 @@ public:
     }
 
     public:
-        curl_handler()
-        {
-            curl = curl_easy_init();
-        }
 
-        void init_curl()
+        static long post(const string & post_url, const string& attribute_name, const string& json_file)
         {
-            std::lock_guard<std::mutex> curl_gurad(curl_mutex);
-            if (curl == nullptr) 
-            {
-                curl = curl_easy_init();
-                curl_global_init(CURL_GLOBAL_DEFAULT);
-            }
-        }
-
-        long post(const string & post_url, const string& attribute_name, const string& json_file)
-        {
+            CURL *curl = nullptr;
+            const char *content_type = "application/json";
             CURLcode curl_code = CURLE_OK;
             std::string response;
             long http_code = 0L;
@@ -77,9 +59,10 @@ public:
 
             if (!is_file) return 0L;
 
-            init_curl();
+            curl = curl_easy_init();
+            curl_global_init(CURL_GLOBAL_DEFAULT);
 
-            if (this->curl)
+            if (curl)
             {
                 curl_easy_setopt(curl, CURLOPT_URL, post_url.c_str());
 
@@ -87,11 +70,11 @@ public:
                 headers = curl_slist_append(headers, "accept: */*");
                 curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-                curl_easy_setopt(curl, CURLPOST, 1L);
+                curl_easy_setopt(curl, CURLOPT_HTTPPOST, 1L);
 
                 struct curl_httppost *form = nullptr;
                 struct curl_httppost *last = nullptr;
-                curl_formadd(&form, &last, CURLFORM_COPYNAME, form_name.c_str(), CURLFORM_FILE, json_file.c_str(), CURLFORM_CONTENTTYPE, content_type, CURLFORM_END);
+                curl_formadd(&form, &last, CURLFORM_COPYNAME, attribute_name.c_str(), CURLFORM_FILE, json_file.c_str(), CURLFORM_CONTENTTYPE, content_type, CURLFORM_END);
                 curl_easy_setopt(curl, CURLOPT_HTTPPOST, form);
 
                 curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
@@ -129,8 +112,9 @@ public:
                     agent_utils::write_log("Failed to send this file " + json_file, FAILED);
                 }
                     
-                std::this_thread::sleep_for(wait_one_second);
-
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                curl_easy_cleanup(curl);
+                curl_global_cleanup();
             }
 
             return http_code;
@@ -149,7 +133,7 @@ public:
      * @param[in] logName The identifier specifying which log to be sent.
      * @return A long integer representing the result of the POST request, typically an HTTP status code.
      */
-    static long post(const string& post_url, const string& attribute_name, const string& log_name)
+    static long post(const string& post_url, const string& attribute_name, const string& log_name, int to_avoid_override)
     {
         long http_code = 0L;
         vector<string> json_files;
@@ -157,7 +141,7 @@ public:
         int result = os::get_regular_files(path + "json/", json_files);
         if (result == FAILED)
         {
-            agent_utils::write_log(FILE_ERROR + logName, http_code);
+            agent_utils::write_log(FILE_ERROR + log_name, http_code);
             return http_code;
         }
 
@@ -168,12 +152,5 @@ public:
 
         return http_code;
     }
-    ~curl_handler()
-    {
-        if (curl != nullptr)
-        {   
-            curl_easy_cleanup(curl);
-        }
-        curl_global_cleanup();
-    }
+
 };
