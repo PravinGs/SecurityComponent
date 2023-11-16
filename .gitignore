@@ -6,4 +6,6 @@ obj/
 /backup
 /tmp
 /downloads
+/html
+/latex
 .vscode
