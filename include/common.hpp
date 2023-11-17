@@ -72,7 +72,7 @@ using std::vector;
 #define FAILED        ERROR
 
 const string FILE_ERROR = "File not found or permission denied: ";
-const string CLEAN_FILE = "File emptied: ";
+const string CLEAN_FILE = "File truncated: ";
 const string INVALID_FILE = "Invalid files: ";
 const string FCREATION_FAILED = "File creation failed: Unable to create file ";
 const string FREAD_FAILED = "Failed to read from file: Unable to read data from ";
@@ -81,7 +81,7 @@ const string FWRITE_SUCCESS = "Successfully wrote to file: Wrote data to ";
 const string FDELETE_FAILED = "Failed to delete a file: Unable to delete  ";
 const string FDELETE_SUCCESS = "Successfully deleted file: Deleted ";
 const string INVALID_PATH = "Path not found: ";
-const string NPATH = "Successfully created: ";
+const string NEW_PATH = "Successfully created: ";
 
 const string APP = "agent";
 const string LOG_PATH = "/etc/scl/log/agent.log";
@@ -100,7 +100,7 @@ const string LOG_PATH = "/etc/scl/log/agent.log";
 #define BASE_LOG_ARCHIVE "archives/"
 #define BASE_CONFIG_TMP "tmp/"
 #define BASE_CONFIG_DIR "/etc/scl/config/"
-#define AGENT_CONFIG_DIRECTORY "/etc/scl/config/agent/agent.config"
+#define AGENT_CONFIG_DIR "/etc/scl/config/agent/agent.config"
 #define AGENT_TEMP_DIR "/etc/scl/tmp/"
 
 

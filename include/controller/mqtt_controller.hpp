@@ -222,7 +222,12 @@ public:
 
     mqtt_controller(map<string, map<string, string>> &table) : config_table(table)
     {
-        mqtt_props.port = std::stoi(config_table["mqtt"]["port"]);
+        string port = config_table["mqtt"]["port"];
+        if (port.empty())
+        {
+            mqtt_props.port = 8000;
+        }
+        mqtt_props.port = std::stoi(port);
         mqtt_props.server_address = config_table["mqtt"]["server_address"];
         mqtt_props.topic = config_table["mqtt"]["topic"];
         mqtt_props.ca_pem = config_table["mqtt"]["ca_pem"];
