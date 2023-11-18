@@ -350,28 +350,28 @@ int os::create_log_file(int cDay, int cMonth, int cYear, string& filePath, const
     if (is_dir_exist(current_dir) == FAILED)
     {
         agent_utils::write_log(INVALID_PATH + current_dir, WARNING);
-        agent_utils::write_log(NPATH + current_dir, INFO);
+        agent_utils::write_log(NEW_PATH + current_dir, INFO);
         create_dir(current_dir);
     }
     current_dir += BASE_LOG_ARCHIVE;
     if (is_dir_exist(current_dir) == FAILED)
     {
         agent_utils::write_log(INVALID_PATH + current_dir, WARNING);
-        agent_utils::write_log(NPATH + current_dir, INFO);
+        agent_utils::write_log(NEW_PATH + current_dir, INFO);
         create_dir(current_dir);
     }
     current_dir += "/" + std::to_string(cYear);
     if (is_dir_exist(current_dir) == FAILED)
     {
         agent_utils::write_log(INVALID_PATH + current_dir, WARNING);
-        agent_utils::write_log(NPATH + current_dir, INFO);
+        agent_utils::write_log(NEW_PATH + current_dir, INFO);
         create_dir(current_dir);
     }
     current_dir += "/" + MONTHS[cMonth - 1];
     if (is_dir_exist(current_dir) == FAILED)
     {
         agent_utils::write_log(INVALID_PATH + current_dir, WARNING);
-        agent_utils::write_log(NPATH + current_dir, INFO);
+        agent_utils::write_log(NEW_PATH + current_dir, INFO);
         create_dir(current_dir);
     }
     current_dir += "/" + std::to_string(cDay) + "-" + app_name;

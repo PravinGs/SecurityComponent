@@ -196,7 +196,7 @@ int log_service::get_syslog(const string &app_name, Json::Value &json, const vec
         }
         if (logs.size() == 0 || result == FAILED)
         {
-            agent_utils::write_log("Read 0 logs for" + app_name);
+            agent_utils::write_log("Read 0 logs for" + app_name, WARNING);
         }
         else
         {
@@ -213,10 +213,9 @@ int log_service::get_syslog(const string &app_name, Json::Value &json, const vec
                 result = save_json(json, fileName, logs, log_attributes, '|');
             }
 
-            agent_utils::write_log("Storing " + app_name + " logs started", INFO);
             if ((result = save_read_logs(logs, app_name)) == SUCCESS)
             {
-
+                agent_utils::write_log("Storing " + app_name + " logs started", INFO);
                 agent_utils::write_log(FWRITE_SUCCESS + log_dir, INFO);
             }
             else

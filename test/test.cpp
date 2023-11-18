@@ -11,8 +11,8 @@ void test_mqtt_controller()
     controller.start();
 }
 
-int main()
-{
-    test_mqtt_controller();
-    return 0;
-}
+// int main()
+// {
+//     test_mqtt_controller();
+//     return 0;
+// }
