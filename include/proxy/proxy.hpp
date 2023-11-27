@@ -47,7 +47,7 @@ public:
 
             vector<string> names = _config_service.to_vector(config_table[name]["columns"], ',');
 
-            if (name != "syslog" && os::is_dir_exist(config_table[name]["log_directory"]))
+            if (name != "syslog" && os::is_exist(config_table[name]["log_directory"]))
             {
                 throw std::invalid_argument("Invalid log directory for " + name);
             };
@@ -121,10 +121,10 @@ public:
         {
             agent_utils::write_log("Log reading directory not exists, creating new directory");
             string dirPath = BASE_CONFIG_DIR;
-            if (os::is_dir_exist(dirPath) == FAILED)
+            if (os::is_exist(dirPath) == FAILED)
                 os::create_dir(dirPath);
             dirPath += BASE_CONFIG_TMP;
-            if (os::is_dir_exist(dirPath) == FAILED)
+            if (os::is_exist(dirPath) == FAILED)
                 os::create_dir(dirPath);
         }
         std::ofstream nf(filePath);

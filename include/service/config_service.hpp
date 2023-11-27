@@ -500,7 +500,7 @@ public:
         agent_utils::write_log("Reading " + path, DEBUG);
         int result = SUCCESS;
         int isFile = 0;
-        if (os::is_dir_exist(path) && std::filesystem::is_regular_file(path))
+        if (os::is_exist(path) && std::filesystem::is_regular_file(path))
         {
             isFile = 1;
         }
@@ -558,11 +558,11 @@ public:
         string line, current_section;
         int index = 1;
 
-        if (!file)
-        {
-            agent_utils::write_log(INVALID_FILE + path, FAILED);
-            return FAILED;
-        }
+        // if (!file)
+        // {
+        //     agent_utils::write_log(INVALID_FILE + path, FAILED);
+        //     return FAILED;
+        // }
 
         while (std::getline(file, line))
         {
@@ -580,7 +580,7 @@ public:
             {
                 agent_utils::write_log(INVALID_FILE + path, FAILED);
                 agent_utils::write_log("Invalid Config file : line number " + std::to_string(index), FAILED);
-                result = FAILED;
+                result = INVALID_CONFIGURATION;
                 break;
             }
             else
@@ -592,7 +592,7 @@ public:
                     if (!validate_ini_file_text(key))
                     {
                         agent_utils::write_log("Invalid Config file : line number " + std::to_string(index), FAILED);
-                        result = FAILED;
+                        result = INVALID_CONFIGURATION;
                         break;
                     }
                     string value = trim(line.substr(delimiter + 1));
@@ -602,6 +602,79 @@ public:
             }
             index++;
         }
+        return result;
+    }
+
+    storage get_storage(const string& name, map<string, map<string, string>> & config_table)
+    {
+        storage stg;
+        stg.url = config_table[name]["url"];
+        stg.certificate = config_table[name]["certificate"];
+        stg.user_name = config_table[name]["user_name"];
+        stg.password = config_table[name]["password"];
+        return stg;
+    }
+
+    syslog_entity get_syslog_entity(map<string, map<string, string>> & config_table)
+    {
+        const string name = "syslog";
+        syslog_entity entity;
+        entity.read_path = config_table[name]["read_path"];
+        entity.commands = config_table[name]["commands"];
+        entity.delimeter = config_table[name]["delimeter"];
+        entity.time_pattern = config_table[name]["time_pattern"];
+        entity.write_path = config_table[name]["write_path"];
+        entity.storage_type = get_storage(name, config_table);
+        return entity;
+    }
+
+    applog_entity get_applog_entity(map<string, map<string, string>> & config_table)
+    {
+        const string name = "applog";
+        applog_entity entity;
+        
+        entity.delimete   = config_table[name]["delimeter"];
+        entity.attributes = config_table[name]["attributes"];
+        entity.read_path  = config_table[name]["read_path"];
+        entity.write_path = config_table[name]["write_path"];
+        entity.storage_type = get_storage(name, config_table);
+        entity.time_pattern = config_table[name]["time_pattern"];
+        return entity;
+    }
+
+    log_analysis_entity get_log_analysis_entity(map<string, map<string, string>> & config_table)
+    {   
+        const string name = "log_analysis";
+        log_analysis_entity entity;
+        entity.logfile_path = config_table[name]["file_path"];
+        entity.decoder_path = config_table[name]["decoder_path"];
+        entity.rules_dir = config_table[name]["rules_dir"];
+        entity.time_pattern = config_table[name]["time_pattern"];
+        entity.storage_type = get_storage(name, config_table);
+
+        return entity;
+    }   
+
+    resource_entity get_resource_entity(map<string, map<string, string>>& Config_table)
+    {
+        const string name = "process";
+        resource_entity entity;
+        entity.write_path = config_table[name]["write_path"];
+        entity.time_pattern = config_table[name]["time_pattern"];
+        entity.storage_type = get_storage(name, config_table);
+
+        return entity;
+    }
+
+    int create_agent_entity(map<string, map<string, string>> & config_table, agent_entity& entity)
+    {
+        int result = SUCCESS;
+
+        entity.sys_event = get_syslog_entity(config_table);
+        entity.applog = get_applog_entity(config_table);
+        entity.log_analysis = get_log_analysis_entity(config_table);
+        entity.process = get_resource_entity(config_table);
+        
         return result;
     }
 
