@@ -374,14 +374,14 @@ int log_service::get_json_write_path(string &timestamp)
 {
     string file_path = BASE_LOG_DIR;
 
-    if (os::is_dir_exist(file_path) == FAILED)
+    if (os::is_exist(file_path) == FAILED)
     {
         os::create_dir(file_path);
     }
 
     file_path += "json";
 
-    if (os::is_dir_exist(file_path) == FAILED)
+    if (os::is_exist(file_path) == FAILED)
     {
         os::create_dir(file_path);
     }

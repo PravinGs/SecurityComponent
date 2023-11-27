@@ -47,12 +47,12 @@ string agent_utils::trim(string line)
 void agent_utils::update_log_written_time(const string& app_name, const string& time)
 {
     string filePath = BASE_CONFIG_DIR;
-    if (os::is_dir_exist(filePath) == FAILED)
+    if (os::is_exist(filePath) == FAILED)
     {
         os::create_dir(filePath);
     }
     filePath += BASE_CONFIG_TMP;
-    if (os::is_dir_exist(filePath) == FAILED)
+    if (os::is_exist(filePath) == FAILED)
     {
         os::create_dir(filePath);
     }
@@ -139,6 +139,22 @@ int agent_utils::convert_time_format(const std::string &inputTime, std::string &
 
     formatTime = std::to_string(tm.tm_year) + "-" + month + "-" + day + " " + time;
     return SUCCESS;
+}
+
+void agent_utils::format_log(const int err_id, string& msg)
+{
+switch (err_id)
+{
+case FILE_NOT_EXIST:
+    msg += "FILE NOT EXIST: ";
+    break;
+case FILE_EXIST:
+    msg += "FILE EXIST: ";
+case INVALID_CONFIGURATION:
+    msg += "INVALID_CONFIGURATION: ";
+default:
+    break;
+}
 }
 
 void agent_utils::write_log(const string& log)
@@ -347,28 +363,28 @@ int os::handle_local_log_file(int day, int month, int year, string& filePath, co
 int os::create_log_file(int cDay, int cMonth, int cYear, string& filePath, const string& app_name)
 {
     string current_dir = BASE_LOG_DIR;
-    if (is_dir_exist(current_dir) == FAILED)
+    if (is_exist(current_dir) == FAILED)
     {
         agent_utils::write_log(INVALID_PATH + current_dir, WARNING);
         agent_utils::write_log(NEW_PATH + current_dir, INFO);
         create_dir(current_dir);
     }
     current_dir += BASE_LOG_ARCHIVE;
-    if (is_dir_exist(current_dir) == FAILED)
+    if (is_exist(current_dir) == FAILED)
     {
         agent_utils::write_log(INVALID_PATH + current_dir, WARNING);
         agent_utils::write_log(NEW_PATH + current_dir, INFO);
         create_dir(current_dir);
     }
     current_dir += "/" + std::to_string(cYear);
-    if (is_dir_exist(current_dir) == FAILED)
+    if (is_exist(current_dir) == FAILED)
     {
         agent_utils::write_log(INVALID_PATH + current_dir, WARNING);
         agent_utils::write_log(NEW_PATH + current_dir, INFO);
         create_dir(current_dir);
     }
     current_dir += "/" + MONTHS[cMonth - 1];
-    if (is_dir_exist(current_dir) == FAILED)
+    if (is_exist(current_dir) == FAILED)
     {
         agent_utils::write_log(INVALID_PATH + current_dir, WARNING);
         agent_utils::write_log(NEW_PATH + current_dir, INFO);
@@ -436,11 +452,10 @@ int os::create_dir(const string dirName)
     return FAILED;
 }
 
-int os::is_dir_exist(const string& dirName)
+int os::is_exist(const string& path)
 {
-    if (std::filesystem::exists(dirName))
-        return SUCCESS;
-    return FAILED;
+    return std::filesystem::exists(path) ? FILE_EXIST : FILE_NOT_EXIST
+
 }
 
 // int os::readRegularFiles(vector<string> &files)
@@ -509,17 +524,17 @@ string os::get_json_write_path(const string & type)
     string time = agent_utils::get_current_time();
     string filePath = BASE_LOG_DIR;
 
-    if (os::is_dir_exist(filePath) == FAILED)
+    if (os::is_exist(filePath) == FAILED)
     {
         os::create_dir(filePath);
     }
     filePath += "json";
-    if (os::is_dir_exist(filePath) == FAILED)
+    if (os::is_exist(filePath) == FAILED)
     {
         os::create_dir(filePath);
     }
     filePath += "/" + type;
-    if (os::is_dir_exist(filePath) == FAILED)
+    if (os::is_exist(filePath) == FAILED)
     {
         os::create_dir(filePath);
     }

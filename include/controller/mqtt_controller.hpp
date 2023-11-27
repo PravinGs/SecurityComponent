@@ -252,7 +252,7 @@ public:
 
     bool set_temp_file()
     {
-        if (!os::is_dir_exist(AGENT_TEMP_DIR))
+        if (!os::is_exist(AGENT_TEMP_DIR))
         {
             os::create_dir(AGENT_TEMP_DIR);
         }

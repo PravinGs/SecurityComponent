@@ -70,6 +70,10 @@ using std::vector;
 
 #define SUCCESS       8
 #define FAILED        ERROR
+#define FILE_EXIST    101
+#define FILE_NOT_EXIST 102
+#define DIR_NOT_EXIST  FILE_NOT_EXIST
+#define INVALID_CONFIGURATION 103
 
 const string FILE_ERROR = "File not found or permission denied: ";
 const string CLEAN_FILE = "File truncated: ";
@@ -112,6 +116,86 @@ typedef struct aconfig aconfig;
 typedef struct log_event log_event;
 typedef struct Timer Timer;
 typedef struct decoder decoder;
+typedef struct applog_entity applog_entity;
+typedef struct syslog_entity syslog_entity;
+typedef struct log_analysis_entity log_analysis_entity;
+typedef struct resource_entity resource_entity;
+typedef struct ids_entity ids_entity;
+typedef struct rest_service_entity rest_service_entity;
+typedef struct storage storage;
+
+typedef struct agent_entity agent_entity;
+
+struct storage
+{
+    string url;
+    string certificate;
+    string user_name;
+    string password;
+};
+
+struct applog_entity 
+{
+    string read_path;
+    char delimete;
+    vector<string> attributes;
+    string write_path;
+    storage storage_type; 
+    string time_pattern;
+};
+
+struct syslog_entity
+{
+    string read_path;
+    char delimeter;
+    string write_path;
+    vector<string> commands;
+    string time_pattern;
+    storage storage_type; 
+};
+
+struct resource_entity
+{
+    string write_path;
+    string time_pattern;
+    storage storage_type; 
+};
+
+struct log_analysis_entity
+{
+    string logfile_path;
+    string decoder_path;
+    string rules_dir;
+    string time_pattern;
+    storage storage_type; 
+};
+
+struct rest_service_entitity
+{
+    string url;
+    string attribute;
+    string type;
+    string certificate;
+    string username;
+    string password;
+};
+
+struct ids_entity
+{
+    string source_dir;
+    string search_dir;
+    storage storage_type; 
+};
+
+struct agent_entity
+{
+    syslog_entity sys_event;
+    applog_entity applog;
+    log_analysis_entity log_analysis;
+    resource_entity process;
+    ids_entity ids;
+    rest_service_entity rest_service;
+};
 
 struct Timer
 {
@@ -305,7 +389,7 @@ public:
      *         - SUCCESS if the directory exists.
      *         - FAILED if the directory does not exist.
      */
-    static int is_dir_exist(const string& dirName);
+    static int is_exist(const string& dirName);
 
     /**
      * @brief Create a directory.
@@ -472,6 +556,9 @@ public:
     static int convert_time_format(const std::string &input_time, std::string &format_time);
 
     static string get_current_time();
+    
+
+    static void format_log(const int err_id, string & log);
 
     static void write_log(const string& log);
 

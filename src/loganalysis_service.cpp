@@ -615,7 +615,7 @@ int log_analysis::start(const string &decoderPath, const string &rulesDir, const
 
     // Actual start function implentation
 
-    int isFile = (os::is_dir_exist(path) && std::filesystem::is_regular_file(path)) ? 1 : 0;
+    int isFile = (os::is_exist(path) && std::filesystem::is_regular_file(path)) ? 1 : 0;
 
     if (isFile)
     {
