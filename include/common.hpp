@@ -116,15 +116,10 @@ typedef struct aconfig aconfig;
 typedef struct log_event log_event;
 typedef struct Timer Timer;
 typedef struct decoder decoder;
-typedef struct applog_entity applog_entity;
-typedef struct syslog_entity syslog_entity;
-typedef struct log_analysis_entity log_analysis_entity;
-typedef struct resource_entity resource_entity;
-typedef struct ids_entity ids_entity;
+
 typedef struct rest_service_entity rest_service_entity;
 typedef struct storage storage;
 
-typedef struct agent_entity agent_entity;
 
 struct storage
 {
@@ -134,41 +129,6 @@ struct storage
     string password;
 };
 
-struct applog_entity 
-{
-    string read_path;
-    char delimete;
-    vector<string> attributes;
-    string write_path;
-    storage storage_type; 
-    string time_pattern;
-};
-
-struct syslog_entity
-{
-    string read_path;
-    char delimeter;
-    string write_path;
-    vector<string> commands;
-    string time_pattern;
-    storage storage_type; 
-};
-
-struct resource_entity
-{
-    string write_path;
-    string time_pattern;
-    storage storage_type; 
-};
-
-struct log_analysis_entity
-{
-    string logfile_path;
-    string decoder_path;
-    string rules_dir;
-    string time_pattern;
-    storage storage_type; 
-};
 
 struct rest_service_entitity
 {
@@ -180,22 +140,6 @@ struct rest_service_entitity
     string password;
 };
 
-struct ids_entity
-{
-    string source_dir;
-    string search_dir;
-    storage storage_type; 
-};
-
-struct agent_entity
-{
-    syslog_entity sys_event;
-    applog_entity applog;
-    log_analysis_entity log_analysis;
-    resource_entity process;
-    ids_entity ids;
-    rest_service_entity rest_service;
-};
 
 struct Timer
 {
