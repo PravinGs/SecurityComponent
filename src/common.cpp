@@ -454,37 +454,8 @@ int os::create_dir(const string dirName)
 
 int os::is_exist(const string& path)
 {
-    return std::filesystem::exists(path) ? FILE_EXIST : FILE_NOT_EXIST
-
+    return std::filesystem::exists(path) ? FILE_EXIST : FILE_NOT_EXIST;
 }
-
-// int os::readRegularFiles(vector<string> &files)
-// {
-//     string directory = BASE_LOG_DIR;
-//     directory += "josn/";
-//     if (!std::filesystem::exists(directory))
-//     {
-//         agent_utils::write_log(INVALID_PATH + directory, FAILED);
-//         return FAILED;
-//     }
-//     for (const auto &entry : std::filesystem::directory_iterator(directory))
-//     {
-//         string filePath = directory;
-//         if (std::filesystem::is_regular_file(entry))
-//         {
-//             filePath += entry.path().string();
-//             files.push_back(filePath);
-//         }
-//     }
-
-//     if (files.size() == 0)
-//     {
-//         agent_utils::write_log(INVALID_PATH + directory, FAILED);
-//         return FAILED;
-//     }
-
-//     return SUCCESS;
-// }
 
 int os::get_regular_files(const string& directory, vector<string> &files)
 {

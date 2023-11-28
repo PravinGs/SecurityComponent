@@ -24,7 +24,7 @@ public:
     }
 
     void setWritePath(const string& write_path) {
-        write_path = write_path;
+        this->write_path = write_path;
     }
 
     // Getter and Setter for 'time_pattern'
@@ -33,7 +33,7 @@ public:
     }
 
     void setTimePattern(const string& time_pattern) {
-        time_pattern = time_pattern;
+        this->time_pattern = time_pattern;
     }
 
     // Getter and Setter for 'storage_type'
@@ -42,7 +42,7 @@ public:
     }
 
     void setStorageType(const storage& storage_type) {
-        storage_type = storage_type;
+        this->storage_type = storage_type;
     }
         const string &getRestUrl() const
     {
@@ -51,7 +51,7 @@ public:
 
     void setRestUrl(const string &rest_url)
     {
-        rest_url = rest_url;
+        this->rest_url = rest_url;
     }
 
     // Getter and Setter for 'rest_attribute'
@@ -62,6 +62,6 @@ public:
 
     void setRestAttribute(const string &rest_attribute)
     {
-        rest_attribute = rest_attribute;
+        this->rest_attribute = rest_attribute;
     }
 };

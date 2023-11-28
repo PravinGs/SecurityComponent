@@ -3,6 +3,6 @@
 class api_entity
 {
     public:
-        api_entity() = default;
+        api_entity(){}
 
 };

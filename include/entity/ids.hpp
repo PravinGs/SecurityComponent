@@ -26,7 +26,7 @@ public:
     }
 
     void setSourceDir(const string& source_dir) {
-        source_dir = source_dir;
+        this->source_dir = source_dir;
     }
 
     // Getter and Setter for 'search_dir'
@@ -35,7 +35,7 @@ public:
     }
 
     void setSearchDir(const string& search_dir) {
-        search_dir = search_dir;
+        this->search_dir = search_dir;
     }
 
     // Getter and Setter for 'storage_type'
@@ -44,7 +44,7 @@ public:
     }
 
     void setStorageType(const storage& storage_type) {
-        storage_type = storage_type;
+        this->storage_type = storage_type;
     }
 
         const string &getRestUrl() const
@@ -54,7 +54,7 @@ public:
 
     void setRestUrl(const string &rest_url)
     {
-        rest_url = rest_url;
+        this->rest_url = rest_url;
     }
 
     // Getter and Setter for 'rest_attribute'
@@ -65,6 +65,6 @@ public:
 
     void setRestAttribute(const string &rest_attribute)
     {
-        rest_attribute = rest_attribute;
+        this->rest_attribute = rest_attribute;
     }
 };

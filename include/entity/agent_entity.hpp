@@ -8,7 +8,8 @@
 
 class agent_entity {
 private:
-    log_entity log;
+    log_entity syslog;
+    log_entity applog;
     analysis_entity log_analysis;
     process_entity process;
     ids_entity ids;
@@ -16,23 +17,35 @@ private:
 
 public:
     // Constructor with all parameters
-    agent_entity(const log_entity& log, const analysis_entity& log_analysis,
-                 const process_entity& process, const ids_entity& ids,
-                 const api_entity& rest_service)
-        : log(log), log_analysis(log_analysis), process(process), ids(ids),
+    agent_entity(log_entity& syslog, log_entity& applog, analysis_entity& log_analysis,
+                 process_entity& process, ids_entity& ids,
+                 api_entity& rest_service)
+        : syslog(syslog), applog(applog), log_analysis(log_analysis), process(process), ids(ids),
           rest_service(rest_service) {
     }
 
     // Constructor with default values
-    agent_entity() = default;
-
-    // Getter and Setter for 'log'
-    const log_entity& getLog() const {
-        return log;
+    agent_entity()
+    {
+        
     }
 
-    void setLog(const log_entity& log) {
-        log = log;
+    // Getter and Setter for 'syslog'
+    const log_entity& getSysLog() const {
+        return syslog;
+    }
+
+    void setSysLog(log_entity& log) {
+        this->syslog = log;
+    }
+
+    // Getter and Setter for 'applog'
+    const log_entity& getAppLog() const {
+        return applog;
+    }
+
+    void setAppLog(log_entity& log) {
+        this->applog = log;
     }
 
     // Getter and Setter for 'log_analysis'
@@ -40,8 +53,8 @@ public:
         return log_analysis;
     }
 
-    void setLogAnalysis(const analysis_entity& log_analysis) {
-        log_analysis = log_analysis;
+    void setLogAnalysis(analysis_entity& log_analysis) {
+        this->log_analysis = log_analysis;
     }
 
     // Getter and Setter for 'process'
@@ -49,8 +62,8 @@ public:
         return process;
     }
 
-    void setProcess(const process_entity& process) {
-        process = process;
+    void setProcess(process_entity& process) {
+        this->process = process;
     }
 
     // Getter and Setter for 'ids'
@@ -58,8 +71,8 @@ public:
         return ids;
     }
 
-    void setIds(const ids_entity& ids) {
-        ids = ids;
+    void setIds(ids_entity& ids) {
+        this->ids = ids;
     }
 
     // Getter and Setter for 'rest_service'
@@ -67,7 +80,7 @@ public:
         return rest_service;
     }
 
-    void setRestService(const api_entity& rest_service) {
-        rest_service = rest_service;
+    void setRestService(api_entity& rest_service) {
+        this->rest_service = rest_service;
     }
 };

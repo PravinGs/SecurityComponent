@@ -3,6 +3,12 @@
 #pragma once
 
 #include "common.hpp"
+#include "entity/log_analysis.hpp"
+#include "entity/agent_entity.hpp"
+#include "entity/log_collector.hpp"
+#include "entity/ids.hpp"
+#include "entity/process.hpp"
+#include "entity/rapi.hpp"
 
 /**
  * @brief Configuration Management Class
@@ -615,67 +621,89 @@ public:
         return stg;
     }
 
-    syslog_entity get_syslog_entity(map<string, map<string, string>> & config_table)
+    //  log_collector::log_collector(const string &type, const string &read_path, char delimeter,
+    //                              const string &write_path, vector<string> &commands, const string &time_pattern,
+    //                              const storage &storage_type, const string &rest_url, const string &rest_attribute) : type(type), read_path(read_path), delimeter(delimeter), write_path(write_path), commands(commands), time_pattern(time_pattern), storage_type(storage_type), rest_url(rest_url), rest_attribute(rest_attribute)
+    // {
+    // }
+
+    log_entity get_syslog_entity(map<string, map<string, string>> & config_table)
     {
         const string name = "syslog";
-        syslog_entity entity;
-        entity.read_path = config_table[name]["read_path"];
-        entity.commands = config_table[name]["commands"];
-        entity.delimeter = config_table[name]["delimeter"];
-        entity.time_pattern = config_table[name]["time_pattern"];
-        entity.write_path = config_table[name]["write_path"];
-        entity.storage_type = get_storage(name, config_table);
+        vector<string> commands = to_vector(config_table[name]["commands"], ',');
+        storage memory_type = get_storage(name, config_table);
+        log_entity entity(
+            name,
+            config_table[name]["read_path"],
+            config_table[name]["delimeter"],
+            config_table[name]["write_path"],
+            commands,
+            config_table[name]["time_pattern"],
+            memory_type,
+            config_table[name]["rest_url"],
+            config_table[name]["rest_attribute"]
+        );
         return entity;
     }
 
-    applog_entity get_applog_entity(map<string, map<string, string>> & config_table)
+    log_entity get_applog_entity(map<string, map<string, string>> & config_table)
     {
         const string name = "applog";
-        applog_entity entity;
-        
-        entity.delimete   = config_table[name]["delimeter"];
-        entity.attributes = config_table[name]["attributes"];
-        entity.read_path  = config_table[name]["read_path"];
-        entity.write_path = config_table[name]["write_path"];
-        entity.storage_type = get_storage(name, config_table);
-        entity.time_pattern = config_table[name]["time_pattern"];
+        vector<string> commands = to_vector(config_table[name]["commands"], ',');
+        storage memory_type = get_storage(name, config_table);
+        log_entity entity(
+            name,
+            config_table[name]["read_path"],
+            config_table[name]["delimeter"],
+            config_table[name]["write_path"],
+            commands,
+            config_table[name]["time_pattern"],
+            memory_type,
+            config_table[name]["rest_url"],
+            config_table[name]["rest_attribute"]
+        );
         return entity;
     }
 
-    log_analysis_entity get_log_analysis_entity(map<string, map<string, string>> & config_table)
+   analysis_entity get_analysis_entity(map<string, map<string, string>> & config_table)
     {   
         const string name = "log_analysis";
-        log_analysis_entity entity;
-        entity.logfile_path = config_table[name]["file_path"];
-        entity.decoder_path = config_table[name]["decoder_path"];
-        entity.rules_dir = config_table[name]["rules_dir"];
-        entity.time_pattern = config_table[name]["time_pattern"];
-        entity.storage_type = get_storage(name, config_table);
+        analysis_entity entity(
+           config_table[name]["file_path"],
+           config_table[name]["decoder_path"],
+           config_table[name]["rules_dir"],
+           config_table[name]["time_pattern"],
+           get_storage(name, config_table),
+           config_table[name]["rest_url"],
+           config_table[name]["rest_attribute"]
 
+        );
         return entity;
     }   
 
-    resource_entity get_resource_entity(map<string, map<string, string>>& Config_table)
+    process_entity get_process_entity(map<string, map<string, string>>& config_table)
     {
         const string name = "process";
-        resource_entity entity;
-        entity.write_path = config_table[name]["write_path"];
-        entity.time_pattern = config_table[name]["time_pattern"];
-        entity.storage_type = get_storage(name, config_table);
-
+        process_entity entity(
+            config_table[name]["write_path"],
+            config_table[name]["time_pattern"],
+            get_storage(name, config_table),
+            config_table[name]["rest_url"],
+            config_table[name]["rest_attribute"]
+        );
         return entity;
     }
 
-    int create_agent_entity(map<string, map<string, string>> & config_table, agent_entity& entity)
+    void create_agent_entity(map<string, map<string, string>> & config_table, agent_entity& entity)
     {
-        int result = SUCCESS;
-
-        entity.sys_event = get_syslog_entity(config_table);
-        entity.applog = get_applog_entity(config_table);
-        entity.log_analysis = get_log_analysis_entity(config_table);
-        entity.process = get_resource_entity(config_table);
-        
-        return result;
+        log_entity syslog_entity = get_syslog_entity(config_table);
+        log_entity applog_entity = get_applog_entity(config_table);
+        analysis_entity an_entity = get_analysis_entity(config_table);
+        process_entity p_entity = get_process_entity(config_table);
+        entity.setSysLog(syslog_entity);
+        entity.setAppLog(applog_entity);
+        entity.setLogAnalysis(an_entity);
+        entity.setProcess(p_entity);
     }
 
     /**

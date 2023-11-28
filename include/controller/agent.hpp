@@ -2,6 +2,7 @@
 #include "common.hpp"
 #include "base_api.hpp"
 #include "service/config_service.hpp"
+#include "entity/agent_entity.hpp"
 
 
 class agent
@@ -22,6 +23,7 @@ public:
         is_config_valid = false;
         cout << "Agent Creation failed" << '\n';
        }
+       
     }
 
     agent(agent_entity& entity):entity(entity)
@@ -29,14 +31,13 @@ public:
         /*Initialize this object */
     }
 
-private:
     int extract_agent_entity(const string& config_file)
     {
         map<string, map<string, string>> config_table;
         int result = os::is_exist(config_file);
         if (result == FILE_NOT_EXIST) return FILE_NOT_EXIST;
-        result = config_service->read_ini_config_file(config_file, config_table);
-        result = config_service->create_agent_entity(config_table, entity);
+        result = config_service.read_ini_config_file(config_file, config_table);
+        config_service.create_agent_entity(config_table, entity);
         return result;
     }
 
@@ -48,17 +49,17 @@ private:
             return FAILED;
         }
         // To be continued
-
+        return SUCCESS;
     }
 
     int update()
     {
-        
+        return SUCCESS;
     }
 
 private:
     bool is_config_valid = true;
     agent_entity entity;
-    std::unique_ptr<Config> config_service;
-    vector<std::uniq_ptr<base_api>> loaded_modules;
+    Config config_service;
+    vector<base_api*> loaded_modules;
 };

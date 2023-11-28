@@ -1,14 +1,12 @@
 #pragma once
 #include "common.hpp"
 
-struct storage;
-
 class log_entity
 {
 private:
     string type;
     string read_path;
-    char delimeter;
+    string delimeter;
     string write_path;
     vector<string> commands;
     string time_pattern;
@@ -18,14 +16,18 @@ private:
     
 
 public:
-    log_collector::log_collector(const string &type, const string &read_path, char delimeter,
+    log_entity()
+    {
+        
+    }
+    log_entity(const string &type, const string &read_path, const string& delimeter,
                                  const string &write_path, vector<string> &commands, const string &time_pattern,
                                  const storage &storage_type, const string &rest_url, const string &rest_attribute) : type(type), read_path(read_path), delimeter(delimeter), write_path(write_path), commands(commands), time_pattern(time_pattern), storage_type(storage_type), rest_url(rest_url), rest_attribute(rest_attribute)
     {
     }
 
 
-    log_collector::~log_collector()
+    ~log_entity()
     {
     }
 
@@ -37,7 +39,7 @@ public:
 
     void setType(const string &new_type)
     {
-        type = new_type;
+        this->type = new_type;
     }
 
     // Getter and Setter for 'read_path'
@@ -48,18 +50,18 @@ public:
 
     void setReadPath(const string &read_path)
     {
-        read_path = read_path;
+        this->read_path = read_path;
     }
 
     // Getter and Setter for 'delimeter'
-    char getDelimeter() const
+    const string& getDelimeter() const
     {
         return delimeter;
     }
 
-    void setDelimeter(char delimeter)
+    void setDelimeter(const string& delimeter)
     {
-        delimeter = delimeter;
+       this->delimeter = delimeter;
     }
 
     // Getter and Setter for 'write_path'
@@ -70,7 +72,7 @@ public:
 
     void setWritePath(const string &write_path)
     {
-        write_path = write_path;
+        this->write_path = write_path;
     }
 
     // Getter and Setter for 'commands'
@@ -81,7 +83,7 @@ public:
 
     void setCommands(const std::vector<string> &commands)
     {
-        commands = commands;
+        this->commands = commands;
     }
 
     // Getter and Setter for 'time_pattern'
@@ -92,7 +94,7 @@ public:
 
     void setTimePattern(const string &time_pattern)
     {
-        time_pattern = time_pattern;
+        this->time_pattern = time_pattern;
     }
 
     // Getter and Setter for 'storage_type'
@@ -103,7 +105,7 @@ public:
 
     void setStorageType(const storage &storage_type)
     {
-        storage_type = storage_type;
+        this->storage_type = storage_type;
     }
 
     // Getter and Setter for 'rest_url'
@@ -114,7 +116,7 @@ public:
 
     void setRestUrl(const string &rest_url)
     {
-        rest_url = rest_url;
+        this->rest_url = rest_url;
     }
 
     // Getter and Setter for 'rest_attribute'
@@ -125,6 +127,6 @@ public:
 
     void setRestAttribute(const string &rest_attribute)
     {
-        rest_attribute = rest_attribute;
+        this->rest_attribute = rest_attribute;
     }
 };
