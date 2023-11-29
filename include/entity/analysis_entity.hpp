@@ -12,18 +12,21 @@ private:
     storage storage_type;
     string rest_url;
     string rest_attribute;
-
+    bool is_empty;
 public:
     // Constructor with all parameters
     analysis_entity(const string& logfile, const string& decoder, const string& rules,
                     const string& time_pattern, const storage& storage_type, const string &rest_url, const string &rest_attribute)
         : logfile_path(logfile), decoder_path(decoder), rules_dir(rules),
-          time_pattern(time_pattern), storage_type(storage_type), rest_url(rest_url), rest_attribute(rest_attribute) {
+          time_pattern(time_pattern), storage_type(storage_type), rest_url(rest_url), rest_attribute(rest_attribute) 
+    {
+        is_empty = false;
     }
 
     // Constructor with no parameters
-    analysis_entity() {
-        // Initialize default values or leave members uninitialized depending on your requirements
+    analysis_entity() 
+    {
+        is_empty = true;
     }
 
     // Getter and Setter for 'logfile_path'
@@ -32,6 +35,7 @@ public:
     }
 
     void setLogfilePath(const string& logfileath) {
+        is_empty = false;
         this->logfile_path = logfileath;
     }
 
@@ -41,6 +45,7 @@ public:
     }
 
     void setDecoderPath(const string& decoder_path) {
+        is_empty = false;
         this->decoder_path = decoder_path;
     }
 
@@ -50,6 +55,7 @@ public:
     }
 
     void setRulesDir(const string& rules_dir) {
+        is_empty = false;
         this->rules_dir = rules_dir;
     }
 
@@ -59,6 +65,7 @@ public:
     }
 
     void setTimePattern(const string& time_pattern) {
+        is_empty = false;
         this->time_pattern = time_pattern;
     }
 
@@ -68,6 +75,7 @@ public:
     }
 
     void setStorageType(const storage& storage_Type) {
+        is_empty = false;
         this->storage_type = storage_Type;
     }
      // Getter and Setter for 'rest_url'
@@ -78,6 +86,7 @@ public:
 
     void setRestUrl(const string &rest_url)
     {
+        is_empty = false;
         this->rest_url = rest_url;
     }
 
@@ -89,6 +98,9 @@ public:
 
     void setRestAttribute(const string &rest_attribute)
     {
+        is_empty = false;
         this->rest_attribute = rest_attribute;
     }
+
+    bool isEmpty() { return this->is_empty; }
 };

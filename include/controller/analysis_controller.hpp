@@ -1,7 +1,7 @@
 #pragma once
 
-#include "agent_utils.hpp"
-#include "service/log_analysis_service.hpp"
+#include "common.hpp"
+#include "service/loganalysis_service.hpp"
 
 /**
  * @brief Analysis Controller
@@ -41,6 +41,7 @@ class analysis_controller
             if (decoderPath.empty() || rulesPath.empty()) return;
 
             int result = _log_analysis->start(decoderPath, rulesPath, readDir);
+            cout << result << '\n';
         }
         /**
          * @brief Destructor for analysis_controller.

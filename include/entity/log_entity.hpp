@@ -13,19 +13,19 @@ private:
     storage storage_type;
     string rest_url;
     string rest_attribute;
-    
+    bool is_empty;
 
 public:
     log_entity()
     {
-        
+        is_empty = true;
     }
-    log_entity(const string &type, const string &read_path, const string& delimeter,
-                                 const string &write_path, vector<string> &commands, const string &time_pattern,
-                                 const storage &storage_type, const string &rest_url, const string &rest_attribute) : type(type), read_path(read_path), delimeter(delimeter), write_path(write_path), commands(commands), time_pattern(time_pattern), storage_type(storage_type), rest_url(rest_url), rest_attribute(rest_attribute)
+    log_entity(const string &type, const string &read_path, const string &delimeter,
+               const string &write_path, vector<string> &commands, const string &time_pattern,
+               const storage &storage_type, const string &rest_url, const string &rest_attribute) : type(type), read_path(read_path), delimeter(delimeter), write_path(write_path), commands(commands), time_pattern(time_pattern), storage_type(storage_type), rest_url(rest_url), rest_attribute(rest_attribute)
     {
+        is_empty = false;
     }
-
 
     ~log_entity()
     {
@@ -39,6 +39,7 @@ public:
 
     void setType(const string &new_type)
     {
+        is_empty = false;
         this->type = new_type;
     }
 
@@ -50,18 +51,20 @@ public:
 
     void setReadPath(const string &read_path)
     {
+        is_empty = false;
         this->read_path = read_path;
     }
 
     // Getter and Setter for 'delimeter'
-    const string& getDelimeter() const
+    const string &getDelimeter() const
     {
         return delimeter;
     }
 
-    void setDelimeter(const string& delimeter)
+    void setDelimeter(const string &delimeter)
     {
-       this->delimeter = delimeter;
+        is_empty = false;
+        this->delimeter = delimeter;
     }
 
     // Getter and Setter for 'write_path'
@@ -72,6 +75,7 @@ public:
 
     void setWritePath(const string &write_path)
     {
+        is_empty = false;
         this->write_path = write_path;
     }
 
@@ -83,6 +87,7 @@ public:
 
     void setCommands(const std::vector<string> &commands)
     {
+        is_empty = false;
         this->commands = commands;
     }
 
@@ -94,17 +99,20 @@ public:
 
     void setTimePattern(const string &time_pattern)
     {
+        is_empty = false;
         this->time_pattern = time_pattern;
     }
 
     // Getter and Setter for 'storage_type'
     const storage &getStorageType() const
     {
+
         return storage_type;
     }
 
     void setStorageType(const storage &storage_type)
     {
+        is_empty = false;
         this->storage_type = storage_type;
     }
 
@@ -116,6 +124,7 @@ public:
 
     void setRestUrl(const string &rest_url)
     {
+        is_empty = false;
         this->rest_url = rest_url;
     }
 
@@ -127,6 +136,9 @@ public:
 
     void setRestAttribute(const string &rest_attribute)
     {
+        is_empty = false;
         this->rest_attribute = rest_attribute;
     }
+
+    bool isEmpty() { return this->is_empty; }
 };

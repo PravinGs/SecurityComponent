@@ -3,12 +3,12 @@
 #pragma once
 
 #include "common.hpp"
-#include "entity/log_analysis.hpp"
+#include "entity/analysis_entity.hpp"
 #include "entity/agent_entity.hpp"
-#include "entity/log_collector.hpp"
-#include "entity/ids.hpp"
-#include "entity/process.hpp"
-#include "entity/rapi.hpp"
+#include "entity/log_entity.hpp"
+#include "entity/ids_entity.hpp"
+#include "entity/process_entity.hpp"
+#include "entity/api_entity.hpp"
 
 /**
  * @brief Configuration Management Class

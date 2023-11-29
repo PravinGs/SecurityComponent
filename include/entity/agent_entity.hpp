@@ -1,10 +1,10 @@
 #pragma once
 #include "common.hpp"
-#include "log_analysis.hpp"
-#include "log_collector.hpp"
-#include "process.hpp"
-#include "ids.hpp"
-#include "rapi.hpp"
+#include "analysis_entity.hpp"
+#include "entity/log_entity.hpp"
+#include "entity/ids_entity.hpp"
+#include "entity/process_entity.hpp"
+#include "entity/api_entity.hpp"
 
 class agent_entity {
 private:
@@ -31,47 +31,47 @@ public:
     }
 
     // Getter and Setter for 'syslog'
-    const log_entity& getSysLog() const {
+    const log_entity& getSysLogEntity() const {
         return syslog;
     }
 
-    void setSysLog(log_entity& log) {
+    void setSysLog(const log_entity& log) {
         this->syslog = log;
     }
 
     // Getter and Setter for 'applog'
-    const log_entity& getAppLog() const {
+    const log_entity& getAppLogEntity() const {
         return applog;
     }
 
-    void setAppLog(log_entity& log) {
+    void setAppLog(const log_entity& log) {
         this->applog = log;
     }
 
     // Getter and Setter for 'log_analysis'
-    const analysis_entity& getLogAnalysis() const {
+    const analysis_entity& getAnalysisEntity() const {
         return log_analysis;
     }
 
-    void setLogAnalysis(analysis_entity& log_analysis) {
+    void setLogAnalysis(const analysis_entity& log_analysis) {
         this->log_analysis = log_analysis;
     }
 
     // Getter and Setter for 'process'
-    const process_entity& getProcess() const {
+    const process_entity& getProcessEntity() const {
         return process;
     }
 
-    void setProcess(process_entity& process) {
+    void setProcess(const process_entity& process) {
         this->process = process;
     }
 
     // Getter and Setter for 'ids'
-    const ids_entity& getIds() const {
+    const ids_entity& getIdsEntity() const {
         return ids;
     }
 
-    void setIds(ids_entity& ids) {
+    void setIds(const ids_entity& ids) {
         this->ids = ids;
     }
 
@@ -80,7 +80,7 @@ public:
         return rest_service;
     }
 
-    void setRestService(api_entity& rest_service) {
+    void setRestService(const api_entity& rest_service) {
         this->rest_service = rest_service;
     }
 };

@@ -9,9 +9,8 @@ used in this library.
 class base_api
 {
     public:
-        virtual int start(std::shared_ptr<void> data) = 0;
-        virtual int run() = 0;
+        virtual int start() = 0;
+        virtual int update() = 0;
         virtual int stop() = 0;
-        // virtual int update(void * data) = 0;
         virtual ~base_api(){}
 };

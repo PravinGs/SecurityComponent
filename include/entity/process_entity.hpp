@@ -8,15 +8,20 @@ private:
     storage storage_type;
     string rest_url;
     string rest_attribute;
-
+    bool is_empty;
 public:
     // Constructor with all parameters
     process_entity(const string& write_path, const string& time_pattern, const storage& storage_type, const string &rest_url, const string &rest_attribute)
-        : write_path(write_path), time_pattern(time_pattern), storage_type(storage_type), rest_url(rest_url), rest_attribute(rest_attribute) {
+        : write_path(write_path), time_pattern(time_pattern), storage_type(storage_type), rest_url(rest_url), rest_attribute(rest_attribute) 
+    {
+        is_empty = false;
     }
 
     // Constructor with default values
-    process_entity() = default;
+    process_entity()
+    {
+        is_empty = true;
+    }
 
     // Getter and Setter for 'write_path'
     const string& getWritePath() const {
@@ -24,6 +29,7 @@ public:
     }
 
     void setWritePath(const string& write_path) {
+        is_empty = false;
         this->write_path = write_path;
     }
 
@@ -33,6 +39,7 @@ public:
     }
 
     void setTimePattern(const string& time_pattern) {
+        is_empty = false;
         this->time_pattern = time_pattern;
     }
 
@@ -42,6 +49,7 @@ public:
     }
 
     void setStorageType(const storage& storage_type) {
+        is_empty = false;
         this->storage_type = storage_type;
     }
         const string &getRestUrl() const
@@ -51,6 +59,7 @@ public:
 
     void setRestUrl(const string &rest_url)
     {
+        is_empty = false;
         this->rest_url = rest_url;
     }
 
@@ -62,6 +71,9 @@ public:
 
     void setRestAttribute(const string &rest_attribute)
     {
+        is_empty = false;
         this->rest_attribute = rest_attribute;
     }
+
+    bool isEmpty() { return this->is_empty; }
 };
