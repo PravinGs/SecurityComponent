@@ -9,6 +9,7 @@ private:
     process_entity entity;
 public:
     process_api(process_entity& entity) : entity(entity) {}
+    
     ~process_api() {}
     
     int start() { return SUCCESS; }

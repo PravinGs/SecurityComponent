@@ -694,16 +694,16 @@ public:
         return entity;
     }
 
-    void create_agent_entity(map<string, map<string, string>> & config_table, agent_entity& entity)
+    void create_agent_entity(map<string, map<string, string>> & config_table, std::shared_ptr<agent_entity>& entity)
     {
         log_entity syslog_entity = get_syslog_entity(config_table);
         log_entity applog_entity = get_applog_entity(config_table);
         analysis_entity an_entity = get_analysis_entity(config_table);
         process_entity p_entity = get_process_entity(config_table);
-        entity.setSysLog(syslog_entity);
-        entity.setAppLog(applog_entity);
-        entity.setLogAnalysis(an_entity);
-        entity.setProcess(p_entity);
+        entity->setSysLog(syslog_entity);
+        entity->setAppLog(applog_entity);
+        entity->setLogAnalysis(an_entity);
+        entity->setProcess(p_entity);
     }
 
     /**

@@ -16,7 +16,6 @@ public:
 
     int stop() { return SUCCESS; }
 
-
     ~ids_api() {}
 };
 

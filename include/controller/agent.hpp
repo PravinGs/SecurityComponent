@@ -28,9 +28,12 @@ public:
         }
     }
 
-    agent(agent_entity &entity) : entity(entity)
+    agent(std::shared_ptr<agent_entity> newEntity) : entity(newEntity), is_config_valid(true)
     {
-        is_config_valid = true;
+    }
+
+    agent(agent_entity *newEntity) : entity(newEntity), is_config_valid(true)
+    {
     }
 
     int extract_agent_entity(const string &config_file)
@@ -46,51 +49,47 @@ public:
 
     int init()
     {
-        log_entity syslog_entity = entity.getSysLogEntity();
-        log_entity applog_entity = entity.getAppLogEntity();
-        analysis_entity anlaysis_ent = entity.getAnalysisEntity();
-        process_entity process_ent = entity.getProcessEntity();
-        ids_entity ids_ent = entity.getIdsEntity();
+        log_entity syslog_entity = entity->getSysLogEntity();
+        log_entity applog_entity = entity->getAppLogEntity();
+        analysis_entity anlaysis_ent = entity->getAnalysisEntity();
+        process_entity process_ent = entity->getProcessEntity();
+        ids_entity ids_ent = entity->getIdsEntity();
 
         if (!is_config_valid)
             return FAILED;
 
         if (!loaded_modules.empty())
         {
-            for (base_api *api : loaded_modules)
-            {
-                delete api;
-            }
-            loaded_modules.clear();
+            loaded_modules.clear(); // I should use erase method to remove specific modules
         }
 
         if (!syslog_entity.isEmpty())
         {
-            base_api *syslog_api = new log_api(syslog_entity);
+            std::shared_ptr<base_api> syslog_api = std::make_shared<log_api>(syslog_entity);
             loaded_modules.emplace_back(syslog_api);
         }
 
         if (!applog_entity.isEmpty())
         {
-            base_api *applog_api = new log_api(applog_entity);
+            std::shared_ptr<base_api>  applog_api = std::make_shared<log_api>(applog_entity);
             loaded_modules.emplace_back(applog_api);
         }
 
         if (!anlaysis_ent.isEmpty())
         {
-            base_api *analysis = new analysis_api(anlaysis_ent);
+            std::shared_ptr<base_api>  analysis = std::make_shared<analysis_api>(anlaysis_ent);
             loaded_modules.emplace_back(analysis);
         }
 
         if (!process_ent.isEmpty())
         {
-            base_api *process = new process_api(process_ent);
+            std::shared_ptr<base_api>  process = std::make_shared<process_api>(process_ent);
             loaded_modules.emplace_back(process);
         }
 
         if (!ids_ent.isEmpty())
         {
-            base_api *ids = new ids_api(ids_ent);
+            std::shared_ptr<base_api>  ids = std::make_shared<ids_api>(ids_ent);
             loaded_modules.emplace_back(ids);
         }
     }
@@ -100,21 +99,9 @@ public:
         return SUCCESS;
     }
 
-    ~agent()
-    {
-        if (!loaded_modules.empty())
-        {
-            for (base_api *api : loaded_modules)
-            {
-                delete api;
-            }
-            loaded_modules.clear();
-        }
-    }
-
 private:
+    std::shared_ptr<agent_entity> entity;
     bool is_config_valid;
-    agent_entity entity;
     Config config_service;
-    vector<base_api *> loaded_modules;
+    vector<std::shared_ptr<base_api>> loaded_modules;
 };
