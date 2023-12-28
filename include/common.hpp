@@ -112,6 +112,12 @@ typedef struct aconfig aconfig;
 typedef struct log_event log_event;
 typedef struct Timer Timer;
 typedef struct decoder decoder;
+typedef struct storage storage;
+
+struct storage
+{
+    string type;
+};
 
 struct Timer
 {
@@ -372,7 +378,7 @@ public:
      */
     static int handle_local_log_file(int day, int month, int year, string& filePath, const string& app_name);
 
-    static string is_empty(string filename);
+    static string get_path_or_backup_file_path(string filename);
 
     /**
      * @brief Compress a file using a compression algorithm.
@@ -431,6 +437,8 @@ public:
 
     static void backup_log_file();
 
+    static string to_lower_case(string &str);
+
     /**
      * @brief Validate a syslog time string.
      *
@@ -477,7 +485,7 @@ public:
 
     static void write_log(const string& log, int logLevel);
 
-    static std::time_t format_string_time(const string &datetime);
+    static std::time_t string_to_time_t(const string &datetime);
 
     ~agent_utils() 
     {

@@ -1,72 +1,45 @@
 #include "service/logcollector_service.hpp"
 
-string to_lower_case(string &str)
+bool log_service::parse_log_category(string &line, const vector<string> &log_levels)
 {
-    string lower_case_string;
-    for (char ch : str)
-    {
-        lower_case_string += std::tolower(ch);
-    }
-    return lower_case_string;
-}
-
-int log_service::save_json(Json::Value &json, const string &path, const vector<string> &logs, const vector<string> &columns, const char &delimeter)
-{
-    string json_write_path = path;
-    if (get_json_write_path(json_write_path) == FAILED) return FAILED;
-
-    fstream file(json_write_path, std::ios::out);
-    Json::StreamWriterBuilder writer_builder;
-    if (!file)
-    {
-        agent_utils::write_log(FWRITE_FAILED + json_write_path, FAILED);
-        return FAILED;
-    }
-
-    json["LogObjects"] = Json::Value(Json::arrayValue);
-    for (auto log : logs)
-    {
-        Json::Value jsonLog;
-
-        standard_log_attrs fLog = standard_log_attrs(log);
-        jsonLog["TimeGenerated"] = fLog.timestamp;
-        jsonLog["UserLoginId"] = fLog.user;
-        jsonLog["ServiceName"] = fLog.program;
-        jsonLog["Message"] = fLog.message;
-        jsonLog["LogLevel"] = fLog.level;
-        jsonLog["LogCategory"] = fLog.category;
-
-        json["LogObjects"].append(jsonLog);
-    }
-    std::unique_ptr<Json::StreamWriter> writer(writer_builder.newStreamWriter());
-    writer->write(json, &file);
-    file.close();
-    agent_utils::write_log(FWRITE_SUCCESS + json_write_path, SUCCESS);
-    return SUCCESS;
-}
-
-void log_service::categorize(string &line, const vector<string> &log_levels)
-{
+    bool result = false;
     int max_level = 0;
     string network = "network";
     string ufw = "ufw";
     string lowercase_line = line;
-    for (string level : log_levels)
+
+    auto it = std::find(log_levels.begin(), log_levels.end(), "all");
+
+    if (it != log_levels.end())
     {
-        std::transform(lowercase_line.begin(), lowercase_line.end(), lowercase_line.begin(), [](unsigned char c)
-                       { return std::tolower(c); });
-        std::transform(level.begin(), level.end(), level.begin(), [](unsigned char c)
-                       { return std::tolower(c); });
-        if (lowercase_line.find(level) != std::string::npos)
+        line += "|0";
+        result = true;
+    }
+    else
+    {
+        for (string level : log_levels)
         {
-            if (_logLevel[to_lower_case(level)] > max_level)
+            std::transform(lowercase_line.begin(), lowercase_line.end(), lowercase_line.begin(), [](unsigned char c)
+                           { return std::tolower(c); });
+            std::transform(level.begin(), level.end(), level.begin(), [](unsigned char c)
+                           { return std::tolower(c); });
+            if (lowercase_line.find(level) != std::string::npos)
             {
-                max_level = _logLevel[to_lower_case(level)];
+                if (log_parser_level[agent_utils::to_lower_case(level)] > max_level)
+                {
+                    max_level = log_parser_level[agent_utils::to_lower_case(level)];
+                    result = true;
+                }
+            }
+            if (level == "none")
+            {
+                max_level = log_parser_level[agent_utils::to_lower_case(level)];
+                result = true;
             }
         }
-    }
 
-    line += "|" + std::to_string(max_level);
+        line += "|" + std::to_string(max_level);
+    }
 
     if (lowercase_line.find(network) != std::string::npos)
     {
@@ -81,7 +54,7 @@ void log_service::categorize(string &line, const vector<string> &log_levels)
         line += "|sys";
     }
 
-    return;
+    return result;
 }
 
 bool filter_log(string &line, vector<string> log_levels)
@@ -102,163 +75,97 @@ bool filter_log(string &line, vector<string> log_levels)
     return result;
 }
 
-int log_service::read_syslog_file(const string &path, vector<string> &logs, const char &delimeter, const string &last_read_time, bool &flag, const vector<string> &log_levels, string &next_reading_time)
+int log_service::read_syslog_file(log_entity &entity, vector<string> &logs)
 {
-    const string sep = "|";
-    string formatted_time, line;
-    std::time_t last_written_time = agent_utils::format_string_time(last_read_time);
+    string standard_time_format_string, line;
 
-    fstream file(path, std::ios::in);
+    fstream file(entity.read_path, std::ios::in);
     if (!file)
     {
-        agent_utils::write_log(FILE_ERROR + path, FAILED);
+        agent_utils::write_log(FILE_ERROR + entity.read_path, FAILED);
         return FAILED;
     }
 
     while (std::getline(file, line))
     {
         if (line.empty())
-            continue;
-        string currentTime = line.substr(0, 15);                         /* Extract the date time format fromt the line */
-        agent_utils::convert_time_format(currentTime, formatted_time);       /* This func convert to standard time format */
-        std::time_t cTime = agent_utils::format_string_time(formatted_time); /* Convert string time to time_t format for comparision between time_t objects */
-        if (cTime < last_written_time)
         {
             continue;
         }
+
+        agent_utils::convert_time_format(line.substr(0, 15), standard_time_format_string);     /* This func convert to standard time format */
+        std::time_t current_time = agent_utils::string_to_time_t(standard_time_format_string); /* Convert string time to time_t format for comparision between time_t objects */
+
+        if (current_time < entity.last_read_time)
+        {
+            continue;
+        }
+
         string log, token;
-        log += formatted_time;
-        std::stringstream stream(line.substr(16));
+        bool is_required = true;
         int index = 0;
-        while (std::getline(stream, token, delimeter) && index < 3)
+
+        log += standard_time_format_string;
+        std::stringstream stream(line.substr(16));
+
+        while (std::getline(stream, token, entity.delimeter) && index < 3)
         {
             if (index == 2)
             {
                 string message = token;
-                while (std::getline(stream, token, ' '))
+                while (std::getline(stream, token, entity.delimeter))
                 {
-                    message += ' ' + token;
+                    message += entity.delimeter + token;
                 }
-                log += sep + message;
-                categorize(log, log_levels);
+                log += "|" + message;
+                is_required = parse_log_category(log, entity.log_levels);
                 index = 4;
                 continue;
             }
-            log += sep + token;
+            log += "|" + token;
             index++;
         }
 
-        logs.push_back(log);
-        std::time_t tempTime = agent_utils::format_string_time(next_reading_time);
-        if (cTime > tempTime)
+        if (is_required)
         {
-            next_reading_time = formatted_time;
+            logs.push_back(log);
+            entity.count += 1;
         }
-        if (cTime == last_written_time)
+
+        std::time_t current_reading_time = agent_utils::string_to_time_t(entity.current_read_time);
+
+        if (current_time > current_reading_time)
         {
-            flag = false;
+            entity.current_read_time = standard_time_format_string;
+        }
+
+        if (current_time == entity.last_read_time)
+        {
+            entity.is_empty = false;
         }
     }
 
     file.close();
 
-    if (flag)
+    if (entity.is_empty)
     {
-        read_syslog_file(path + ".1", logs, delimeter, last_read_time, flag, log_levels, next_reading_time);
+        entity.read_path += ".1";
+        read_syslog_file(entity, logs);
     }
     return SUCCESS;
-}
-
-int log_service::get_syslog(const string &app_name, Json::Value &json, const vector<string> &log_attributes, const string &path, string &last_read_time, const vector<string> &log_levels, const char &remote)
-{
-    bool flag = true;
-    int result = SUCCESS;
-    const char delimeter = ' ';
-    vector<string> logs;
-
-    string log_dir = BASE_LOG_DIR;
-    log_dir += BASE_LOG_ARCHIVE;
-    string next_reading_time = last_read_time;
-    
-
-    if (strcmp(app_name.c_str(), "syslog") == 0 || strcmp(app_name.c_str(), "auth") == 0)
-    {
-
-        if (remote == 'y' || remote == 'Y')
-        {
-            UdpQueue queue;
-            result = read_remote_syslog(queue, logs);
-            queue.stop();
-        }
-        else
-        {
-            result = read_syslog_file(path, logs, delimeter, last_read_time, flag, log_levels, next_reading_time);
-        }
-        if (logs.size() == 0 || result == FAILED)
-        {
-            agent_utils::write_log("Read 0 logs for" + app_name, WARNING);
-        }
-        else
-        {
-            last_read_time = next_reading_time;
-            agent_utils::write_log(app_name + " logs collected", INFO);
-            if (_config_service.to_vector(logs[0], '|').size() < log_attributes.size())
-            {
-                agent_utils::write_log("Invalid Log Attributes configured for " + app_name, FAILED);
-                result = FAILED;
-            }
-            else
-            {
-                string fileName = next_reading_time + "-" + app_name;
-                result = save_json(json, fileName, logs, log_attributes, '|');
-            }
-
-            if ((result = save_read_logs(logs, app_name)) == SUCCESS)
-            {
-                agent_utils::write_log("Storing " + app_name + " logs started", INFO);
-                agent_utils::write_log(FWRITE_SUCCESS + log_dir, INFO);
-            }
-            else
-            {
-                agent_utils::write_log(FWRITE_FAILED + log_dir, FAILED);
-            }
-        }
-    }
-    else if (strcmp(app_name.c_str(), "dpkg") == 0)
-    {
-        result = read_dpkg_logfile(path, logs, last_read_time, next_reading_time, flag);
-        last_read_time = next_reading_time;
-        if (logs.size() == 0)
-        {
-            agent_utils::write_log("Read 0 logs for " + app_name);
-        }
-        else
-        {
-            agent_utils::write_log("Storing " + app_name + " logs started", INFO);
-            if ((result = save_read_logs(logs, app_name)) == SUCCESS)
-            {
-                agent_utils::write_log(FWRITE_SUCCESS + log_dir, INFO);
-            }
-            else
-            {
-                agent_utils::write_log(FWRITE_FAILED + log_dir, FAILED);
-            }
-        }
-    }
-
-    return result;
 }
 
 int log_service::get_applog(Json::Value &json, const vector<string> &log_attributes, const string &readDir, const string &writePath, string &last_read_time, const vector<string> &log_levels, const char &delimeter)
 {
     vector<string> logs;
     bool flag = true;
-    vector<std::filesystem::directory_entry> files = get_dir_files(readDir);
-    int index = (int)files.size() - 1;
+    vector<string> files;
+    os::get_regular_files(readDir, files);
+    int index = (int)files.size();
     string next_reading_time = last_read_time;
     while (flag && index >= 0)
     {
-        string path = files[index].path();
+        string path = files[index];
         if (!std::filesystem::is_regular_file(path))
         {
             index--;
@@ -273,20 +180,20 @@ int log_service::get_applog(Json::Value &json, const vector<string> &log_attribu
         index--;
     }
 
-    if (_config_service.to_vector(logs[0], delimeter).size() < log_attributes.size())
+    if (config.to_vector(logs[0], delimeter).size() < log_attributes.size())
     {
         agent_utils::write_log("Invalid Log Attributes configured for Applog", FAILED);
         return FAILED;
     }
     last_read_time = next_reading_time;
-    return save_json(json, writePath, logs, log_attributes, delimeter);
+    return SUCCESS;
 }
 
 int log_service::read_applog_file(const string &path, vector<string> &logs, const char &delimeter, const string &last_read_time, bool &flag, const vector<string> &log_levels, string &next_reading_time)
 {
     fstream file(path);
     string line;
-    std::time_t last_written_time = agent_utils::format_string_time(last_read_time);
+    std::time_t last_written_time = agent_utils::string_to_time_t(last_read_time);
     bool is_critical_log = false;
     if (!file)
     {
@@ -301,9 +208,9 @@ int log_service::read_applog_file(const string &path, vector<string> &logs, cons
             continue;
         }
 
-        string currentTime = line.substr(0, 19);                       /* Extract the date time format fromt the line */
-        std::time_t cTime = agent_utils::format_string_time(currentTime); /* Convert string time to time_t format for comparision between time_t objects */
-        if (cTime < last_written_time)
+        string current_time_string = line.substr(0, 19);                               /* Extract the date time format fromt the line */
+        std::time_t current_time = agent_utils::string_to_time_t(current_time_string); /* Convert string time to time_t format for comparision between time_t objects */
+        if (current_time < last_written_time)
         {
             continue;
         }
@@ -313,12 +220,12 @@ int log_service::read_applog_file(const string &path, vector<string> &logs, cons
         {
             logs.push_back(line);
         }
-        std::time_t tempTime = agent_utils::format_string_time(next_reading_time);
-        if (cTime > tempTime)
+        std::time_t tempTime = agent_utils::string_to_time_t(next_reading_time);
+        if (current_time > tempTime)
         {
-            next_reading_time = currentTime;
+            next_reading_time = current_time_string;
         }
-        if (cTime == last_written_time)
+        if (current_time == last_written_time)
         {
             flag = false;
         }
@@ -327,88 +234,14 @@ int log_service::read_applog_file(const string &path, vector<string> &logs, cons
     return SUCCESS;
 }
 
-vector<std::filesystem::directory_entry> log_service::get_dir_files(const string &directory)
+int log_service::read_dpkg_logfile(log_entity &entity, vector<string> &logs)
 {
-    vector<std::filesystem::directory_entry> files;
+    string standard_time_format_string, line;
 
-    for (const auto &file : std::filesystem::directory_iterator(directory))
-    {
-        files.push_back(file);
-    }
-
-    std::sort(files.begin(), files.end(), [](const std::filesystem::directory_entry &a, const std::filesystem::directory_entry &b)
-              { return std::filesystem::last_write_time(a) < std::filesystem::last_write_time(b); });
-
-    return files;
-}
-
-int log_service::save_read_logs(const vector<string> &logs, const string &app_name)
-{
-    string file_path;
-    auto today = std::chrono::system_clock::now();
-    auto time_info = std::chrono::system_clock::to_time_t(today);
-    std::tm *tm_info = std::localtime(&time_info);
-
-    int day = tm_info->tm_mday;
-    int month = tm_info->tm_mon + 1;
-    int year = tm_info->tm_year + 1900;
-
-    if (os::handle_local_log_file(day, month, year, file_path, app_name) == FAILED)
-    {
-        return FAILED;
-    }
-
-    fstream file(file_path, std::ios::app);
-
-    for (string line : logs)
-    {
-        file << line << "\n";
-    }
-
-    file.close();
-
-    return SUCCESS;
-}
-
-int log_service::get_json_write_path(string &timestamp)
-{
-    string file_path = BASE_LOG_DIR;
-
-    if (os::is_dir_exist(file_path) == FAILED)
-    {
-        os::create_dir(file_path);
-    }
-
-    file_path += "json";
-
-    if (os::is_dir_exist(file_path) == FAILED)
-    {
-        os::create_dir(file_path);
-    }
-
-    file_path += "/" + timestamp + ".json";
-
-    std::ofstream file(file_path);
+    fstream file(entity.read_path, std::ios::in);
     if (!file)
     {
-        agent_utils::write_log(FILE_ERROR + file_path, FAILED);
-        return FAILED;
-    }
-    file.close();
-    timestamp = file_path;
-    return SUCCESS;
-}
-
-int log_service::read_dpkg_logfile(const string &path, vector<string> &logs, string &last_read_time, string &next_reading_time, bool &flag)
-{
-    string formatted_time, line;
-    const string format = "dpkg";
-    std::time_t last_written_time = agent_utils::format_string_time(last_read_time);
-
-    fstream file(path, std::ios::in);
-    if (!file)
-    {
-        agent_utils::write_log(FILE_ERROR + path, FAILED);
+        agent_utils::write_log(FILE_ERROR + entity.read_path, FAILED);
         return FAILED;
     }
 
@@ -416,33 +249,36 @@ int log_service::read_dpkg_logfile(const string &path, vector<string> &logs, str
     {
         string log, temp, host;
         agent_utils::get_hostname(host);
-        string currentTime = line.substr(0, 19);
-        std::time_t cTime = agent_utils::format_string_time(currentTime); /* Convert string time to time_t format for comparision between time_t objects */
-        if (cTime < last_written_time)
+        string current_time_string = line.substr(0, 19);
+        std::time_t current_time = agent_utils::string_to_time_t(current_time_string); /* Convert string time to time_t format for comparision between time_t objects */
+        if (current_time < entity.last_read_time)
         {
             continue;
         }
 
-        log += currentTime;
-        log += "|"+host;
-        log += "|" + format;
+        log += current_time_string;
+        log += "|" + host;
+        log += "| dpkg";
         temp = line.substr(20);
-        log += "|"+temp;
+        log += "|" + temp;
+        entity.count += 1;
         logs.push_back(log);
 
-        std::time_t tempTime = agent_utils::format_string_time(next_reading_time);
-        if (cTime > tempTime)
+
+        std::time_t current_reading_time = agent_utils::string_to_time_t(entity.current_read_time);
+        if (current_time > current_reading_time)
         {
-            next_reading_time = currentTime;
+            entity.current_read_time = current_time_string;
         }
-        if (cTime == last_written_time)
+        if (current_time == entity.last_read_time)
         {
-            flag = false;
+            entity.is_empty = false;
         }
     }
-    if (flag)
+    if (entity.is_empty)
     {
-        read_dpkg_logfile(path + ".1", logs, last_read_time, next_reading_time, flag);
+        entity.read_path += ".1";
+        read_dpkg_logfile(entity, logs);
     }
     return SUCCESS;
 }
@@ -450,6 +286,41 @@ int log_service::read_dpkg_logfile(const string &path, vector<string> &logs, str
 int log_service::read_remote_syslog(UdpQueue &queue, vector<string> &logs)
 {
     return queue.getMessage(logs);
+}
+
+int log_service::get_syslog(log_entity &entity)
+{
+    int result = SUCCESS;
+    vector<string> logs;
+
+    if (entity.name == "syslog" || entity.name == "auth")
+    {
+        if (entity.remote == 'y' || entity.remote == 'Y')
+        {
+            UdpQueue queue;
+            result = read_remote_syslog(queue, logs);
+            queue.stop();
+        }
+        else
+        {
+            result = read_syslog_file(entity, logs);
+        }
+    }
+    else if (entity.name == "dpkg")
+    {
+        result = read_dpkg_logfile(entity, logs);
+    }
+    
+    if (entity.count > 0)
+    {
+        result = db.save(entity, logs);
+    }
+    else
+    {
+        agent_utils::write_log("Read 0 logs for " + entity.name, DEBUG);
+    }
+
+    return result;
 }
 
 log_service::~log_service() {}

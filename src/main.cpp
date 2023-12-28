@@ -1,8 +1,5 @@
 #include "controller/main_controller.hpp"
 #include "common.hpp"
-#ifndef NO_DEBUG
-#define NO_DEBUG
-#endif
 
 void handle_message(const string &json_string)
 {
@@ -39,22 +36,22 @@ void handle_message(const string &json_string)
     return;
 }
 
-int main()
-{
-    openlog("agent.service", LOG_INFO | LOG_CONS, LOG_USER);
-    agent_utils::syslog_enabled = true;
-    agent_utils::setup_logger();
-    if (!agent_utils::syslog_enabled)
-    {
-        agent_utils::logfp.open(LOG_PATH, std::ios::app);
-    }
+// int main()
+// {
+//     openlog("agent.service", LOG_INFO | LOG_CONS, LOG_USER);
+//     agent_utils::syslog_enabled = true;
+//     agent_utils::setup_logger();
+//     if (!agent_utils::syslog_enabled)
+//     {
+//         agent_utils::logfp.open(LOG_PATH, std::ios::app);
+//     }
 
-    main_controller controller(AGENT_CONFIG_DIR);
-    controller.start();
-    if (agent_utils::logfp.is_open())
-    {
-        agent_utils::logfp.close();
-    }
-    closelog();
-    return 0;
-}
+//     main_controller controller(AGENT_CONFIG_DIR);
+//     controller.start();
+//     if (agent_utils::logfp.is_open())
+//     {
+//         agent_utils::logfp.close();
+//     }
+//     closelog();
+//     return 0;
+// }

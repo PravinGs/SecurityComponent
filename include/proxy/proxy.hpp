@@ -2,6 +2,7 @@
 #define LOGPROXY_HPP
 
 #include "service/config_service.hpp"
+#include "service/entity.hpp"
 
 /**
  * @brief Proxy Validation and Control
@@ -17,6 +18,42 @@ private:
     Config _config_service; /**< A private instance of IniConfig for configuration management. */
 public:
     Proxy() = default;
+
+
+    bool validate_log_entity(log_entity& entity)
+    {
+        try
+        {
+
+            if (!entity.columns.empty())
+            {
+                entity.json_attributes = _config_service.to_vector(entity.columns, ',');
+            }
+
+            // if (entity.name != "syslog" && os::is_dir_exist(config_table[entity.name]["log_directory"]))
+            // {
+            //     throw std::invalid_argument("Invalid log directory for " + entity.name);
+            // };
+
+             if (entity.last_read_time == std::numeric_limits<time_t>::min())
+            {
+                throw std::invalid_argument("No Specific time mentioned to collect log");
+            }
+
+            if (entity.format == "applog" && entity.columns.size() == 0)
+            {
+                throw std::invalid_argument("Log attributes not configured for " + entity.name);
+            }
+
+            return true;
+        }
+        catch (exception &e)
+        {
+            string error = e.what();
+            agent_utils::write_log(error, FAILED);
+        }
+        return false;
+    }
 
     /**
      * @brief Validate Log Configuration
@@ -96,65 +133,67 @@ public:
      * @return A string representing the last written time of the log file, formatted according to a specific timestamp format.
      *         If the operation fails, an empty string is returned.
      */
-    string getLastLogWrittenTime(const string& name, const string& path)
+    bool get_previous_log_read_time(log_entity& entity)
     {
-        string nonEmtPath = os::is_empty(path);
-        if (nonEmtPath.size() == 0)
+        string file_path = os::get_path_or_backup_file_path(entity.read_path);
+        if (file_path.size() == 0)
         {
-            agent_utils::write_log("Invalid file " + path, FAILED);
-            return "";
+            agent_utils::write_log("Invalid file " + entity.read_path, FAILED);
+            return false;
         }
-        string filePath = BASE_CONFIG_DIR;
-        filePath += BASE_CONFIG_TMP + name;
-        fstream file(filePath, std::ios::in);
-        string lastTime = "";
+        string temp_config_path = BASE_CONFIG_DIR;
+        temp_config_path += BASE_CONFIG_TMP + entity.name;
+        fstream file(temp_config_path, std::ios::in);
+        string last_time = "";
         if (file.is_open())
         {
-            std::getline(file, lastTime);
+            std::getline(file, last_time);
             file.close();
-            if (lastTime.size() == 19)
+            if (last_time.size() == 19)
             {
-                return lastTime;
+                entity.last_read_time = agent_utils::string_to_time_t(last_time);
+                return true;
             }
         }
         else
         {
             agent_utils::write_log("Log reading directory not exists, creating new directory");
-            string dirPath = BASE_CONFIG_DIR;
-            if (os::is_dir_exist(dirPath) == FAILED)
-                os::create_dir(dirPath);
-            dirPath += BASE_CONFIG_TMP;
-            if (os::is_dir_exist(dirPath) == FAILED)
-                os::create_dir(dirPath);
+            string tmp_config_dir = BASE_CONFIG_DIR;
+            if (os::is_dir_exist(tmp_config_dir) == FAILED)
+                os::create_dir(tmp_config_dir);
+            tmp_config_dir += BASE_CONFIG_TMP;
+            if (os::is_dir_exist(tmp_config_dir) == FAILED)
+                os::create_dir(tmp_config_dir);
         }
-        std::ofstream nf(filePath);
-        if (!nf)
+        std::ofstream temp_config_file(temp_config_path);
+        if (!temp_config_file)
         {
-            agent_utils::write_log("Failed to create file check it's permission", FAILED);
-            return lastTime;
+            agent_utils::write_log("Failed to create file check it's permission " + temp_config_path, FAILED);
+            return false;
         }
-        fstream fp(nonEmtPath, std::ios::in | std::ios::binary);
+        fstream fp(file_path, std::ios::in | std::ios::binary);
         if (!fp)
         {
-            agent_utils::write_log("Invalid Log file " + path, FAILED);
-            nf.close();
-            return lastTime;
+            agent_utils::write_log("Invalid Log file " + file_path, FAILED);
+            temp_config_file.close();
+            return false;
         }
         string line;
         std::getline(fp, line);
-        if (name == "syslog" || name == "auth")
+        if (entity.name == "syslog" || entity.name == "auth")
         {
             string timestamp = line.substr(0, 15);
-            agent_utils::convert_time_format(timestamp, lastTime);
+            agent_utils::convert_time_format(timestamp, last_time);
         }
-        else if (name == "dpkg")
+        else if (entity.name == "dpkg")
         {
-            lastTime = line.substr(0, 19);
+            last_time = line.substr(0, 19);
         }
-        nf << lastTime;
+        temp_config_file << last_time;
         fp.close();
-        nf.close();
-        return lastTime;
+        temp_config_file.close();
+        entity.last_read_time = agent_utils::string_to_time_t(last_time);
+        return true;
     }
 
     /**

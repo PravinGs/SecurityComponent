@@ -57,7 +57,7 @@ void agent_utils::update_log_written_time(const string& app_name, const string& 
         os::create_dir(filePath);
     }
     filePath += app_name;
-    std::ofstream file(filePath);
+    fstream file(filePath, std::ios::out);
     if (!file.is_open())
     {
         write_log(INVALID_FILE + filePath, FAILED);
@@ -67,6 +67,16 @@ void agent_utils::update_log_written_time(const string& app_name, const string& 
     write_log("Time " + time + " updated to " + filePath, SUCCESS);
     file.close();
     return;
+}
+
+string agent_utils::to_lower_case(string &str)
+{
+    string lower_case_string;
+    for (char ch : str)
+    {
+        lower_case_string += std::tolower(ch);
+    }
+    return lower_case_string;
 }
 
 int agent_utils::get_hostname(string &host)
@@ -193,11 +203,12 @@ void agent_utils::write_log(const string& log, int logLevel)
         }
         else
         {
-            if (agent_utils::logfp.is_open())
+            if (!agent_utils::logfp.is_open())
             {
-                agent_utils::logfp.write(line.c_str(), line.size());
-                agent_utils::logfp.flush();
+                agent_utils::logfp.open(LOG_PATH, std::ios::app);   
             }
+            agent_utils::logfp.write(line.c_str(), line.size());
+            agent_utils::logfp.flush();
         }
     }
     agent_utils::backup_log_file();
@@ -211,7 +222,7 @@ void agent_utils::backup_log_file()
         agent_utils::logfp.seekg(0, std::ios::end);
         size = agent_utils::logfp.tellg();
     }
-    if (size > 1024)
+    if (size > 5120)
     {
         os::compress_file(LOG_PATH);
         agent_utils::logfp.close();
@@ -288,7 +299,7 @@ bool os::is_file_exist(const string &file)
     return true;
 }
 
-string os::is_empty(string filename)
+string os::get_path_or_backup_file_path(string filename)
 {
     string non_empty_path;
     if (std::filesystem::exists(filename))
@@ -495,7 +506,7 @@ int os::get_regular_files(const string& directory, vector<string> &files)
     return result;
 }
 
-std::time_t agent_utils::format_string_time(const string &datetime)
+std::time_t agent_utils::string_to_time_t(const string &datetime)
 {
     const char *STANDARD_TIME_FORMAT = "%Y-%m-%d %H:%M:%S";
     std::tm tm = {};

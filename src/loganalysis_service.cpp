@@ -433,7 +433,7 @@ void log_analysis::match(log_event & log_info, aconfig & rule_info)
     if (rule_info.frequency > 0 && rule_info.timeframe > 0) /*Check if the rule has time based matcher, if it is mark this rule as the processing rule.*/
     {
         pRule.id = rule_info.id;
-        pRule.start = agent_utils::format_string_time(log_info.timestamp);
+        pRule.start = agent_utils::string_to_time_t(log_info.timestamp);
         pRule.end = pRule.start + rule_info.timeframe;
         pRule.frequency = rule_info.frequency;
         // pRule.d_frequency = 1;
@@ -512,11 +512,11 @@ void log_analysis::match(log_event & log_info, aconfig & rule_info)
         for (int i = 0; i < (int)this->_processing_rules.size(); i++)
         {
             p_rule pRule = this->_processing_rules[i];
-            if ((pRule.end < agent_utils::format_string_time(log_info.timestamp) && pRule.d_frequency != pRule.frequency))
+            if ((pRule.end < agent_utils::string_to_time_t(log_info.timestamp) && pRule.d_frequency != pRule.frequency))
             {
                 this->_processed_rules.push_back(i); /* The rule expired */
             }
-            else if ((pRule.end < agent_utils::format_string_time(log_info.timestamp) && pRule.frequency == pRule.d_frequency) || pRule.frequency <= pRule.d_frequency)
+            else if ((pRule.end < agent_utils::string_to_time_t(log_info.timestamp) && pRule.frequency == pRule.d_frequency) || pRule.frequency <= pRule.d_frequency)
             {
                 /*The rule ID'd and have to alerted*/
                 log_info.is_matched = 1;

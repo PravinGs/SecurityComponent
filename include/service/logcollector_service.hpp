@@ -5,51 +5,10 @@
 #include "common.hpp"
 #include "service/config_service.hpp"
 #include "udp.hpp"
+#include "entity.hpp"
+#include "db.hpp"
 
-typedef struct standard_log_attrs standard_log_attrs;
 
-static map<string, int> LogCategory {{"sys", 2}, {"network", 3}, {"ufw", 4}};
-
-struct standard_log_attrs
-{
-    string timestamp;
-    string user;
-    string program;
-    string message;
-    int level;
-    int category;
-
-    standard_log_attrs(const string& log)
-    {
-        string t_level, t_category;
-        std::stringstream ss(log);
-        std::getline(ss, timestamp, '|');
-        std::getline(ss, user, '|');
-        std::getline(ss, program, '|');
-        std::getline(ss, message, '|');
-        std::getline(ss, t_level, '|');
-        std::getline(ss, t_category, '|');
-        level = handle_exception(t_level);
-        category = LogCategory[t_category];
-    }
-
-    int handle_exception(const string& level)
-    {
-        int r;
-        try
-        {
-            r = std::stoi(level);
-        }
-        catch(const std::exception& e)
-        {
-            r = 0;
-        }
-        return r;
-    }
-
-    ~standard_log_attrs(){}
-    
-};
 
 /**
  * @brief Abstract Log Interface
@@ -78,14 +37,8 @@ public:
      *         - SUCCESS: The syslog retrieval operation was successful.
      *         - FAILED: The syslog retrieval operation encountered errors.
      */
-    virtual int get_syslog(
-        const string& app_name,
-        Json::Value &json,
-        const vector<string>& log_attributes,
-        const string& read_path,
-        string &last_read_time,
-        const vector<string>& log_levels,
-        const char& remote) = 0;
+
+    virtual int get_syslog(log_entity& entity) = 0;
 
     /**
      * @brief Get Application Log
@@ -131,27 +84,11 @@ public:
 class log_service : public ILog
 {
 private:
-    Config _config_service; /**< A private instance of IniConfig for configuration management. */
-    map<string, int> _logLevel{{"none", 0}, {"trace", 1}, {"debug", 2}, {"warning", 3}, {"error", 4}, {"critical", 5}}; /**< A private constant map<string, int> for system log name. */
+    Config config; /**< A private instance of IniConfig for configuration management. */
+    resource db;
+    map<string, int> log_parser_level{{"none", 0}, {"trace", 1}, {"debug", 2}, {"warning", 3}, {"error", 4}, {"critical", 5}}; /**< A private constant map<string, int> for system log name. */
     
 private:
-    /**
-     * @brief Save Log Data as JSON
-     *
-     * The `_save_json` function is a private method used to create a JSON file and store processed log data in it. It takes the provided `json`
-     * object, log data from the `logs` vector, and column information from the `columns` vector to create the JSON file at
-     * the specified `read_path`. The `delimeter` parameter is used as a separator in the log data when constructing the JSON.
-     *
-     * @param[in] json A JSON object to store the log data.
-     * @param[in] read_path The read_path where the JSON file will be created and saved.
-     * @param[in] logs A vector of log entries to be included in the JSON.
-     * @param[in] columns A vector of column information for the JSON structure.
-     * @param[in] delimeter The character delimiter used to separate log data.
-     * @return An integer result code:
-     *         - SUCCESS: The log data was successfully saved as a JSON file.
-     *         - FAILED: The operation encountered errors and failed to save the JSON file.
-     */
-    int save_json(Json::Value &json, const string& read_path, const vector<string>& logs, const vector<string>& columns, const char& delimeter);
 
     /**
      * @brief Read Syslog File
@@ -173,7 +110,7 @@ private:
      *         - SUCCESS: The syslog reading operation was successful.
      *         - FAILED: The syslog reading operation encountered errors.
      */
-    int read_syslog_file(const string& read_path, vector<string> &logs, const char& delimeter, const string &last_read_time, bool &flag, const vector<string>& log_levels, string &next_log_reading_time);
+    int read_syslog_file(log_entity & entity, vector<string> & logs);
 
     /**
      * @brief Read Application Log File
@@ -197,59 +134,18 @@ private:
      *         - FAILED: The application log reading operation encountered errors.
      */
     int read_applog_file(const string& read_path, vector<string> &logs, const char& delimeter, const string &last_read_time, bool &flag, const vector<string>& log_levels, string &next_log_reading_time);
-    
-    /**
-     * @brief Get Files in Directory
-     *
-     * The `get_dir_files` function is a private method used to retrieve a list of regular files located in the specified `directory`.
-     * It returns a vector containing `std::filesystem::directory_entry` objects representing the files found in the directory.
-     *
-     * @param[in] directory The read_path to the directory from which to extract files.
-     * @return A vector of `std::filesystem::directory_entry` objects representing the files in the directory.
-     */
-    vector<std::filesystem::directory_entry> get_dir_files(const string& directory);
 
     /**
-     * @brief Save Logs to Local Storage
+     * @brief parse_log_category Log Entry
      *
-     * The `save_read_logs` function is a private method used to store collected logs from the provided `logs` vector to local storage.
-     * The logs are associated with the specified `app_name`. This function is responsible for persisting log data
-     * locally for further analysis or storage.
-     *
-     * @param[in] logs A vector of log entries to be saved to local storage.
-     * @param[in] app_name The name of the application associated with the logs.
-     * @return An integer result code:
-     *         - SUCCESS: The log data was successfully saved to local storage.
-     *         - FAILED: The operation encountered errors and failed to save the log data.
-     */
-    int save_read_logs(const vector<string>& logs, const string& app_name);
-
-    /**
-     * @brief Verify JSON read_path
-     *
-     * The `get_json_write_path` function is a private method used to verify the existence of a file specified by the provided `timestamp`.
-     * If the file does not exist, this function creates a new file at the specified read_path. It ensures that the read_path is
-     * available for storing JSON data.
-     *
-     * @param[in,out] timestamp The read_path to the file to be verified or created. If the file does not exist, a new file
-     *                          will be created at this read_path.
-     * @return An integer result code:
-     *         - SUCCESS: The file read_path was verified, and the file exists or was successfully created.
-     *         - FAILED: The operation encountered errors, and the file read_path could not be verified or created.
-     */
-    int get_json_write_path(string &timestamp);
-
-    /**
-     * @brief Categorize Log Entry
-     *
-     * The `categorize` function is a private method used to categorize a log entry specified by the `line` parameter into particular categories
+     * The `parse_log_category` function is a private method used to parse_log_category a log entry specified by the `line` parameter into particular categories
      * based on their data and the provided `log_levels`. This function is responsible for assigning a category or label to a log entry
      * to aid in log analysis or organization.
      *
-     * @param[in, out] line The log entry to be categorized.
+     * @param[in, out] line The log entry to be parse_log_categoryd.
      * @param[in] log_levels A vector of log log_levels used to determine the categorization criteria.
      */
-    void categorize(string &line, const vector<string>& log_levels);
+    bool parse_log_category(string &line, const vector<string>& log_levels);
     
     /**
      * @brief Read Dpkg Log File
@@ -268,7 +164,7 @@ private:
      *         - SUCCESS: The dpkg-formatted log reading operation was successful.
      *         - FAILED: The dpkg-formatted log reading operation encountered errors.
      */
-    int read_dpkg_logfile(const string& read_path, vector<string> &logs, string &last_read_time, string &next_log_reading_time, bool &flag);
+    int read_dpkg_logfile(log_entity& entity, vector<string>& logs);
 
     /**
      * @brief Read Remote Syslog Data
@@ -294,27 +190,7 @@ public:
      */
     log_service() = default;
 
-    /**
-     * @brief Get Syslog Data
-     *
-     * The `get_syslog` function is an overload of the pure virtual function defined in the `ILog` interface. It acts as a manager
-     * for collecting syslog data from various sources. This function retrieves syslog data from the specified `read_path` and processes
-     * it based on the provided criteria such as `app_name`, `log_attributes`, `log_levels`, and `remote`. The `json` object is used to store the
-     * collected syslog data, and the `last_read_time` parameter is utilized to keep track of the last read time.
-     *
-     * @param[in] app_name The name of the application for which syslog data is collected.
-     * @param[in] json A JSON object to store the collected syslog data.
-     * @param[in] log_attributes A vector of log file identifiers to filter syslog data.
-     * @param[in] read_path The read_path to the syslog file(s) to be read.
-     * @param[in,out] last_read_time The last read time of the syslog file(s).
-     * @param[in] log_levels A vector of log log_levels to filter syslog entries.
-     * @param[in] remote A character indicating whether syslog data is collected remotely.
-     * @return An integer result code:
-     *         - SUCCESS: The syslog data was successfully collected and processed.
-     *         - FAILED: The syslog data collection encountered errors.
-     */
-    int get_syslog(const string& app_name, Json::Value &json, const vector<string>& log_attributes, const string& read_path, string &last_read_time, const vector<string>& log_levels, const char& remote); 
-
+    int get_syslog(log_entity& entity);
     /**
      * @brief Get Application Log Data
      *
@@ -336,6 +212,7 @@ public:
      */
     int get_applog(Json::Value &json, const vector<string>& log_attributes, const string& read_path, const string& write_path, string &last_read_time, const vector<string>& log_levels, const char& delimeter);
 
+    
      /**
      * @brief Destructor for log_service.
      *

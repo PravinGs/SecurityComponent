@@ -225,7 +225,8 @@ public:
         string port = config_table["mqtt"]["port"];
         if (port.empty())
         {
-            mqtt_props.port = 8000;
+            port = "8000";
+            // mqtt_props.port = 8000;
         }
         mqtt_props.port = std::stoi(port);
         mqtt_props.server_address = config_table["mqtt"]["server_address"];

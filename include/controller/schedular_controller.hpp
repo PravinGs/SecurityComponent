@@ -19,7 +19,7 @@ class schedule
 {
 
 private:
-    log_controller _log_controller;         /**< A private instance of the log_controller class. */
+    log_controller * _log_controller = nullptr;         /**< A private instance of the log_controller class. */
     monitor_controller _monitor_controller; /**< A private instance of the monitor_controller class. */
     patch_controller _patch_controller;      /**< A private instance of the patch_controller class. */
     Config _config_service;                /**< A private instance of the IniConfig class. */
@@ -97,6 +97,10 @@ schedule::schedule(const string &file)
     {
         _is_ready_to_schedule = false;
     }
+    else
+    {
+        _log_controller = new log_controller(_config_table);
+    }
 }
 
 void print_next_execution_time(std::tm *next_time_info)
@@ -163,7 +167,7 @@ void schedule::run(const string &process_name, const string &time_pattern, int i
                 }
                 else if (strcmp(process_name.c_str(), "applog") == 0)
                 {
-                    if (_log_controller.applog_manager(_config_table) == SUCCESS)
+                    if (_log_controller->applog_manager(_config_table) == SUCCESS)
                     {
                         if (agent_utils::debug){
                             agent_utils::write_log("Applog operation done.", DEBUG);
@@ -180,7 +184,7 @@ void schedule::run(const string &process_name, const string &time_pattern, int i
                 }
                 else if (strcmp(process_name.c_str(), "syslog") == 0)
                 {
-                    if (_log_controller.syslog_manager(_config_table) == SUCCESS)
+                    if (_log_controller->syslog_manager() == SUCCESS)
                     {
                         std::cout << "Syslog operation done"
                                   << "\n";

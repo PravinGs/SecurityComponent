@@ -596,3 +596,176 @@ public:
         condition.notify_one();
     }
 };
+
+// int log_service::save_read_logs(const vector<string> &logs, const string &app_name)
+// {
+//     string file_path;
+//     auto today = std::chrono::system_clock::now();
+//     auto time_info = std::chrono::system_clock::to_time_t(today);
+//     std::tm *tm_info = std::localtime(&time_info);
+
+//     int day = tm_info->tm_mday;
+//     int month = tm_info->tm_mon + 1;
+//     int year = tm_info->tm_year + 1900;
+
+//     if (os::handle_local_log_file(day, month, year, file_path, app_name) == FAILED)
+//     {
+//         return FAILED;
+//     }
+
+//     fstream file(file_path, std::ios::app);
+
+//     for (string line : logs)
+//     {
+//         file << line << "\n";
+//     }
+
+//     file.close();
+
+//     return SUCCESS;
+// }
+
+// int log_service::get_json_write_path(string &timestamp)
+// {
+//     string file_path = BASE_LOG_DIR;
+
+//     if (os::is_dir_exist(file_path) == FAILED)
+//     {
+//         os::create_dir(file_path);
+//     }
+
+//     file_path += "json";
+
+//     if (os::is_dir_exist(file_path) == FAILED)
+//     {
+//         os::create_dir(file_path);
+//     }
+
+//     file_path += "/" + timestamp + ".json";
+
+//     std::ofstream file(file_path);
+//     if (!file)
+//     {
+//         agent_utils::write_log(FILE_ERROR + file_path, FAILED);
+//         return FAILED;
+//     }
+//     file.close();
+//     timestamp = file_path;
+//     return SUCCESS;
+// }
+
+// int log_service::save_json(Json::Value &json, const string &path, const vector<string> &logs, const vector<string> &columns, const char &delimeter)
+// {
+//     string json_write_path = path;
+//     if (get_json_write_path(json_write_path) == FAILED)
+//         return FAILED;
+
+//     fstream file(json_write_path, std::ios::out);
+//     Json::StreamWriterBuilder writer_builder;
+//     if (!file)
+//     {
+//         agent_utils::write_log(FWRITE_FAILED + json_write_path, FAILED);
+//         return FAILED;
+//     }
+
+//     json["LogObjects"] = Json::Value(Json::arrayValue);
+//     for (auto log : logs)
+//     {
+//         Json::Value jsonLog;
+
+//         standard_log_attrs fLog = standard_log_attrs(log);
+//         jsonLog["TimeGenerated"] = fLog.timestamp;
+//         jsonLog["UserLoginId"] = fLog.user;
+//         jsonLog["ServiceName"] = fLog.program;
+//         jsonLog["Message"] = fLog.message;
+//         jsonLog["LogLevel"] = fLog.level;
+//         jsonLog["LogCategory"] = fLog.category;
+
+//         json["LogObjects"].append(jsonLog);
+//     }
+//     std::unique_ptr<Json::StreamWriter> writer(writer_builder.newStreamWriter());
+//     writer->write(json, &file);
+//     file.close();
+//     agent_utils::write_log(FWRITE_SUCCESS + json_write_path, SUCCESS);
+//     return SUCCESS;
+// }
+
+int log_service::get_syslog(const string &app_name, Json::Value &json, const vector<string> &log_attributes, const string &path, string &last_read_time, const vector<string> &log_levels, const char &remote)
+{
+    bool flag = true;
+    int result = SUCCESS;
+    // const char delimeter = ' ';
+    vector<string> logs;
+
+    string log_dir = BASE_LOG_DIR;
+    log_dir += BASE_LOG_ARCHIVE;
+    string next_reading_time = last_read_time;
+
+    if (strcmp(app_name.c_str(), "syslog") == 0 || strcmp(app_name.c_str(), "auth") == 0)
+    {
+
+        if (remote == 'y' || remote == 'Y')
+        {
+            UdpQueue queue;
+            result = read_remote_syslog(queue, logs);
+            queue.stop();
+        }
+        else
+        {
+            // result = read_syslog_file(path, logs, delimeter, last_read_time, flag, log_levels, next_reading_time);
+            result = SUCCESS;
+        }
+        if (logs.size() == 0 || result == FAILED)
+        {
+            agent_utils::write_log("Read 0 logs for" + app_name, WARNING);
+        }
+        else
+        {
+            last_read_time = next_reading_time;
+            agent_utils::write_log(app_name + " logs collected", INFO);
+            if (config.to_vector(logs[0], '|').size() < log_attributes.size())
+            {
+                agent_utils::write_log("Invalid Log Attributes configured for " + app_name, FAILED);
+                result = FAILED;
+            }
+            else
+            {
+                string fileName = next_reading_time + "-" + app_name;
+                result = save_json(json, fileName, logs, log_attributes, '|');
+            }
+
+            if ((result = save_read_logs(logs, app_name)) == SUCCESS)
+            {
+                agent_utils::write_log("Storing " + app_name + " logs started", INFO);
+                agent_utils::write_log(FWRITE_SUCCESS + log_dir, INFO);
+            }
+            else
+            {
+                agent_utils::write_log(FWRITE_FAILED + log_dir, FAILED);
+            }
+        }
+    }
+    else if (strcmp(app_name.c_str(), "dpkg") == 0)
+    {
+        result = read_dpkg_logfile(path, logs, last_read_time, next_reading_time, flag);
+        last_read_time = next_reading_time;
+        if (logs.size() == 0)
+        {
+            agent_utils::write_log("Read 0 logs for " + app_name);
+        }
+        else
+        {
+            agent_utils::write_log("Storing " + app_name + " logs started", INFO);
+            if ((result = save_read_logs(logs, app_name)) == SUCCESS)
+            {
+                agent_utils::write_log(FWRITE_SUCCESS + log_dir, INFO);
+            }
+            else
+            {
+                agent_utils::write_log(FWRITE_FAILED + log_dir, FAILED);
+            }
+        }
+    }
+
+    return result;
+}

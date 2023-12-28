@@ -420,7 +420,7 @@ public:
      * @param[in] sep The character used as the separator between fields (typically a comma ',' in this case).
      * @return A vector of strings, where each string represents an individual field from the input string.
      */
-    vector<string> to_vector(string columns, const char sep)
+    vector<string> to_vector(const string& columns, const char sep)
     {
         vector<string> names;
         std::stringstream iss(columns);
