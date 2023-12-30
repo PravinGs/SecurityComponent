@@ -6,31 +6,23 @@
 #include "service/config_service.hpp"
 #include "proxy/proxy.hpp"
 #include "service/curl_service.hpp"
-#include "service/entity_parser.hpp"
-
-
-/**
- * @brief Log Controller
- *
- * The `log_controller
- *` class serves as the controller layer for managing and reading logs from system and application logs.
- * It provides methods for initiating log reading operations and managing log-related tasks.
- */
+#include "model/entity_parser.hpp"
 
 class log_controller
 {
 private:
     map<string, map<string, string>> config_table;
-    ILog * service = nullptr;                 /**< A private pointer to the ILog service. */
-    Config config;                       /**< A private instance of IniConfig for configuration management. */
+    ILog *service = nullptr;
+    Config config;
     entity_parser parser;
-    bool is_valid_config = true;
-    vector<std::future<int>> async_syslog_tasks; /**< A private vector of futures for asynchronous system tasks. */
-    vector<std::future<int>> async_applog_tasks; /**< A private vector of futures for asynchronous application tasks. */
-    Proxy proxy;                                 /**< A private instance of the Proxy class. */
+    bool is_valid_config;
+    bool thread_handler;
+    vector<std::future<int>> async_syslog_tasks;
+    vector<std::future<int>> async_applog_tasks;
+    Proxy proxy;
+
 
 public:
-
     /**
      * @brief Construct a new log_controller
      * object.
@@ -39,47 +31,118 @@ public:
      *` and creates an instance of the `LogService`
      * to be used for log management.
      */
-    log_controller(const map<string, map<string, string>>& config_table) :  config_table(config_table), service(new log_service()) {}    
+    log_controller(const map<string, map<string, string>> &config_table) : config_table(config_table), service(new log_service()), is_valid_config(true), thread_handler(true) {}
 
-    log_controller(const string& config_file): service(new log_service())
+    log_controller(const string &config_file) : service(new log_service()), thread_handler(true)
     {
-    
         if (config.read_ini_config_file(config_file, config_table) != SUCCESS)
         {
             is_valid_config = false;
         }
-
-    
+        else
+        {
+            is_valid_config = true;
+        }
     }
 
-    /**
-     * @brief System Log Manager
-     *
-     * This function reads configured log files from the `config_table` and asynchronously invokes the `get_syslog` function
-     * for each configured file. It manages the logging process and returns a result code.
-     *
-     * @param[in] config_table A map containing configuration data for log files.
-     *                       The map should be structured as follows:
-     *                       - The keys are log file identifiers.
-     *                       - The values are maps containing log configuration settings.
-     * @return An integer result code:
-     *         - SUCCESS: The logging process was successful for all configured files.
-     *         - FAILED:  The logging process encountered errors for one or more files.
-     * @see get_syslog
-     */
+    void start()
+    {
+        std::vector<string> processes{"tcp", "syslog", "applog"};
+
+        std::vector<std::thread> threads(processes.size());
+
+        for (int i = 0; i < (int)processes.size(); i++)
+        {
+            string process_name = processes[i];
+            try
+            {
+                threads[i] = std::thread([&, process_name]()
+                                         { assign_task_to_thread(process_name); });
+            }
+            catch (const std::exception &e)
+            {
+                std::cerr << e.what() << '\n';
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+
+        for (auto &th : threads)
+        {
+            if (th.joinable())
+            {
+                th.join();
+            }
+        }
+    }
+
+    void assign_task_to_thread(const string &process)
+    {
+        if (process == "tcp")
+        {
+            std::cout << "This functionality not yet developed" << '\n';
+        }
+        else if (process == "applog")
+        {
+            cout << "applog_manager result : " << applog_manager() << '\n';
+        }
+        else if (process == "syslog")
+        {
+            cout << "syslog_manager result : " << syslog_manager() << '\n';
+        }
+    }
 
     int syslog_manager()
     {
+        int result = SUCCESS;
 
-        if (!is_valid_config) return FAILED;
+        if (!is_valid_config)
+            return FAILED;
 
         log_entity entity = parser.get_log_entity(config_table, "syslog");
-        
-        vector<string> syslog_files = config.to_vector(entity.read_path, ',');
 
+        if (entity.time_pattern.empty())
+        {
+            return create_syslog_async_tasks(entity);
+        }
+        try
+        {
+            auto cron = cron::make_cron(entity.time_pattern);
+            while (thread_handler)
+            {
+                std::chrono::system_clock::time_point current_time = std::chrono::system_clock::now();
+                std::time_t time = std::chrono::system_clock::to_time_t(current_time);
+                std::time_t next = cron::cron_next(cron, time);
+                std::chrono::system_clock::time_point target_point = std::chrono::system_clock::from_time_t(next);
+                std::tm *next_time_info = std::localtime(&next);
+                agent_utils::print_next_execution_time(next_time_info);
+                std::chrono::duration<double> duration = target_point - current_time;
+                agent_utils::print_duration(duration);
+                std::this_thread::sleep_for(duration);
+                result = create_syslog_async_tasks(entity);
+                if (result == FAILED)
+                {
+                    thread_handler = false;
+                }
+                agent_utils::write_log("Thread execution done.", DEBUG);
+            }
+            if (!thread_handler)
+            {
+                agent_utils::write_log("execution stopped from being runnig", DEBUG);
+            }
+        }
+        catch (std::exception &ex)
+        {
+            std::cerr << ex.what() << '\n';
+        }
+        return result;
+    }
+
+    int create_syslog_async_tasks(log_entity &entity)
+    {
+        vector<string> syslog_files = config.to_vector(entity.read_path, ',');
         for (const string &file : syslog_files)
         {
-   
             string app_name;
             if (file.size() == 0)
                 continue;
@@ -101,158 +164,96 @@ public:
             }
             entity.read_path = file;
             entity.name = app_name;
-            auto asyncTask = [&, entity]() -> int
+            auto async_task = [&, entity]() -> int
             {
                 return get_syslog(entity);
             };
-            async_syslog_tasks.push_back(std::async(std::launch::async, asyncTask));
+            async_syslog_tasks.push_back(std::async(std::launch::async, async_task));
         }
 
         for (auto &async_task : async_syslog_tasks)
         {
             async_task.get();
         }
-
         return SUCCESS;
     }
 
-    /**
-     * @brief Get System Log
-     *
-     * This function performs necessary validations for a log file specified by `log_name` in the `config_table`. It reads
-     * log data from the file located at `read_path` and processes it as needed.
-     *
-     * After validating, it invokes the `get_syslog` function from the ` service` instance to perform
-     * the actual log collection. Finally, it sends the collected log data to the cloud for further processing.
-     *
-     * @param[in] config_table A map containing configuration data for log files.
-     *                       The map should be structured as follows:
-     *                       - The keys are log file identifiers.
-     *                       - The values are maps containing log configuration settings.
-     * @param[in] read_path The path to the log file to be read.
-     * @param[in] log_name The identifier of the log file to be processed.
-     * @return An integer result code:
-     *         - SUCCESS: The log file was successfully validated, read, and processed.
-     *         - FAILED: The validation or processing of the log file encountered errors.
-     */
-    
-    int get_syslog(const log_entity& e)
+    int get_syslog(const log_entity &e)
     {
-        log_entity entity = const_cast<log_entity&>(e);
+        log_entity entity = const_cast<log_entity &>(e);
         int result = SUCCESS;
 
-        if (!proxy.get_previous_log_read_time(entity)) { return FAILED; }
+        if (!proxy.get_previous_log_read_time(entity))
+        {
+            return FAILED;
+        }
 
-        if (!proxy.validate_log_entity(entity)) { return FAILED; }
-        
+        if (!proxy.validate_log_entity(entity))
+        {
+            return FAILED;
+        }
+
         agent_utils::write_log("Reading " + entity.name + " starting...", INFO);
-        result =  service->get_syslog(entity);
-        if (result == SUCCESS) { agent_utils::update_log_written_time(entity.name, entity.current_read_time); }
+        result = service->get_syslog(entity);
+        if (result == SUCCESS)
+        {
+            agent_utils::update_log_written_time(entity.name, entity.current_read_time);
+        }
 
         return result;
     }
 
-    /**
-     * @brief Application Log Manager
-     *
-     * This function reads configured log files from the `config_table` and asynchronously invokes the `get_applog` function
-     * for each configured file. It manages the logging process and returns a result code.
-     *
-     * @param[in] config_table A map containing configuration data for log files.
-     *                       The map should be structured as follows:
-     *                       - The keys are log file identifiers.
-     *                       - The values are maps containing log configuration settings.
-     * @return An integer result code:
-     *         - SUCCESS: The logging process was successful for all configured files.
-     *         - FAILED: The logging process encountered errors for one or more files.
-     * 
-     * @see get_applog
-     */
-    
-    int applog_manager(map<string, map<string, string>> &config_table)
+    int applog_manager()
     {
         vector<string> apps = config.to_vector(config_table["applog"]["list"], ',');
 
         for (string app : apps)
         {
-            auto asyncTask = [&, app]() -> int
+            log_entity entity = parser.get_log_entity(config_table, app);
+            entity.name = app;
+            auto async_task = [&, entity]() -> int
             {
-                return get_applog(config_table, app);
-            }; 
+                return get_applog(entity);
+            };
 
-            async_applog_tasks.push_back(std::async(std::launch::async, asyncTask));
+            async_applog_tasks.push_back(std::async(std::launch::async, async_task));
         }
 
-        for (auto &asyncTask : async_applog_tasks)
+        for (auto &async_task : async_applog_tasks)
         {
-            asyncTask.get();
+            async_task.get();
         }
         return SUCCESS;
     }
 
-    /**
-     * @brief Get Application Log
-     *
-     * This function performs necessary validations for a log file specified by `log_name` in the `config_table`. It reads
-     * log data from the file located at `read_path` and processes it as needed.
-     *
-     * After validating, it invokes the `get_syslog` function from the ` service` instance to perform
-     * the actual log collection. Finally, it sends the collected log data to the cloud for further processing.
-     *
-     * @param[in] config_table A map containing configuration data for log files.
-     *                       The map should be structured as follows:
-     *                       - The keys are log file identifiers.
-     *                       - The values are maps containing log configuration settings.
-     * @param[in] log_name The identifier of the log file to be processed.
-     * @return An integer result code:
-     *         - SUCCESS: The log file was successfully validated, read, and processed.
-     *         - FAILED: The validation or processing of the log file encountered errors.
-     */
- 
-    int get_applog(map<string, map<string, string>> &config_table, const string &log_name)
+    int get_applog(const log_entity &e)
     {
-        agent_utils::write_log("Reading " + log_name + " log starting...", DEBUG);
-        long post_result = 0L;
-        Json::Value json;
-        char sep = ' ';
-        const string write_path = config_table[log_name]["write_path"];
-        const string read_path = config_table[log_name]["log_directory"];
-        const string post_url = config_table["cloud"]["monitor_url"];
-        const string form_name = config_table["cloud"]["form_name"];
-        vector<string> attributes = config.to_vector(config_table[log_name]["columns"], ',');
-        vector<string> log_levels = config.to_vector(config_table[log_name]["level"], ',');
-        // string last_read_time = config.trim(proxy.getLastLogWrittenTime(config_table["cloud"]["name"], read_path));
-        string last_read_time = "23232";
+        int result = SUCCESS;
 
-        if (proxy.isValidLogConfig(config_table, json, log_name, sep, last_read_time) == FAILED)
-            return FAILED;
+        log_entity entity = const_cast<log_entity &>(e);
 
-        if ( service->get_applog(json, attributes, read_path, write_path, last_read_time, log_levels, sep) == FAILED)
-            return FAILED;
-
-        post_result = curl_handler::post(post_url, form_name, write_path);
-
-        if (post_result == POST_SUCCESS)
+        if (!proxy.get_previous_log_read_time(entity))
         {
-            agent_utils::update_log_written_time(config_table[log_name]["last_time"], last_read_time);
-            config.clean_file(write_path);
+            return FAILED;
         }
 
-        return (post_result == POST_SUCCESS) ? SUCCESS : FAILED;
+        if (!proxy.validate_log_entity(entity))
+        {
+            return FAILED;
+        }
+
+        result = service->get_applog(entity);
+
+        if (result == SUCCESS)
+        {
+            agent_utils::update_log_written_time(entity.name, entity.current_read_time);
+        }
+        return result;
     }
 
-    /**
-     * @brief Destructor for log_controller
-     *.
-     *
-     * The destructor performs cleanup tasks for the `log_controller
-     *` class, which may include
-     * releasing resources and deallocating memory, such as deleting the ` service` instance.
-     */
- 
     virtual ~log_controller()
     {
-        delete  service;
+        delete service;
     }
 };
 

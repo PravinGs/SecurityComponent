@@ -2,14 +2,14 @@
 
 static std::mutex p_mutex;
 
-const string PROC       = "/proc/";
-const string CPUDATA    = "/stat";
+const string PROC = "/proc/";
+const string CPUDATA = "/stat";
 const string MEMORYDATA = "/statm";
-const string BOOTTIME   = "uptime";
-const string COMM       = "/comm";
-const string IO         = "/io";
+const string BOOTTIME = "uptime";
+const string COMM = "/comm";
+const string IO = "/io";
 
-int cpu_table::_getUpTime()
+int cpu_table::get_up_time()
 {
     string path = PROC + BOOTTIME;
     fstream file;
@@ -29,11 +29,11 @@ double monitor_service::calculate_cpu_time(cpu_table &table)
 {
     double utime = table.getUTime() / CLK_TCK;
     double stime = table.getSTime() / CLK_TCK;
-    double startTime = table.getStartTime() / CLK_TCK;
-    double elapsedTime = table.getUpTime() - startTime;
-    double cpuRunTime = ((utime + stime) * 100) / elapsedTime;
-    cpuRunTime = cpuRunTime * (1 + (table.getNiceTime() / MAX_NICE_VALUE));
-    return cpuRunTime;
+    double start_time = table.getStartTime() / CLK_TCK;
+    double elapsed_time = table.getUpTime() - start_time;
+    double cpu_run_time = ((utime + stime) * 100) / elapsed_time;
+    cpu_run_time = cpu_run_time * (1 + (table.getNiceTime() / MAX_NICE_VALUE));
+    return cpu_run_time;
 }
 
 vector<int> monitor_service::get_processes_id() // I don't see it could be optimized
@@ -67,82 +67,33 @@ vector<int> monitor_service::get_processes_id() // I don't see it could be optim
 
 string monitor_service::get_proces_name_id(const unsigned int &process_id)
 {
-    string processName = "";
+    string process_name = "";
     string path = PROC + std::to_string(process_id) + COMM;
     std::ifstream file(path);
 
     if (file.is_open())
     {
-        std::getline(file, processName);
+        std::getline(file, process_name);
         file.close();
     }
-    return processName;
-}
-
-int monitor_service::save_monitor_log(const vector<process_data> &logs)
-{
-    string hostName;
-    string path = os::get_json_write_path("process");
-    agent_utils::get_hostname(hostName);
-    sys_properties properties = get_system_properties();
-    Json::Value props;
-    props["CpuMemory"] = properties.cpu;
-    props["RamMeomry"] = properties.ram;
-    props["DiskMemory"] = properties.disk;
-    properties = get_availed_system_properties();
-    Json::Value availedProps;
-    availedProps["CpuMemory"] = properties.cpu;
-    availedProps["RamMeomry"] = properties.ram;
-    availedProps["DiskMemory"] = properties.disk;
-    fstream file(path, std::ios::app);
-    Json::Value jsonData;
-    Json::StreamWriterBuilder writerBuilder;
-    if (!file)
-    {
-        agent_utils::write_log(FWRITE_FAILED + path, FAILED);
-        return FAILED;
-    }
-    
-    jsonData["DeviceTotalSpace"] = props;
-    jsonData["DeviceUsedSpace"] = availedProps;
-    jsonData["TimeGenerated"] = agent_utils::get_current_time();
-    jsonData["Source"] = hostName;
-    jsonData["OrgId"] = 12345;
-    jsonData["ProcessObjects"] = Json::Value(Json::arrayValue);
-    for (process_data data : logs)
-    {
-        Json::Value jsonLog;
-        jsonLog["process_id"] = std::stoi(data.process_id);
-        jsonLog["process_name"] = data.processName;
-        jsonLog["cpu_usage"] = std::stod(data.cpuTime);
-        jsonLog["ram_usage"] = std::stod(data.memUsage);
-        jsonLog["disk_usage"] = std::stod(data.diskUsage);
-        jsonData["ProcessObjects"].append(jsonLog);
-    }
-
-    std::unique_ptr<Json::StreamWriter> writer(writerBuilder.newStreamWriter());
-    writer->write(jsonData, &file);
-
-    file.close();
-    agent_utils::write_log(FWRITE_SUCCESS + path, SUCCESS);
-    return SUCCESS;
+    return process_name;
 }
 
 double monitor_service::get_memory_usage(const unsigned int &process_id)
 {
     unsigned long size, resident, shared, text, lib, data, dt;
-    double memoryPercentage = -1.0;
+    double memory_percentage = -1.0;
     string line;
     string path = PROC + std::to_string(process_id) + MEMORYDATA;
 
-    long pageSize = sysconf(_SC_PAGESIZE);
-    long totalMemory = sysconf(_SC_PHYS_PAGES) * pageSize;
+    long page_size = sysconf(_SC_PAGESIZE);
+    long total_memory = sysconf(_SC_PHYS_PAGES) * page_size;
 
     std::ifstream file(path);
     if (!file)
     {
         agent_utils::write_log(FILE_ERROR + path, FAILED);
-        return memoryPercentage;
+        return memory_percentage;
     }
     std::getline(file, line);
     std::istringstream iss(line);
@@ -150,12 +101,12 @@ double monitor_service::get_memory_usage(const unsigned int &process_id)
     if (!(iss >> size >> resident >> shared >> text >> lib >> data >> dt))
     {
         agent_utils::write_log("Failed to parse memory statistics.", FAILED);
-        return memoryPercentage;
+        return memory_percentage;
     }
 
-    memoryPercentage = 100.0 * resident * pageSize / totalMemory;
+    memory_percentage = 100.0 * resident * page_size / total_memory;
     file.close();
-    return memoryPercentage;
+    return memory_percentage;
 }
 
 cpu_table monitor_service::read_processing_time_id(const unsigned int &process_id)
@@ -188,7 +139,7 @@ cpu_table monitor_service::read_processing_time_id(const unsigned int &process_i
 
 double monitor_service::get_disk_usage(const unsigned int &process_id)
 {
-    double diskUsage = -1.0;
+    double disk_usage = -1.0;
     int i = 0;
     string line;
     string path = PROC + std::to_string(process_id) + IO;
@@ -197,9 +148,9 @@ double monitor_service::get_disk_usage(const unsigned int &process_id)
     if (!file.is_open())
     {
         agent_utils::write_log("Process does not exist with this id : " + std::to_string(process_id), FAILED);
-        return diskUsage;
+        return disk_usage;
     }
-    diskUsage = 0.0;
+    disk_usage = 0.0;
 
     while (std::getline(file, line))
     {
@@ -212,7 +163,7 @@ double monitor_service::get_disk_usage(const unsigned int &process_id)
                 try
                 {
                     double d = std::stod(token);
-                    diskUsage += d;
+                    disk_usage += d;
                 }
                 catch (std::exception &e)
                 {
@@ -222,7 +173,7 @@ double monitor_service::get_disk_usage(const unsigned int &process_id)
         i++;
     }
     file.close();
-    return diskUsage;
+    return disk_usage;
 }
 
 sys_properties monitor_service::get_system_properties()
@@ -237,21 +188,21 @@ sys_properties monitor_service::get_system_properties()
     }
     std::ifstream meminfo(PROC + "meminfo");
     std::string line;
-    unsigned long long totalMemory = 0;
+    unsigned long long total_memory = 0;
     unsigned long long freeMemory = 0;
 
     while (std::getline(meminfo, line))
     {
         if (line.find("MemTotal:") != std::string::npos)
         {
-            sscanf(line.c_str(), "MemTotal: %llu", &totalMemory);
+            sscanf(line.c_str(), "MemTotal: %llu", &total_memory);
         }
         else if (line.find("MemFree:") != std::string::npos)
         {
             sscanf(line.c_str(), "MemFree: %llu", &freeMemory);
         }
     }
-    properties.ram = static_cast<double>(totalMemory) / (1024 * 1024);
+    properties.ram = static_cast<double>(total_memory) / (1024 * 1024);
     meminfo.close();
     std::ifstream statFile("/proc/stat");
     unsigned long long userTime = 0;
@@ -287,22 +238,22 @@ sys_properties monitor_service::get_availed_system_properties()
     }
     std::ifstream meminfo(PROC + "meminfo");
     std::string line;
-    unsigned long long totalMemory = 0;
+    unsigned long long total_memory = 0;
     unsigned long long freeMemory = 0;
 
     while (std::getline(meminfo, line))
     {
         if (line.find("MemTotal:") != std::string::npos)
         {
-            sscanf(line.c_str(), "MemTotal: %llu", &totalMemory);
+            sscanf(line.c_str(), "MemTotal: %llu", &total_memory);
         }
         else if (line.find("MemFree:") != std::string::npos)
         {
             sscanf(line.c_str(), "MemFree: %llu", &freeMemory);
         }
     }
-    unsigned long long usedMemory = totalMemory - freeMemory;
-    properties.ram = static_cast<double>(usedMemory) / totalMemory * 100;
+    unsigned long long usedMemory = total_memory - freeMemory;
+    properties.ram = static_cast<double>(usedMemory) / total_memory * 100;
     meminfo.close();
     std::ifstream statFile("/proc/stat");
     unsigned long long userTime = 0;
@@ -328,19 +279,18 @@ sys_properties monitor_service::get_availed_system_properties()
 process_data monitor_service::create_process_data(int process_id)
 {
     cpu_table table = read_processing_time_id(process_id);
-    string processName = get_proces_name_id(process_id);
+    string process_name = get_proces_name_id(process_id);
     double cpuTime = calculate_cpu_time(table);
     double memUsage = get_memory_usage(process_id);
-    double diskUsage = get_disk_usage(process_id);
+    double disk_usage = get_disk_usage(process_id);
     process_data processData{
-        std::to_string(process_id), processName,
+        std::to_string(process_id), process_name,
         std::to_string(cpuTime), std::to_string(memUsage),
-        std::to_string(diskUsage)};
-    // data.push_back(processData);
+        std::to_string(disk_usage)};
     return processData;
 }
 
-int monitor_service::get_monitor_data()
+int monitor_service::get_monitor_data(const process_entity &entity)
 {
     agent_utils::write_log("Request for collecting process details", DEBUG);
     vector<process_data> parent;
@@ -350,22 +300,19 @@ int monitor_service::get_monitor_data()
         int p_id = process_ids[i];
         auto asyncTask = [&, p_id]()
         {
-            // vector<process_data> localData;
-            process_data localData = create_process_data(p_id);
+            process_data local_data = create_process_data(p_id);
             std::lock_guard<std::mutex> lock(p_mutex);
-            parent.push_back(localData);
-            // parent.insert(parent.end(), localData.begin(), localData.end());
+            parent.push_back(local_data);
         };
-        _async_tasks.push_back(std::async(std::launch::async, asyncTask));
+        async_tasks.push_back(std::async(std::launch::async, asyncTask));
     }
 
-    // Wait for async tasks to complete
-    for (auto &task : _async_tasks)
+    for (auto &task : async_tasks)
     {
         task.wait();
     }
     agent_utils::write_log("Process information collected", DEBUG);
-    return save_monitor_log(parent);
+    return db.save(parent, get_system_properties(), get_availed_system_properties());
 }
 
 monitor_service::~monitor_service() {}

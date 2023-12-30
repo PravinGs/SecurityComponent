@@ -2,52 +2,99 @@
 
 #include "agent_utils.hpp"
 #include "service/log_analysis_service.hpp"
+#include "service/config_service.hpp"
+#include "model/entity.hpp"
+#include "model/entity_parser.hpp"
 
-/**
- * @brief Analysis Controller
- *
- * The `analysis_controller` class is responsible for managing log analysis within the application. It serves as the
- * central component for processing and interpreting log data, providing insights, and facilitating data-driven decision-making.
- * This class plays a crucial role in extracting meaningful information from logs and enhancing application functionality.
- */
+
 class analysis_controller
 {
     private:
-        log_analysis * _log_analysis = nullptr; /**< A private pointer to the log_analysis service. */
+        I_analysis * analysis = nullptr; /**< A private pointer to the log_analysis service. */
+        Config config;
+        entity_parser parser;
+        map<string, map<string,string>> config_table;
+        bool is_valid_config;
+        
     public: 
-        /**
-         * @brief Construct a new Analysis Controller  object
-         * This constructor initializes the `analysis_controller` and creates an instance of the `log_analysis`
-         * to be used for firmware management.
-         */
-        analysis_controller() : _log_analysis(new log_analysis()) {} 
 
-        /**
-         * @brief Start Log Analysis Operation
-         *
-         * The `start` function is responsible for initiating the log analysis operation. It validates the information provided
-         * in the `table` parameter to ensure it meets the required criteria for analysis. Once validation is successful, it
-         * triggers the log analysis process.
-         *
-         * @param[in] table A map containing configuration data and log information for analysis.
-         *                  The map should be structured to include necessary settings and log data.
-         */
-        void start(map<string,  map<string, string>>& table)
+        analysis_controller(const map<string, map<string,string>>& config_table) : analysis(new log_analysis()), config_table(config_table), is_valid_config(true) {} 
+
+        analysis_controller(const string& config_file) : analysis(new log_analysis())
         {
-            string decoderPath = table["log_analysis"]["decoder_path"];
-            string rulesPath = table["log_analysis"]["rules_path"];
-            string readDir = table["log_analysis"]["read_dir"];
-
-            if (decoderPath.empty() || rulesPath.empty()) return;
-
-            int result = _log_analysis->start(decoderPath, rulesPath, readDir);
+            is_valid_config = (config.read_ini_config_file(config_file, config_table) != SUCCESS) ? false: true;
         }
-        /**
-         * @brief Destructor for analysis_controller.
-         *
-         * The destructor performs cleanup tasks for the `analysis_controller` class, which may include
-         * releasing resources and deallocating memory, such as deleting the `_log_analysis` instance.
-         */
-        virtual ~analysis_controller() {delete _log_analysis;}
+
+        void start()
+        {
+            std::vector<string> processes{"tcp", "analysis"};
+
+            std::vector<std::thread> threads(processes.size());
+
+            for (int i = 0; i < (int)processes.size(); i++)
+            {
+                string process_name = processes[i];
+                try
+                {
+                    threads[i] = std::thread([&, process_name]()
+                                            { assign_task_to_thread(process_name); });
+                }
+                catch (const std::exception &e)
+                {
+                    std::cerr << e.what() << '\n';
+                }
+            }
+
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+
+            for (auto &th : threads)
+            {
+                if (th.joinable())
+                {
+                    th.join();
+                }
+            }
+        }
+
+        void assign_task_to_thread(const string &process)
+        {
+            if (process == "tcp")
+            {
+                std::cout << "This functionality not yet developed" << '\n';
+            }
+            else if (process == "analysis")
+            {
+                cout << "Log analysis result : " << '\n';
+            }
+
+        }
+
+        int  analyse()
+        {
+            analysis_entity entity = parser.get_analysis_entity(config_table);
+
+            if (entity.decoder_path.empty()) { entity.decoder_path = DEFAULT_XML_RULES_PATH; }
+
+            if (entity.rules_path.empty()) { entity.rules_path = DEFAULT_XML_RULES_PATH ; }
+        
+            if (entity.logfile_path.empty()) 
+            {
+                agent_utils::write_log("Logfile path not configured for analysis, please check the configuration properly.", FAILED);
+                return FAILED;
+            }
+
+            if (entity.time_pattern.empty())
+            {
+                return analysis->start(entity);
+            }
+
+            // here scheduling code willbe applied 
+
+            int result = analysis->start(entity);
+
+            return result;
+        }
+
+        virtual ~analysis_controller() {delete analysis;}
 
 };

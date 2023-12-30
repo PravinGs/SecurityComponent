@@ -155,82 +155,81 @@ int log_service::read_syslog_file(log_entity &entity, vector<string> &logs)
     return SUCCESS;
 }
 
-int log_service::get_applog(Json::Value &json, const vector<string> &log_attributes, const string &readDir, const string &writePath, string &last_read_time, const vector<string> &log_levels, const char &delimeter)
+int log_service::get_applog(log_entity &entity)
 {
+    int result = SUCCESS;
     vector<string> logs;
-    bool flag = true;
-    vector<string> files;
-    os::get_regular_files(readDir, files);
-    int index = (int)files.size();
-    string next_reading_time = last_read_time;
-    while (flag && index >= 0)
+    agent_utils::write_log("Reading " + entity.name + " log starting...", DEBUG);
+  
+    if (entity.format == "syslog")
     {
-        string path = files[index];
-        if (!std::filesystem::is_regular_file(path))
-        {
-            index--;
-            continue;
-        }
-
-        if (read_applog_file(path, logs, delimeter, last_read_time, flag, log_levels, next_reading_time) == FAILED || logs.size() == 0)
-        {
-            return FAILED;
-        }
-        agent_utils::write_log("Applog collected from " + path, INFO);
-        index--;
+        result = read_syslog_file(entity, logs);
+    }
+    else if (entity.format == "dpkg")
+    {
+        result = read_dpkg_logfile(entity, logs);
+    }
+    else if (entity.format == "applog")
+    {
+        result = read_applog_file(entity, logs);
+    }
+    else 
+    {
+        agent_utils::write_log("Currently this format not supported " + entity.format, WARNING);
+        return WARNING;
     }
 
-    if (config.to_vector(logs[0], delimeter).size() < log_attributes.size())
-    {
-        agent_utils::write_log("Invalid Log Attributes configured for Applog", FAILED);
-        return FAILED;
-    }
-    last_read_time = next_reading_time;
-    return SUCCESS;
+    if (entity.count > 0) { result = db.save(entity, logs); }
+
+    else  { agent_utils::write_log("Read 0 logs for " + entity.name, WARNING); }
+
+
+    return result;
+
 }
 
-int log_service::read_applog_file(const string &path, vector<string> &logs, const char &delimeter, const string &last_read_time, bool &flag, const vector<string> &log_levels, string &next_reading_time)
+int log_service::read_applog_file(log_entity& entity, vector<string> & logs)
 {
-    fstream file(path);
-    string line;
-    std::time_t last_written_time = agent_utils::string_to_time_t(last_read_time);
-    bool is_critical_log = false;
-    if (!file)
-    {
-        agent_utils::write_log(FILE_ERROR + path, FAILED);
-        return FAILED;
-    }
+    // string line;
+    // bool is_critical_log = false;
 
-    while (std::getline(file, line))
-    {
-        if (line.length() == 0)
-        {
-            continue;
-        }
+    // fstream file(path);
+    // if (!file)
+    // {
+    //     agent_utils::write_log(FILE_ERROR + path, FAILED);
+    //     return FAILED;
+    // }
 
-        string current_time_string = line.substr(0, 19);                               /* Extract the date time format fromt the line */
-        std::time_t current_time = agent_utils::string_to_time_t(current_time_string); /* Convert string time to time_t format for comparision between time_t objects */
-        if (current_time < last_written_time)
-        {
-            continue;
-        }
+    // while (std::getline(file, line))
+    // {
+    //     if (line.length() == 0)
+    //     {
+    //         continue;
+    //     }
 
-        is_critical_log = filter_log(line, log_levels);
-        if (is_critical_log)
-        {
-            logs.push_back(line);
-        }
-        std::time_t tempTime = agent_utils::string_to_time_t(next_reading_time);
-        if (current_time > tempTime)
-        {
-            next_reading_time = current_time_string;
-        }
-        if (current_time == last_written_time)
-        {
-            flag = false;
-        }
-    }
-    file.close();
+    //     string current_time_string = line.substr(0, 19);                               /* Extract the date time format fromt the line */
+    //     std::time_t current_time = agent_utils::string_to_time_t(current_time_string); /* Convert string time to time_t format for comparision between time_t objects */
+    //     if (current_time < last_written_time)
+    //     {
+    //         continue;
+    //     }
+
+    //     is_critical_log = filter_log(line, log_levels);
+    //     if (is_critical_log)
+    //     {
+    //         logs.push_back(line);
+    //     }
+    //     std::time_t tempTime = agent_utils::string_to_time_t(next_reading_time);
+    //     if (current_time > tempTime)
+    //     {
+    //         next_reading_time = current_time_string;
+    //     }
+    //     if (current_time == last_written_time)
+    //     {
+    //         flag = false;
+    //     }
+    // }
+    // file.close();
     return SUCCESS;
 }
 

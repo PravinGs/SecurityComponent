@@ -1,4 +1,4 @@
-#ifndef AGENT_UTILS_HPP 
+#ifndef AGENT_UTILS_HPP
 #define AGENT_UTILS_HPP
 #define PCRE2_CODE_UNIT_WIDTH 8
 #pragma once
@@ -26,9 +26,9 @@
 #include <chrono>
 #include <thread>
 #if RABBITMQ
-    #include <amqpcpp.h>
-    #include <amqpcpp/libev.h>
-    #include <ev.h>
+#include <amqpcpp.h>
+#include <amqpcpp/libev.h>
+#include <ev.h>
 #endif
 #include <mosquitto.h>
 #include <fcntl.h>
@@ -58,18 +58,33 @@ using std::map;
 using std::string;
 using std::vector;
 
-#define DEBUG         0
-#define INFO          1
-#define WARNING       2
-#define ERROR         3
-#define CRITICAL      4
-#define FATAL         5
-#define ALARM         6
-
+#define DEBUG 0
+#define INFO 1
+#define WARNING 2
+#define ERROR 3
+#define CRITICAL 4
+#define FATAL 5
+#define ALARM 6
 #define SCHEDULAR_WAIT 11
+#define SUCCESS 8
+#define FAILED ERROR
+#define OS_SIZE_1024 1024
+#define PATH_MAX 4096
+#define MAX_PID 32768
+#define MAX_RK_SYS 512
+#define PROC_ 0
+#define PID 1
+#define TASK 2
 
-#define SUCCESS       8
-#define FAILED        ERROR
+#define POST_SUCCESS 200L
+#define SERVER_ERROR 10
+
+#define BASE_LOG_DIR "/etc/scl/log/"
+#define BASE_LOG_ARCHIVE "archives/"
+#define BASE_CONFIG_TMP "tmp/"
+#define BASE_CONFIG_DIR "/etc/scl/config/"
+#define AGENT_CONFIG_DIR "/etc/scl/config/agent/agent.config"
+#define AGENT_TEMP_DIR "/etc/scl/tmp/"
 
 const string FILE_ERROR = "File not found or permission denied: ";
 const string CLEAN_FILE = "File truncated: ";
@@ -82,42 +97,13 @@ const string FDELETE_FAILED = "Failed to delete a file: Unable to delete  ";
 const string FDELETE_SUCCESS = "Successfully deleted file: Deleted ";
 const string INVALID_PATH = "Path not found: ";
 const string NEW_PATH = "Successfully created: ";
-
 const string APP = "agent";
 const string LOG_PATH = "/etc/scl/log/agent.log";
-
-#define OS_SIZE_1024 1024
-#define PATH_MAX 4096
-#define MAX_PID 32768
-#define MAX_RK_SYS 512
-#define PROC_ 0
-#define PID  1
-#define TASK 2
-
-#define POST_SUCCESS 200L
-#define SERVER_ERROR 10
-#define BASE_LOG_DIR "/etc/scl/log/"
-#define BASE_LOG_ARCHIVE "archives/"
-#define BASE_CONFIG_TMP "tmp/"
-#define BASE_CONFIG_DIR "/etc/scl/config/"
-#define AGENT_CONFIG_DIR "/etc/scl/config/agent/agent.config"
-#define AGENT_TEMP_DIR "/etc/scl/tmp/"
-
-
 const vector<string> MONTHS = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 const int BUFFER_SIZE = 1024;
 const int UDP_PORT = 8080;
 
-typedef struct aconfig aconfig;
-typedef struct log_event log_event;
 typedef struct Timer Timer;
-typedef struct decoder decoder;
-typedef struct storage storage;
-
-struct storage
-{
-    string type;
-};
 
 struct Timer
 {
@@ -136,80 +122,6 @@ struct Timer
     }
 };
 
-struct aconfig
-{
-    int id;
-    int level;
-    int if_sid;
-    int if_matched_id;
-    int same_source_ip;
-    int frequency;
-    int timeframe;
-    int same_id;
-    int noalert;
-    int different_url;
-    int max_log_size;
-    
-    string group;
-    string decoded_as;
-    string description;
-    vector<string> pcre2;
-    string info;
-    string type;
-    string status_pcre2;
-    string extra_data_pcre2;
-    string options;
-    string user_pcre2;
-    string if_group;
-    string if_matched_group;
-    string id_pcre2;
-    string action;
-    string categories;
-    string check_if_ignored;
-    string ignore;
-    string regex;
-    string script;
-    string program_name_pcre2;
-    string weekday;
-    string time;
-    string url_pcre2;
-    string if_fts;
-    string hostname_pcre2;
-    string match;
-    string compiled_rule;
-
-    aconfig() : id(0), level(0), if_sid(0), if_matched_id(0), same_source_ip(0), frequency(0), 
-                timeframe(0), same_id(0), noalert(0), different_url(0), max_log_size(0) 
-                {
-                    group = "";
-                    decoded_as ="";
-                    pcre2.clear();
-                    description = "";
-                    info = "";
-                    type = "";
-                    status_pcre2 = "";
-                    program_name_pcre2="";
-                    regex="";
-                    user_pcre2="";
-                    compiled_rule="";
-                    match="";
-                    hostname_pcre2="";
-                    if_fts="";
-                    time="";
-                    weekday="";
-                    script="";
-                    check_if_ignored="";
-                    categories="";
-                    if_group="";
-                    action="";
-                    id_pcre2="";
-                    if_matched_group="";
-                    options="";
-                    extra_data_pcre2="";
-
-                }
-};
-
 /**
  * @brief A structure representing a log event with various attributes.
  *
@@ -218,57 +130,6 @@ struct aconfig
  * user, source and destination IP addresses, protocol, match status, group,
  * and associated rule ID.
  */
-struct log_event
-{
-    size_t size;            /**< The size of the log event. */
-    string log;             /**< The original log entry string. */
-    string format;          /**< The log format (e.g., syslog, auth, dpkg, netstat, port). */
-    string timestamp;       /**< The timestamp associated with the log event. */
-    string program;         /**< The program or source of the log event. */
-    string user;            /**< The user associated with the log event. */
-    string message;
-    string src_ip;          /**< The source IP address in the log event. */
-    string dest_ip;         /**< The destination IP address in the log event. */
-    string proto;           /**< The protocol used in the log event. */
-    int is_matched;         /**< A flag indicating if the log event matched a rule (0 or 1). */
-    string group;           /**< The group associated with the matched rule. */
-    string decoded;
-    int rule_id;            /**< The ID of the rule that matched the log event. */
-
-    /**
-     * @brief Default constructor for the log_event structure.
-     *
-     * Initializes an instance of the log_event structure with default values
-     * for its attributes.
-     */
-    log_event() : size(0L), is_matched(0), rule_id(0) {}
-};
-
-struct decoder
-{
-    string decode;
-    string parent;
-    string program_name_pcre2;
-    string pcre2;
-    string order;
-    string prematch_pcre2;
-    string fts;
-    string prematch_offset;
-    string pcre2_offset;
-
-    void update(const decoder& other)
-    {
-        if (decode.empty()) decode = other.decode;
-        if (parent.empty()) parent = other.parent;
-        if (program_name_pcre2.empty()) program_name_pcre2 = other.program_name_pcre2;
-        if (pcre2.empty()) pcre2 = other.pcre2;
-        if (order.empty()) order = other.order;
-        if (prematch_pcre2.empty()) prematch_pcre2 = other.prematch_pcre2;
-        if (fts.empty()) fts = other.fts;
-        if (prematch_offset.empty()) prematch_offset = other.prematch_offset;
-        if (pcre2_offset.empty()) pcre2_offset = other.pcre2_offset;
-    }
-};
 
 /**
  * @brief A utility class for managing file and directory operations and maintaining a global timestamp.
@@ -311,7 +172,7 @@ public:
      *         - SUCCESS if the directory exists.
      *         - FAILED if the directory does not exist.
      */
-    static int is_dir_exist(const string& dirName);
+    static int is_dir_exist(const string &dirName);
 
     /**
      * @brief Create a directory.
@@ -337,7 +198,7 @@ public:
      *         - SUCCESS if the file was successfully deleted.
      *         - FAILED if an error occurred during the deletion.
      */
-    static int delete_file(const string& fileName);
+    static int delete_file(const string &fileName);
 
     /**
      * @brief Create a log file for storing processed logs under a specified date and application name.
@@ -356,7 +217,7 @@ public:
      *         - 0 if the log file was successfully created.
      *         - (-1) if an error occurred during file creation.
      */
-    static int create_log_file(int cDay, int cMonth, int cYear, string& filePath, const string& app_name);
+    static int create_log_file(int cDay, int cMonth, int cYear, string &filePath, const string &app_name);
 
     /**
      * @brief Manage log files and backup previous day's files based on the date.
@@ -376,7 +237,7 @@ public:
      *         - 0 if log files were managed successfully.
      *         - (-1) if an error occurred during log file management.
      */
-    static int handle_local_log_file(int day, int month, int year, string& filePath, const string& app_name);
+    static int handle_local_log_file(int day, int month, int year, string &filePath, const string &app_name);
 
     static string get_path_or_backup_file_path(string filename);
 
@@ -391,7 +252,7 @@ public:
      *         - 0 if the file was successfully compressed.
      *         - (-1) if an error occurred during the compression process.
      */
-    static int compress_file(const string& logFile);
+    static int compress_file(const string &logFile);
 
     /**
      * @brief Generate a file path for the application name based on the current date.
@@ -403,14 +264,13 @@ public:
      *
      * @return A string containing the file path based on the current date and application name.
      */
-    static string get_file_by_current_day(const string& app_name);
+    static string get_file_by_current_day(const string &app_name);
 
-    static int get_regular_files(const string& directory, vector<string> &files);
+    static int get_regular_files(const string &directory, vector<string> &files);
 
-    static string get_json_write_path(const string & type);
+    static string get_json_write_path(const string &type);
 
     static bool is_file_exist(const string &file);
-
 };
 
 /**
@@ -423,7 +283,6 @@ public:
 class agent_utils
 {
 private:
-    
 public:
     static fstream logfp;
 
@@ -460,7 +319,7 @@ public:
      * @param app_name The name of the application whose log time is being updated.
      * @param time The time to be set as the last written time for the application's log.
      */
-    static void update_log_written_time(const string& app_name, const string& time);
+    static void update_log_written_time(const string &app_name, const string &time);
 
     static int get_hostname(string &host);
 
@@ -481,18 +340,21 @@ public:
 
     static string get_current_time();
 
-    static void write_log(const string& log);
+    static void write_log(const string &log);
 
-    static void write_log(const string& log, int logLevel);
+    static void write_log(const string &log, int logLevel);
 
     static std::time_t string_to_time_t(const string &datetime);
 
-    ~agent_utils() 
+    static void print_next_execution_time(std::tm *next_time_info);
+
+    static void print_duration(const std::chrono::duration<double> &duration);
+
+    ~agent_utils()
     {
         if (logfp.is_open())
             logfp.close();
     }
-
 };
 
 #endif

@@ -1,7 +1,6 @@
 #ifndef main_controller_HPP
 #define main_controller_HPP
 
-#include "controller/schedular_controller.hpp"
 #include "service/apparmor_service.hpp"
 #include "service/config_service.hpp"
 #include "controller/mqtt_controller.hpp"
@@ -26,7 +25,7 @@ private:
     bool isReady = true; /**< A private variable for configuration file status*/
     Config _config; /**< A private instance of IniConfig for configuration management. */
     map<string, map<string, string>> _table; /**< A private map<string, map<string, string>> to store configuration data. */
-    schedule *_schedule = nullptr; /**< A private instance of the schedule class. */
+    // schedule *_schedule = nullptr; /**< A private instance of the schedule class. */
     apparmor_service a_service;
     mqtt_controller* m_controller = nullptr;
 public:
@@ -48,7 +47,7 @@ public:
         }
         if (isReady){
             const string scheduar_config_file = _table["schedule"]["config_file"];
-            _schedule = new schedule(scheduar_config_file);
+            // _schedule = new schedule(scheduar_config_file);
             m_controller = new mqtt_controller(_table);
         }
         auto today = std::chrono::system_clock::now();
@@ -116,7 +115,7 @@ public:
         if (process_name == "schedule")
         {
             //schedule schedule(_table[process_name]["config_file"]);
-            _schedule->start();
+            // _schedule->start();
         }
         else if (process_name == MQTT)
         {
@@ -131,7 +130,7 @@ public:
      */
     ~main_controller()
     {
-        delete _schedule;
+        // delete _schedule;
     }
 };
 #endif

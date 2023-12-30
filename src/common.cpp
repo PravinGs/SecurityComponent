@@ -31,6 +31,24 @@ void agent_utils::setup_logger()
     }
 }
 
+void agent_utils::print_next_execution_time(std::tm *next_time_info)
+{
+    char buffer[80];
+    std::strftime(buffer, 80, "%Y-%m-%d %H:%M:%S", next_time_info);
+    std::string next_time_str(buffer);
+    agent_utils::write_log("Next execution time: " + next_time_str, DEBUG);
+}
+
+void agent_utils::print_duration(const std::chrono::duration<double> &duration)
+{
+    int hours = std::chrono::duration_cast<std::chrono::hours>(duration).count();
+    auto remaining_duration = duration - std::chrono::hours(hours);
+    int minutes = std::chrono::duration_cast<std::chrono::minutes>(remaining_duration).count();
+    remaining_duration -= std::chrono::minutes(minutes);
+    int seconds = std::chrono::duration_cast<std::chrono::seconds>(remaining_duration).count();
+    agent_utils::write_log("Duration until next execution: " + std::to_string(hours) + " hours, " + std::to_string(minutes) + " minutes, " + std::to_string(seconds) + " seconds.", DEBUG);
+}
+
 string agent_utils::trim(string line)
 {
     const auto strBegin = line.find_first_not_of(" \t");

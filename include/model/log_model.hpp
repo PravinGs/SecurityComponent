@@ -4,7 +4,7 @@
 
 typedef struct standard_log_attrs standard_log_attrs;
 
-static map<string, int> LogCategory {{"sys", 2}, {"network", 3}, {"ufw", 4}};
+static map<string, int> LogCategory{{"sys", 2}, {"network", 3}, {"ufw", 4}};
 
 struct standard_log_attrs
 {
@@ -15,7 +15,7 @@ struct standard_log_attrs
     int level;
     int category;
 
-    standard_log_attrs(const string& log)
+    standard_log_attrs(const string &log)
     {
         string t_level, t_category;
         std::stringstream ss(log);
@@ -29,20 +29,19 @@ struct standard_log_attrs
         category = LogCategory[t_category];
     }
 
-    int handle_exception(const string& level)
+    int handle_exception(const string &level)
     {
         int r;
         try
         {
             r = std::stoi(level);
         }
-        catch(const std::exception& e)
+        catch (const std::exception &e)
         {
             r = 0;
         }
         return r;
     }
 
-    ~standard_log_attrs(){}
-    
+    ~standard_log_attrs() {}
 };

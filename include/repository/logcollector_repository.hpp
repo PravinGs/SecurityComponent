@@ -1,10 +1,10 @@
-#ifndef RESOURCE_HPP
-#define RESOURCE_HPP
+#ifndef LOG_COLLECCTOR_REPOSITORY_HPP
+#define LOG_COLLECCTOR_REPOSITORY_HPP
 
-#pragma once 
+#pragma once
 
 #include "common.hpp"
-#include "entity.hpp"
+#include "model/entity.hpp"
 #include "model/log_model.hpp"
 
 struct standard_log_attrs;
@@ -12,9 +12,7 @@ struct standard_log_attrs;
 class resource
 {
 
-
 private:
-
     int get_json_write_path(string &timestamp)
     {
         string file_path = BASE_LOG_DIR;
@@ -44,10 +42,13 @@ private:
         return SUCCESS;
     }
 
-    int save_syslog(log_entity& entity, const vector<string>& logs, Json::Value &json)
+    int save_syslog(log_entity &entity, const vector<string> &logs, Json::Value &json)
     {
         string json_write_path = entity.current_read_time + "-" + entity.name;
-        if (get_json_write_path(json_write_path) == FAILED) { return FAILED; }
+        if (get_json_write_path(json_write_path) == FAILED)
+        {
+            return FAILED;
+        }
 
         fstream file(json_write_path, std::ios::out);
         Json::StreamWriterBuilder writer_builder;
@@ -80,7 +81,7 @@ private:
         return SUCCESS;
     }
 
-    int save_as_json(log_entity& entity, const vector<string> logs)
+    int save_as_json(log_entity &entity, const vector<string> logs)
     {
         Json::Value json;
         string host;
@@ -99,7 +100,7 @@ private:
         }
     }
 
-    int save_as_archive(log_entity& entity, const vector<string> & logs)
+    int save_as_archive(log_entity &entity, const vector<string> &logs)
     {
         string file_path;
         auto today = std::chrono::system_clock::now();
@@ -130,8 +131,7 @@ private:
     }
 
 public:
-
-    int save(log_entity& entity, const vector<string>& logs)
+    int save(log_entity &entity, const vector<string> &logs)
     {
         agent_utils::write_log("Storing " + entity.name + " logs started", DEBUG);
         if (entity.storage_type == "json")

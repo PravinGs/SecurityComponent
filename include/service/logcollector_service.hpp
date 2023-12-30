@@ -5,10 +5,8 @@
 #include "common.hpp"
 #include "service/config_service.hpp"
 #include "udp.hpp"
-#include "entity.hpp"
-#include "db.hpp"
-
-
+#include "model/entity.hpp"
+#include "repository/logcollector_repository.hpp"
 
 /**
  * @brief Abstract Log Interface
@@ -57,14 +55,7 @@ public:
      *         - SUCCESS: The application log retrieval operation was successful.
      *         - FAILED: The application log retrieval operation encountered errors.
      */
-    virtual int get_applog(
-        Json::Value &json,
-        const vector<string>& log_attributes,
-        const string& read_path,
-        const string& write_path,
-        string &last_read_time,
-        const vector<string>& log_levels,
-        const char& delimeter) = 0;
+    virtual int get_applog(log_entity& entity) = 0;
     
     /**
      * @brief Virtual Destructor
@@ -133,7 +124,7 @@ private:
      *         - SUCCESS: The application log reading operation was successful.
      *         - FAILED: The application log reading operation encountered errors.
      */
-    int read_applog_file(const string& read_path, vector<string> &logs, const char& delimeter, const string &last_read_time, bool &flag, const vector<string>& log_levels, string &next_log_reading_time);
+    int read_applog_file(log_entity& entity, vector<string>& logs);
 
     /**
      * @brief parse_log_category Log Entry
@@ -210,7 +201,7 @@ public:
      *         - SUCCESS: The application log data was successfully collected and processed.
      *         - FAILED: The application log data collection encountered errors.
      */
-    int get_applog(Json::Value &json, const vector<string>& log_attributes, const string& read_path, const string& write_path, string &last_read_time, const vector<string>& log_levels, const char& delimeter);
+    int get_applog(log_entity& entity);
 
     
      /**

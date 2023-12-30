@@ -34,7 +34,7 @@ int main()
     }
     initialize_time();
     log_controller controller("/home/pravin/micro-service/config/schedule.config");
-    controller.syslog_manager();
+    controller.start();
     if (agent_utils::logfp.is_open())
     {
         agent_utils::logfp.close();

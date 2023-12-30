@@ -2,7 +2,7 @@
 #define LOGPROXY_HPP
 
 #include "service/config_service.hpp"
-#include "service/entity.hpp"
+#include "model/entity.hpp"
 
 /**
  * @brief Proxy Validation and Control

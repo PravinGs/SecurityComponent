@@ -3,6 +3,8 @@
 #pragma once
 
 #include "common.hpp"
+#include "model/analysis_model.hpp"
+
 
 /**
  * @brief Configuration Management Class

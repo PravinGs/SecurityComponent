@@ -2,73 +2,124 @@
 #define MCONTROLLER_HPP
 #pragma once
 
-#include "service/monitor_service.hpp"
 #include "service/config_service.hpp"
 #include "proxy/proxy.hpp"
 #include "service/curl_service.hpp"
+#include "model/entity_parser.hpp"
 
-/**
- * @brief Monitor Controller
- * 
- * The `monitor_controller` class serves as the controler layer for managing and reading processes information. 
- * It provides methoods fot initiating device monitoring operations and managing monitor related tasks.
- */
+
 class monitor_controller
 {
 private:
-    IMonitor *_monitor_service = nullptr; /**< A private pointer to the IMonitor service. */
-    Config _config_service; /**< A private instance of IniConfig for configuration management. */
-    Proxy proxy; /**< A private instance of the Proxy class. */
-    const string monitor = "monitor"; /**< A private constant string for monito process name. */
+    IMonitor * service = nullptr; 
+    map<string, map<string, string>> config_table;
+    Config config;
+    entity_parser parser;
+    bool is_valid_config;
+    bool thread_handler;
+    Proxy proxy;
 
 public:
-    /**
-     * @brief Construct a new monitor_controller object.
-     *
-     * This constructor initializes the `monitor_controller` and creates an instance of the `monitor_service`
-     * to be used for monitor.
-     */
-    monitor_controller() : _monitor_service(new monitor_service()) {}
 
-    /**
-     * @brief Get Monitor Log
-     *
-     * This function validates the configuration parameters provided in the `config_table` to ensure they meet the required
-     * criteria for monitoring. After validation, it invokes the `_monitor_service->get_monitor_data()` function to collect
-     * information about every process running in the system. Finally, it sends the collected information to the cloud.
-     *
-     * @param[in] config_table A map containing configuration data for monitoring.
-     *                       The map should be structured as follows:
-     *                       - The keys are configuration identifiers.
-     *                       - The values are maps containing monitoring configuration settings.
-     * @return An integer result code:
-     *         - SUCCESS: The monitoring data was successfully collected and processed.
-     *         - FAILED: The validation, data collection, or processing encountered errors.
-     */    
-    int getMonitorLog(map<string, map<string, string>>& config_table)
+    monitor_controller(const map<string, map<string, string>> & config_table) : service(new monitor_service()), config_table(config_table), is_valid_config(true), thread_handler(true) {}
+
+    monitor_controller(const string& config_file): thread_handler(true)
+    {
+        is_valid_config = (config.read_ini_config_file(config_file, config_table) != SUCCESS) ? false: true;
+    }
+
+    void start()
+    {
+        std::vector<string> processes{"tcp", "monitor"};
+
+        std::vector<std::thread> threads(processes.size());
+
+        for (int i = 0; i < (int)processes.size(); i++)
+        {
+            string process_name = processes[i];
+            try
+            {
+                threads[i] = std::thread([&, process_name]()
+                                         { assign_task_to_thread(process_name); });
+            }
+            catch (const std::exception &e)
+            {
+                std::cerr << e.what() << '\n';
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+
+        for (auto &th : threads)
+        {
+            if (th.joinable())
+            {
+                th.join();
+            }
+        }
+    }
+
+     void assign_task_to_thread(const string &process)
+    {
+        if (process == "tcp")
+        {
+            std::cout << "This functionality not yet developed" << '\n';
+        }
+        else if (process == "monitor")
+        {
+            cout << "applog_manager result : " << get_process_details() << '\n';
+        }
+        
+    }
+
+    int get_process_details()
     {
         int result = SUCCESS;
-        string writePath = config_table[monitor]["write_path"];
-        string postUrl = config_table["cloud"]["monitor_url"];
-        string attributeName = config_table["cloud"]["form_name"];
 
-        if (_monitor_service->get_monitor_data() == FAILED)
-            return FAILED;
+        process_entity entity = parser.get_process_entity();
 
-        // result = curl_handler::post(postUrl, formName, jsonFile);
-        // _config_service.clean_file(writePath);
+        if (entity.time_pattern.empty())
+        {
+            return service->get_monitor_data(entity);
+        }
+        try
+        {
+            auto cron = cron::make_cron(entity.time_pattern);
+            while (thread_handler)
+            {
+                std::chrono::system_clock::time_point current_time = std::chrono::system_clock::now();
+                std::time_t time = std::chrono::system_clock::to_time_t(current_time);
+                std::time_t next = cron::cron_next(cron, time);
+                std::chrono::system_clock::time_point target_point = std::chrono::system_clock::from_time_t(next);
+                std::tm *next_time_info = std::localtime(&next);
+                agent_utils::print_next_execution_time(next_time_info);
+                std::chrono::duration<double> duration = target_point - current_time;
+                agent_utils::print_duration(duration);
+                std::this_thread::sleep_for(duration);
+                result = ervice->get_monitor_data(entity);
+                if (result == FAILED)
+                {
+                    thread_handler = false;
+                }
+                agent_utils::write_log("Thread execution done.", DEBUG);
+            }
+            if (!thread_handler)
+            {
+                agent_utils::write_log("execution stopped from being runnig", DEBUG);
+            }
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << e.what() << '\n';
+        }
+        
         return result;
     }
 
-    /**
-     * @brief Destructor for monitor_controller.
-     *
-     * The destructor performs cleanup tasks for the `monitor_controller` class, which may include
-     * releasing resources and deallocating memory, such as deleting the `_monitor_service` instance.
-     */
+
     virtual ~monitor_controller()
     {
-        delete _monitor_service;
+        delete service;
     }
 };
 
