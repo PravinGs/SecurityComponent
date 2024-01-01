@@ -1,9 +1,11 @@
-#pragma once 
+#pragma once
+#include "common.hpp"
 
 typedef struct log_entity log_entity;
 typedef struct analysis_entity analysis_entity;
 typedef struct process_entity process_entity;
 typedef struct patch_entity patch_entity;
+typedef struct mqtt_entity mqtt_entity;
 
 struct log_entity
 {
@@ -23,7 +25,7 @@ struct log_entity
     char remote;
     bool is_empty;
 
-    log_entity(): count(0), is_empty(true) {}
+    log_entity() : count(0), is_empty(true) {}
 };
 
 struct analysis_entity
@@ -45,9 +47,33 @@ struct process_entity
 
 struct patch_entity
 {
-    string application;
-    string application_root_path;
+    long size;
     int max_download_speed;
     int min_download_speed;
     int retry_time_out;
+    int retry_count;
+    bool is_sftp;
+    bool is_secure;
+    string ca_cert_path;
+    string client_cert_path;
+    string application;
+    string application_root_path;
+    string download_path;
+    string username;
+    string password;
+    string url;
+
+    patch_entity() : size(0L), max_download_speed(0), min_download_speed(0), retry_time_out(0), retry_count(0), is_sftp(true), is_secure(true) {}
+};
+
+struct mqtt_entity
+{
+
+    string conn_string;
+    int port;     // local dev testing only.
+    string topic; // this type could be key:value (or) vector (or) single char[]
+    string ca_cert_path;
+    string client_cert_path;
+
+    mqtt_entity() : port(8000);
 };

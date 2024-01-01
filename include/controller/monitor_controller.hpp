@@ -4,8 +4,8 @@
 
 #include "service/config_service.hpp"
 #include "proxy/proxy.hpp"
-#include "service/curl_service.hpp"
 #include "model/entity_parser.hpp"
+#include "service/monitor_service.hpp"
 
 
 class monitor_controller
@@ -23,7 +23,7 @@ public:
 
     monitor_controller(const map<string, map<string, string>> & config_table) : service(new monitor_service()), config_table(config_table), is_valid_config(true), thread_handler(true) {}
 
-    monitor_controller(const string& config_file): thread_handler(true)
+    monitor_controller(const string& config_file): service(new monitor_service()), thread_handler(true)
     {
         is_valid_config = (config.read_ini_config_file(config_file, config_table) != SUCCESS) ? false: true;
     }
@@ -67,16 +67,17 @@ public:
         }
         else if (process == "monitor")
         {
-            cout << "applog_manager result : " << get_process_details() << '\n';
+             get_process_details();
         }
-        
     }
 
     int get_process_details()
     {
         int result = SUCCESS;
 
-        process_entity entity = parser.get_process_entity();
+        process_entity entity = parser.get_process_entity(config_table);
+
+        if (!proxy.validate_process_entity(entity)) { return FAILED; }
 
         if (entity.time_pattern.empty())
         {
@@ -96,7 +97,7 @@ public:
                 std::chrono::duration<double> duration = target_point - current_time;
                 agent_utils::print_duration(duration);
                 std::this_thread::sleep_for(duration);
-                result = ervice->get_monitor_data(entity);
+                result = service->get_monitor_data(entity);
                 if (result == FAILED)
                 {
                     thread_handler = false;

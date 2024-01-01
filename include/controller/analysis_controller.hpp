@@ -3,6 +3,7 @@
 #include "agent_utils.hpp"
 #include "service/log_analysis_service.hpp"
 #include "service/config_service.hpp"
+#include "proxy/proxy.hpp"
 #include "model/entity.hpp"
 #include "model/entity_parser.hpp"
 
@@ -12,6 +13,7 @@ class analysis_controller
     private:
         I_analysis * analysis = nullptr; /**< A private pointer to the log_analysis service. */
         Config config;
+        Proxy proxy;
         entity_parser parser;
         map<string, map<string,string>> config_table;
         bool is_valid_config;
@@ -73,15 +75,7 @@ class analysis_controller
         {
             analysis_entity entity = parser.get_analysis_entity(config_table);
 
-            if (entity.decoder_path.empty()) { entity.decoder_path = DEFAULT_XML_RULES_PATH; }
-
-            if (entity.rules_path.empty()) { entity.rules_path = DEFAULT_XML_RULES_PATH ; }
-        
-            if (entity.logfile_path.empty()) 
-            {
-                agent_utils::write_log("Logfile path not configured for analysis, please check the configuration properly.", FAILED);
-                return FAILED;
-            }
+            if (!proxy.validate_analysis_entity(entity)) { return FAILED; }
 
             if (entity.time_pattern.empty())
             {

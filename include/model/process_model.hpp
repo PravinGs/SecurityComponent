@@ -1,6 +1,5 @@
 #pragma once 
 
-#include "common.hpp"
 #include "entity.hpp"
 
 #define MAX_NICE_VALUE 20

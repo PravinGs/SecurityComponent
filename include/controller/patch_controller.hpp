@@ -34,14 +34,12 @@ public:
             return FAILED;
         }
 
-        string application = config_table[firmware]["application"];
-        string rootDir = config_table[firmware]["root_dir"];
-        if (application.empty()) // Precheck
-        {
-            agent_utils::write_log("No Application configured for patch management.", WARNING);
-            return SUCCESS;
-        }
-        int result = service->start(config_table);
+        patch_entity entity = parser.get_patch_entity(config_table);
+
+        if (!proxy.validate_patch_entity(entity)) { return FAILED; }
+
+        int result = service->start(entity);
+
         while (result == SERVER_ERROR)
         {
 
@@ -50,7 +48,7 @@ public:
             std::chrono::system_clock::duration duration = executionTime - currentTime;
             int waitingTime = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
             std::this_thread::sleep_for(std::chrono::seconds(waitingTime));
-            result = service->start(config_table);
+            result = service->start(entity);
         }
 
         return result;

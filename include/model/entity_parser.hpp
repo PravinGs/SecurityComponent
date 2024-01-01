@@ -81,16 +81,22 @@ public:
         return entity;
     }
 
-    patch_entity get_patch_entity()
+    patch_entity get_patch_entity(map<string, map<string, string>> &config_table)
     {
         patch_entity entity;
         entity.application = config_table["firmware"]["application"];
         entity.application_root_path = config_table["firmware"]["application_root_path"];
+        entity.username = config_table["firmware"]["username"];
+        entity.password = config_table["firmware"]["password"];
+        entity.url      = config_table["firmware"]["url"];
+        entity.ca_cert_path = config_table["firmware"]["ca_cert_path"];
+        entity.client_cert_path = config_table["firmware"]["client_cert_path"];
         try
         {
             entity.max_download_speed = std::stoi(config_table["firmware"]["max_download_speed"]);
             entity.min_download_speed = std::stoi(config_table["firmware"]["min_download_speed"]);
             entity.retry_time_out = std::stoi(config_table["firmware"]["retry_time_out"]);
+            entity.retry_count  = std::stoi(config_table["firmware"]["retry_count"]);
         }
         catch (const std::exception &e)
         {
@@ -98,6 +104,26 @@ public:
             agent_utils::write_log("patch_entitty get_patch_entity() exception occured: " + error, FAILED);
         }
 
+        return entity;
+    }
+
+    mqtt_entity get_mqtt_entity(map<string, map<string, string>> &config_table)
+    {
+        mqtt_entity entity;
+        entity.conn_string = config_table["mqtt"]["address"];
+        entity.ca_cert_path = config_table["mqtt"]["ca_cert_path"];
+        entity.client_cert_path = config_table["mqtt"]["client_cert_path"]
+        try
+        {
+            entity.port = std::stoi(config_table["mqtt"]["port"]);
+        }
+        catch(const std::exception& e)
+        {
+            entity.port = 8000;
+            std::cerr << e.what() << '\n';
+            agent_utils::write_log("Mqtt port number not valid", FAILED);
+        }
+        
         return entity;
     }
 };

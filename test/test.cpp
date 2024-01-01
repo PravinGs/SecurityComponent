@@ -2,6 +2,7 @@
 #include "service/config_service.hpp"
 #include "controller/mqtt_controller.hpp"
 #include "controller/log_controller.hpp"
+#include "controller/monitor_controller.hpp"
 
 void test_mqtt_controller()
 {
@@ -23,6 +24,18 @@ void initialize_time()
     os::current_year = tm_info->tm_year+1900;
 }
 
+void test_log_controller()
+{
+    log_controller controller("/home/pravin/micro-service/config/schedule.config");
+    controller.start();
+}
+
+void test_process_controller()
+{
+    monitor_controller controller("/home/pravin/micro-service/config/schedule.config");
+    controller.start();
+
+}
 int main()
 {
     openlog("agent.service", LOG_INFO | LOG_CONS, LOG_USER);
@@ -33,8 +46,7 @@ int main()
         agent_utils::logfp.open(LOG_PATH, std::ios::app);
     }
     initialize_time();
-    log_controller controller("/home/pravin/micro-service/config/schedule.config");
-    controller.start();
+    test_process_controller();
     if (agent_utils::logfp.is_open())
     {
         agent_utils::logfp.close();

@@ -2,7 +2,9 @@
 #define LOGPROXY_HPP
 
 #include "service/config_service.hpp"
-#include "model/entity.hpp"
+#include "model/patch_model.hpp"
+#include "model/analysis_model.hpp"
+#include "model/process_model.hpp"
 
 /**
  * @brief Proxy Validation and Control
@@ -16,15 +18,22 @@ class Proxy
 {
 private:
     Config _config_service; /**< A private instance of IniConfig for configuration management. */
+    string extract_file_name_from_url(const string &url)
+    {
+        size_t last_slash_index = url.find_last_of("/");
+        if (last_slash_index != string::npos)
+        {
+            return url.substr(last_slash_index + 1);
+        }
+        return "";
+    }
 public:
     Proxy() = default;
 
-
-    bool validate_log_entity(log_entity& entity)
+    bool validate_log_entity(log_entity &entity)
     {
         try
         {
-
             if (!entity.columns.empty())
             {
                 entity.json_attributes = _config_service.to_vector(entity.columns, ',');
@@ -35,7 +44,7 @@ public:
             //     throw std::invalid_argument("Invalid log directory for " + entity.name);
             // };
 
-             if (entity.last_read_time == std::numeric_limits<time_t>::min())
+            if (entity.last_read_time == std::numeric_limits<time_t>::min())
             {
                 throw std::invalid_argument("No Specific time mentioned to collect log");
             }
@@ -55,85 +64,133 @@ public:
         return false;
     }
 
-    /**
-     * @brief Validate Log Configuration
-     *
-     * The `isValidLogConfig` function validates the configuration for syslog, application log, or similar log types.
-     * It uses the `config_table` parameter to access and validate the log configuration settings. The `json` parameter
-     * is utilized to set common information about the logs. The `name` parameter specifies the log's identifier.
-     * The `remote` parameter is used to identify whether a remote connection is configured or not.
-     * The `prevTime` parameter is used to obtain the last read time of the log file.
-     *
-     * @param[in] config_table A map containing log configuration data.
-     *                       The map should be structured to include settings for the specified log type.
-     * @param[in, out] json A JSON object used to set common log information.
-     * @param[in] name The identifier of the log being validated.
-     * @param[in, out] remote A character indicating whether a remote connection is established ('Y' for yes, 'N' for no).
-     * @param[in] prevTime The last read time of the log file.
-     * @return An integer result code:
-     *         - SUCCESS: The log configuration is valid.
-     *         - FAILED: The validation encountered errors or the configuration is invalid.
-     */
-
-    int isValidLogConfig(map<string, map<string, string>> &config_table, Json::Value &json, const string& name, char &remote, const string& prevTime)
+    bool validate_analysis_entity(analysis_entity& entity)
     {
-        int result = SUCCESS;
-        try
+        if (entity.log_path.empty() || os::is_file_exist(entity.log_path))
         {
-            string hostName = "unknown";
-
-            vector<string> names = _config_service.to_vector(config_table[name]["columns"], ',');
-
-            if (name != "syslog" && os::is_dir_exist(config_table[name]["log_directory"]))
-            {
-                throw std::invalid_argument("Invalid log directory for " + name);
-            };
-
-            if (names.size() == 0)
-            {
-                throw std::invalid_argument("Log attributes not configured for " + name);
-            }
-
-            if (config_table[name]["remote"].length() == 1)
-            {
-                remote = (config_table[name]["remote"][0] == '1') ? 'y' : 'n';
-            }
-
-            // else if (config_table[name]["remote"].length() > 1) { throw std::invalid_argument("Delimeter not configured Properly"); }
-
-            if (prevTime.length() == 0)
-            {
-                throw std::invalid_argument("No Specific time mentioned to collect log");
-            }
-
-            if (agent_utils::get_hostname(hostName) == FAILED)
-                return FAILED;
-
-            json["OrgId"] = 234225;
-            json["AppName"] = config_table[name]["name"];
-            json["Source"] = hostName;
+            agent_utils::write_log("Invalid log path configured log analysis: " + entity.log_path, FAILED);
+            return false;
         }
-        catch (exception &e)
+
+        if (!entity.decoder_path.empty() && os::is_file_exist(entity.decoder_path))
         {
-            result = FAILED;
-            string error = e.what();
-            agent_utils::write_log(error, FAILED);
+            agent_utils::write_log("Invalid decoder path configured: " + entity.decoder_path, FAILED);
+            return false;
         }
-        return result;
+        else 
+        {
+            entity.decoder_path = IDS_DEFAULT_DECODER_RULES_PATH;
+        }
+
+        if (!entity.write_path.empty() && os::is_dir_exist(entity.write_path))
+        {
+            agent_utils::write_log("Configured analyis write path not exist default path set", WARNING);
+        }
+
+        if (!entity.rules_path.empty() && os::is_dir_exist(entity.rules_path))
+        {
+            agent_utils::write_log("Invalid xml-rules path configured: " + entity.rules_path, FAILED);
+            return false;
+        }
+        else 
+        {
+            entity.rules_path = IDS_DEFAULT_XML_RULES_PATH;
+        }
+
+        if (entity.storage_type.empty())
+        {
+            entity.storage_type = "json";
+        }
+        return true;
     }
 
-    /**
-     * @brief Get Last Log Written Time
-     *
-     * The `getLastLogWrittenTime` function is used to extract the last written time of a log file specified by its `name`
-     * and `path`. This information is essential for tracking when the log file was last read to avoid reading duplicates.
-     *
-     * @param[in] name The identifier of the log file.
-     * @param[in] path The path to the log file.
-     * @return A string representing the last written time of the log file, formatted according to a specific timestamp format.
-     *         If the operation fails, an empty string is returned.
-     */
-    bool get_previous_log_read_time(log_entity& entity)
+    bool validate_patch_entity(patch_entity &entity)
+    {
+        if (entity.application.empty())
+        {
+            agent_utils::write_log("Application Name not configured for patch update.", FAILED);
+            return false;
+        }
+
+        if (entity.application_root_path.empty())
+        {
+            agent_utils::write_log("Application binary path not configured", FAILED);
+            return false;
+        }
+
+        if (entity.url.empty())
+        {
+            agent_utils::write_log("Url not configured for patch download", FAILED);
+            return FAILED;
+        }
+
+        if (entity.ca_cert_path.empty())
+        {
+            entity.is_secure = false;
+        }
+        else
+        {
+            entity.is_secure = (os::is_file_exist(entity.ca_cert_path)) ? true : false;
+        }
+
+        if (entity.client_cert_path.empty())
+        {
+            entity.is_secure = false;
+        }
+        else
+        {
+            entity.is_secure = (os::is_file_exist(entity.client_cert_path)) ? true : false;
+        }
+
+        if (entity.username.empty() && entity.password.empty())
+        {
+            entity.is_sftp = false;
+        }
+
+        if (entity.retry_count == 0)
+        {
+            entity.retry_count = PATCH_DEFAULT_RETRY_COUNT;
+        }
+
+        if (entity.retry_time_out == 0)
+        {
+            entity.retry_time_out = PATCH_DEFAULT_RETRY_TIMEOUT;
+        }
+
+        if (entity.max_download_speed == 0)
+        {
+            entity.max_download_speed = PATCH_DEFAULT_MAX_DOWNLOAD_SPEED;
+        }
+
+        if (entity.min_download_speed == 0)
+        {
+            entity.min_download_speed = PATCH_DEFAULT_MIN_DOWNLOAD_SPEED;
+        }
+
+        if (!os::is_dir_exist(PATCH_FILE_DOWNLOAD_PATH))
+        {
+            os::create_dir(PATCH_FILE_DOWNLOAD_PATH);
+        }
+
+        entity.download_path = PATCH_FILE_DOWNLOAD_PATH + extract_file_name_from_url(entity.url);
+
+        return true;
+    }
+
+    bool validate_process_entity(process_entity& entity)
+    {
+        if (!entity.write_path.empty() && os::is_dir_exist(entity.write_path))
+        {
+            agent_utils::write_log("Configured write directory path not exist", FAILED);
+            return false;
+        }
+
+        if (entity.storage_type.empty()) { entity.storage_type = "json"; }
+
+        return true;
+    }
+
+    bool get_previous_log_read_time(log_entity &entity)
     {
         string file_path = os::get_path_or_backup_file_path(entity.read_path);
         if (file_path.size() == 0)
@@ -196,12 +253,6 @@ public:
         return true;
     }
 
-    /**
-     * @brief Destructor for Proxy.
-     *
-     * The destructor performs cleanup tasks for the `Proxy` class, which may include
-     * releasing resources and deallocating memory.
-     */
     ~Proxy() {}
 };
 

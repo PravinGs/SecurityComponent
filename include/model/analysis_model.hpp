@@ -4,8 +4,8 @@
 
 #define STANDARD_TIMESTAMP_SIZE 19
 #define MAX_CACHE_SIZE 5
-#define DEFAULT_XML_RULES_PATH "/home/krishna/security/Agent/rules"
-#define DEFAULT_DECODER_RULES_PATH "/etc/scl/decoder/decoder.xml"
+#define IDS_DEFAULT_XML_RULES_PATH "/home/krishna/security/Agent/rules"
+#define IDS_DEFAULT_DECODER_RULES_PATH "/etc/scl/decoder/decoder.xml"
 
 typedef struct p_rule p_rule;
 typedef struct aconfig aconfig;
