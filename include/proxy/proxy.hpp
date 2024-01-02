@@ -5,6 +5,7 @@
 #include "model/patch_model.hpp"
 #include "model/analysis_model.hpp"
 #include "model/process_model.hpp"
+#include "model/mqtt_model.hpp"
 
 /**
  * @brief Proxy Validation and Control
@@ -27,6 +28,7 @@ private:
         }
         return "";
     }
+
 public:
     Proxy() = default;
 
@@ -64,35 +66,35 @@ public:
         return false;
     }
 
-    bool validate_analysis_entity(analysis_entity& entity)
+    bool validate_analysis_entity(analysis_entity &entity)
     {
-        if (entity.log_path.empty() || os::is_file_exist(entity.log_path))
+        if (!entity.log_path.empty() && !os::is_file_exist(entity.log_path))
         {
             agent_utils::write_log("Invalid log path configured log analysis: " + entity.log_path, FAILED);
             return false;
         }
 
-        if (!entity.decoder_path.empty() && os::is_file_exist(entity.decoder_path))
+        if (!entity.decoder_path.empty() && !os::is_file_exist(entity.decoder_path))
         {
             agent_utils::write_log("Invalid decoder path configured: " + entity.decoder_path, FAILED);
             return false;
         }
-        else 
+        else
         {
             entity.decoder_path = IDS_DEFAULT_DECODER_RULES_PATH;
         }
 
-        if (!entity.write_path.empty() && os::is_dir_exist(entity.write_path))
+        if (!entity.write_path.empty() && !os::is_dir_exist(entity.write_path))
         {
             agent_utils::write_log("Configured analyis write path not exist default path set", WARNING);
         }
 
-        if (!entity.rules_path.empty() && os::is_dir_exist(entity.rules_path))
+        if (!entity.rules_path.empty() && !os::is_dir_exist(entity.rules_path))
         {
             agent_utils::write_log("Invalid xml-rules path configured: " + entity.rules_path, FAILED);
             return false;
         }
-        else 
+        else
         {
             entity.rules_path = IDS_DEFAULT_XML_RULES_PATH;
         }
@@ -104,6 +106,10 @@ public:
         return true;
     }
 
+    bool validate_Rest_entity()
+    {
+        return true;
+    }
     bool validate_patch_entity(patch_entity &entity)
     {
         if (entity.application.empty())
@@ -177,7 +183,7 @@ public:
         return true;
     }
 
-    bool validate_process_entity(process_entity& entity)
+    bool validate_process_entity(process_entity &entity)
     {
         if (!entity.write_path.empty() && os::is_dir_exist(entity.write_path))
         {
@@ -185,7 +191,10 @@ public:
             return false;
         }
 
-        if (entity.storage_type.empty()) { entity.storage_type = "json"; }
+        if (entity.storage_type.empty())
+        {
+            entity.storage_type = "json";
+        }
 
         return true;
     }
@@ -250,6 +259,43 @@ public:
         fp.close();
         temp_config_file.close();
         entity.last_read_time = agent_utils::string_to_time_t(last_time);
+        return true;
+    }
+
+    bool validate_mqtt_entity(mqtt_entity &entity)
+    {
+        if (entity.conn_string.empty())
+        {
+            agent_utils::write_log("configuration: mqtt_entity: connection string is empty", FAILED);
+            return false;
+        }
+
+        if (entity.topics.empty())
+        {
+            agent_utils::write_log("configuration: mqtt_entity: topics not configured", FAILED);
+            return false;
+        }
+
+        if (!entity.ca_cert_path.empty() && !os::is_file_exist(entity.ca_cert_path))
+        {
+            agent_utils::write_log("configuration: mqtt_entity: file not exist " + entity.ca_cert_path, FAILED);
+            return false;
+        }
+        else
+        {
+            entity.is_secure = false;
+        }
+
+        // it is an optional but may be required if server wanted to verify the client
+        if (!entity.client_cert_path.empty() && !os::is_file_exist(entity.client_cert_path))
+        {
+            agent_utils::write_log("configuration: mqtt_entity: file not exist " + entity.client_cert_path, WARNING);
+        }
+
+        if (entity.client_id.empty())
+        {
+            entity.client_id = os::host_name;
+        }
         return true;
     }
 

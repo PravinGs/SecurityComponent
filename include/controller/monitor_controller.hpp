@@ -30,6 +30,10 @@ public:
 
     void start()
     {
+         if (!is_valid_config)
+        {
+            return FAILED;
+        }
         std::vector<string> processes{"tcp", "monitor"};
 
         std::vector<std::thread> threads(processes.size());

@@ -33,10 +33,12 @@ public:
         {
             return FAILED;
         }
-
         patch_entity entity = parser.get_patch_entity(config_table);
 
-        if (!proxy.validate_patch_entity(entity)) { return FAILED; }
+        if (!proxy.validate_patch_entity(entity))
+        {
+            return FAILED;
+        }
 
         int result = service->start(entity);
 

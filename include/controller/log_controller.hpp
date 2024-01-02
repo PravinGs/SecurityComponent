@@ -21,28 +21,12 @@ private:
     vector<std::future<int>> async_applog_tasks;
     Proxy proxy;
 
-
 public:
-    /**
-     * @brief Construct a new log_controller
-     * object.
-     *
-     * This constructor initializes the `log_controller
-     *` and creates an instance of the `LogService`
-     * to be used for log management.
-     */
     log_controller(const map<string, map<string, string>> &config_table) : config_table(config_table), service(new log_service()), is_valid_config(true), thread_handler(true) {}
 
     log_controller(const string &config_file) : service(new log_service()), thread_handler(true)
     {
-        if (config.read_ini_config_file(config_file, config_table) != SUCCESS)
-        {
-            is_valid_config = false;
-        }
-        else
-        {
-            is_valid_config = true;
-        }
+        is_valid_config = (config.read_ini_config_file(config_file, config_table) != SUCCESS) ? false : true;
     }
 
     void start()
@@ -84,11 +68,11 @@ public:
         }
         else if (process == "applog")
         {
-            cout << "applog_manager result : " << applog_manager() << '\n';
+           applog_manager();
         }
         else if (process == "syslog")
         {
-            cout << "syslog_manager result : " << syslog_manager() << '\n';
+           syslog_manager();
         }
     }
 
@@ -97,7 +81,9 @@ public:
         int result = SUCCESS;
 
         if (!is_valid_config)
+        {
             return FAILED;
+        }
 
         log_entity entity = parser.get_log_entity(config_table, "syslog");
 

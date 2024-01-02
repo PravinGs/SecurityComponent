@@ -1,54 +1,28 @@
+#ifndef MQTT_clientENT
+#define MQTT_clientENT
 
+#include "model/mqtt_model.hpp"
 
-// void message_callback(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *message) {
-//     if (message->payloadlen) {
-//         std::cout << "Received message on topic: " << message->topic << "\n";
-//         std::cout << "Message: " << std::string((char *)message->payload, message->payloadlen) << "\n";
-//     } else {
-//         std::cout << "Empty message received on topic: " << message->topic << "\n";
-//     }
-// }
+class Imqtt_client
+{
+public:
+	virtual void start(const mqtt_entity &entity) = 0;
+	virtual ~Imqtt_client() {}
+};
 
-// int main() {
-    
-//     mosquitto_lib_init();
+class mqtt_client: public Imqtt_client
+{
+private:
+	mqtt::async_client *client = nullptr;
 
-//     // Create a Mosquitto client instance
-//     struct mosquitto *mosq = mosquitto_new("C++Client", true, nullptr);
+private:
+	void publish_response(const std::string &response, const std::string &original_topic);
 
-//     if (!mosq) {
-//         std::cerr << "Error: Unable to create Mosquitto client instance.\n";
-//         return 1;
-//     }
+	void handle_message(const mqtt::const_message_ptr &msg);
 
-//     mosquitto_message_callback_set(mosq, message_callback);
+public:
 
-//     // Connect to the MQTT broker
-//     int rc = mosquitto_connect(mosq, "localhost", 1883, 60);
+	void start(const mqtt_entity &entity);
+};
 
-//     if (rc) {
-//         std::cerr << "Error: Unable to connect to the MQTT broker. Return code: " << rc << "\n";
-//         mosquitto_destroy(mosq);
-//         mosquitto_lib_cleanup();
-//         return 1;
-//     }
-
-//     // Subscribe to a topic
-//     mosquitto_subscribe(mosq, nullptr, "example/topic", 0);
-
-//     // Loop and handle messages
-//     while (true) {
-//         rc = mosquitto_loop(mosq, -1, 1);
-//         if (rc) {
-//             std::cerr << "Error: Unable to loop and handle messages. Return code: " << rc << "\n";
-//             break;
-//         }
-//     }
-
-//     // Disconnect and clean up
-//     mosquitto_disconnect(mosq);
-//     mosquitto_destroy(mosq);
-//     mosquitto_lib_cleanup();
-
-//     return 0;
-// }
+#endif

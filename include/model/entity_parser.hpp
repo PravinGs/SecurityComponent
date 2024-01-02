@@ -110,9 +110,11 @@ public:
     mqtt_entity get_mqtt_entity(map<string, map<string, string>> &config_table)
     {
         mqtt_entity entity;
+        entity.client_id = config_table["mqtt"]["client_id"];
         entity.conn_string = config_table["mqtt"]["address"];
+        entity.topics = config.to_vector(config_table["mqtt"]["topics"], ',') ;
         entity.ca_cert_path = config_table["mqtt"]["ca_cert_path"];
-        entity.client_cert_path = config_table["mqtt"]["client_cert_path"]
+        entity.client_cert_path = config_table["mqtt"]["client_cert_path"];
         try
         {
             entity.port = std::stoi(config_table["mqtt"]["port"]);
@@ -124,6 +126,18 @@ public:
             agent_utils::write_log("Mqtt port number not valid", FAILED);
         }
         
+        return entity;
+    }
+
+    rest_entity get_rest_entity(map<string, map<string, string>> &config_table)
+    {
+        rest_entity entity;
+        mqtt_entity entity;
+        entity.logs_post_url = config_table["cloud"]["logs_post_url"];
+        entity.ids_post_url = config_table["cloud"]["ids_post_url"];
+        entity.resources_post_url = config_table["cloud"]["resources_post_url"];
+        entity.ca_cert_path = config_table["cloud"]["ca_cert_path"];
+        entity.client_cert_path = config_table["cloud"]["client_cert_path"];
         return entity;
     }
 };

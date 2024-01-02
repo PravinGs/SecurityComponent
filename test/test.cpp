@@ -3,6 +3,8 @@
 #include "controller/mqtt_controller.hpp"
 #include "controller/log_controller.hpp"
 #include "controller/monitor_controller.hpp"
+#include "controller/mqtt_controller.hpp"
+#include "controller/patch_controller.hpp"
 
 void test_mqtt_controller()
 {
@@ -13,8 +15,9 @@ void test_mqtt_controller()
     controller.start();
 }
 
-void initialize_time()
+void init()
 {
+    agent_utils::get_hostname(os::host_name);
     auto today = std::chrono::system_clock::now();
     auto timeInfo = std::chrono::system_clock::to_time_t(today);
     std::tm *tm_info = std::localtime(&timeInfo);
@@ -22,6 +25,7 @@ void initialize_time()
     os::current_day = day; /* Current day at the application starting date. */
     os::current_month = tm_info->tm_mon;
     os::current_year = tm_info->tm_year+1900;
+    
 }
 
 void test_log_controller()
@@ -45,7 +49,7 @@ int main()
     {
         agent_utils::logfp.open(LOG_PATH, std::ios::app);
     }
-    initialize_time();
+    init();
     test_process_controller();
     if (agent_utils::logfp.is_open())
     {

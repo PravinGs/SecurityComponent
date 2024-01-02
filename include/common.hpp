@@ -30,7 +30,6 @@
 #include <amqpcpp/libev.h>
 #include <ev.h>
 #endif
-#include <mosquitto.h>
 #include <fcntl.h>
 #include <net/if.h>
 #include <sys/ioctl.h>
@@ -48,6 +47,7 @@
 #include <pugixml.hpp>
 #include <pcre2.h>
 #include <future>
+#include <mqtt/async_client.h>
 #include "service/croncpp.h"
 
 using std::cerr;
@@ -147,6 +147,7 @@ public:
     static int current_day;
     static int current_month;
     static int current_year;
+    static string host_name;
 
     /**
      * @brief Retrieve a list of regular files from a directory.

@@ -9,9 +9,8 @@
 
 struct standard_log_attrs;
 
-class resource
+class logcollector_repository
 {
-
 private:
     int get_json_write_path(string &timestamp)
     {

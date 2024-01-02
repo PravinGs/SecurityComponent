@@ -3,6 +3,7 @@
 int os::current_day = 0;
 int os::current_month = 0;
 int os::current_year = 0;
+string os::host_name = "";
 bool agent_utils::syslog_enabled = true;
 fstream agent_utils::logfp;
 std::mutex logMutex;

@@ -6,6 +6,7 @@ typedef struct analysis_entity analysis_entity;
 typedef struct process_entity process_entity;
 typedef struct patch_entity patch_entity;
 typedef struct mqtt_entity mqtt_entity;
+typedef struct rest_entity rest_entity;
 
 struct log_entity
 {
@@ -68,12 +69,24 @@ struct patch_entity
 
 struct mqtt_entity
 {
-
+    int port; // local dev testing only.
+    int qos;
+    bool is_secure;
+    string client_id;
     string conn_string;
-    int port;     // local dev testing only.
-    string topic; // this type could be key:value (or) vector (or) single char[]
+    vector<string> topics; // this type could be key:value (or) vector (or) single char[]
     string ca_cert_path;
     string client_cert_path;
 
-    mqtt_entity() : port(8000);
+    mqtt_entity() : port(8000), qos(1), is_secure(true) {}
+};
+
+struct rest_entity
+{
+    string logs_post_url;
+    string ids_post_url;
+    string patch_get_url;
+    string resources_post_url;
+    string ca_cert_path;
+    string client_cert_path;
 };
