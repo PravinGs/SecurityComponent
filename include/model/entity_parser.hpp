@@ -139,6 +139,34 @@ public:
         entity.client_cert_path = config_table["cloud"]["client_cert_path"];
         return entity;
     }
+
+    conn_entity get_conn_entity(map<string, map<string, string>> &config_table, const string& type)
+    {
+        conn_entity entity;
+        string cert_pem = type + "_cert_path";
+        string key_pem = type + "_private_key_path";
+        string port;
+        entity.ca_pem = config_table["connection"]["ca_cert_path"];
+        entity.cert_pem = config_table["connection"][cert_pem];
+        entity.key_pem = config_table["connection"][key_pem];
+        port = config_table["connection"]["port"];
+        try
+        {
+            entity.port = std::stoi(port);
+        }
+        catch(const std::exception& e)
+        {
+            string error = e.what();
+            agent_utils::write_log("entity_parser: get_conn_entity: " + error, FAILED);
+        }
+        
+        if (type == "client")
+        {
+            entity.conn_string = config_table["connection"]["host_address"] + ":" + port;
+        }
+        return entity;
+    }
+
 };
 
 #endif

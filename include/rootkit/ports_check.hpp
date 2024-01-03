@@ -17,7 +17,7 @@ class port_check
 
     public:
 
-        int runNetStat(int protocol, int port)
+        int run_net_stat(int protocol, int port)
         {
             int ret;
             char nt[OS_SIZE_1024 + 1];
@@ -27,7 +27,7 @@ class port_check
             } else if (protocol == IPPROTO_UDP) {
                 snprintf(nt, OS_SIZE_1024, NETSTAT, "udp", port);
             } else {
-                agent_utils::write_log("Netstat error (wrong protocol)", FAILED);
+                agent_utils::write_log("ports_check: run_net_stat: netstat error (wrong protocol)", FAILED);
                 return (0);
             }
 
@@ -124,11 +124,11 @@ class port_check
                     /* Check if we can find it using netstat. If not,
                     * check again to see if the port is still being used.
                     */
-                    if (runNetStat(protocol, i)) {
+                    if (run_net_stat(protocol, i)) {
                         continue;
                     }
 
-                    if (!runNetStat(protocol, i) && connPort(protocol, i)) {
+                    if (!run_net_stat(protocol, i) && connPort(protocol, i)) {
                         char op_msg[OS_SIZE_1024 + 1];
 
                         errors++;
@@ -138,7 +138,7 @@ class port_check
                                 "version of netstat.", i,
                                 (protocol == IPPROTO_UDP) ? "udp" : "tcp");
 
-                        agent_utils::write_log(op_msg, CRITICAL);
+                        agent_utils::write_log("ports_check: test_ports: " + op_msg, CRITICAL);
                     }
                 }
 
@@ -149,7 +149,7 @@ class port_check
                             "hidden. It maybe a false-positive or "
                             "something really bad is going on.",
                             (protocol == IPPROTO_UDP) ? "udp" : "tcp" );
-                    agent_utils::write_log(op_msg, CRITICAL);
+                    agent_utils::write_log("ports_check: test_ports: " + op_msg, CRITICAL);
                     return;
                 }
             }
@@ -176,7 +176,7 @@ class port_check
                 snprintf(op_msg, OS_SIZE_1024, "No kernel-level rootkit hiding any port."
                         "\n      Netstat is acting correctly."
                         " Analyzed %d ports.", total);
-                agent_utils::write_log(op_msg, SUCCESS);
+                agent_utils::write_log("ports_check: check: " + op_msg, SUCCESS);
             }
 
             for (int port = 0; port < 65535; port++)

@@ -22,16 +22,16 @@ class sys_check
     
     public:
 
-        int check(const string sourceFile, vector<string> & reports)
+        int check(const string source_file, vector<string> & reports)
         {
             total = 0;
             errors = 0;
             rk_sys_count = 0;
-            fstream file(sourceFile, std::ios::in);
+            fstream file(source_file, std::ios::in);
 
             if (!file)
             {
-                agent_utils::write_log(sourceFile + " not exists.", FAILED);
+                agent_utils::write_log("sys_check: check: " + source_file + " not exists.", FAILED);
                 return FAILED;
             }
             string line;
@@ -41,7 +41,7 @@ class sys_check
                 /* Check rk_sys_count for IOB exception */
                 if (rk_sys_count >= MAX_RK_SYS)
                 {
-                    agent_utils::write_log("RK_SYS count reached", WARNING);
+                    agent_utils::write_log("sys_check: check: rk_sys count reached", WARNING);
                     break;
                 }
                 /* continue comments and empty lines */
@@ -62,7 +62,7 @@ class sys_check
                     rk_sys_name[rk_sys_count] = name;
                     if (rk_sys_name[rk_sys_count].empty() || rk_sys_file[rk_sys_count].empty()) 
                     {
-                        agent_utils::write_log("Could not acquire memory", WARNING);
+                        agent_utils::write_log("sys_check: check: could not acquire memory", WARNING);
                         rk_sys_file[rk_sys_count].clear();
                         rk_sys_name[rk_sys_count].clear();
                     }
@@ -73,18 +73,18 @@ class sys_check
                 if (std::filesystem::exists(filePath))
                 {
                     reports.push_back(name+","+file);
-                    agent_utils::write_log("Rootkit " + name + " detected by the presence of file " + file, CRITICAL);
+                    agent_utils::write_log("sys_check: check: rootkit " + name + " detected by the presence of file " + file, CRITICAL);
                     errors++;
                 }
             }
 
             file.close();
 
-            agent_utils::write_log("Total " + std::to_string(total) + " number of rootkit files processed.");
+            agent_utils::write_log("sys_check: check: total " + std::to_string(total) + " number of rootkit files processed.");
 
             if (errors > 0)
             {
-                agent_utils::write_log("Total " + std::to_string(errors) + " number of rootkit detected.");
+                agent_utils::write_log("sys_check: check: total " + std::to_string(errors) + " number of rootkit detected.");
             }
             return SUCCESS;
         }

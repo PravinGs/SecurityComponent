@@ -17,7 +17,7 @@
 class dev_check
 {
 private:
-    int devErrors;
+    int dev_errors;
     int devTotal;
     const vector<string> ignore_dev = {
         "MAKEDEV", "README.MAKEDEV",
@@ -42,7 +42,7 @@ public:
         std::filesystem::path file_path(file_name);
         if (!std::filesystem::exists(file_path)) 
         {
-            agent_utils::write_log(INVALID_PATH + file_name, FAILED);
+            agent_utils::write_log("dev_check: read_dev_file: " + INVALID_PATH + file_name, FAILED);
             return FAILED;
         }
         if (std::filesystem::is_directory(file_path)) 
@@ -54,8 +54,8 @@ public:
             result = CRITICAL;
             string error = file_name;
             std::string op_msg = "File '" + error + "' present on /dev. Possible hidden file.";
-            agent_utils::write_log(op_msg, CRITICAL);
-            devErrors++;
+            agent_utils::write_log("dev_check: read_dev_file: " + op_msg, CRITICAL);
+            dev_errors++;
         }
         return result;
     }
@@ -66,7 +66,7 @@ public:
         if (dir_name.empty() || dir_name.length() > PATH_MAX) 
         {
             string error = dir_name;
-            agent_utils::write_log(INVALID_PATH + error, FAILED);
+            agent_utils::write_log("dev_check: read_dev_dir: " + INVALID_PATH + error, FAILED);
             return -1;
         }
 
@@ -106,16 +106,16 @@ public:
         char file_path[OS_SIZE_1024 + 1];
 
         devTotal = 0;
-        devErrors = 0;
-        agent_utils::write_log("Starting on check_rc_dev", INFO);
+        dev_errors = 0;
+        agent_utils::write_log("dev_check: check: starting on check_rc_dev", INFO);
 
         snprintf(file_path, OS_SIZE_1024, "%s/dev", basedir);
 
         read_dev_dir(file_path, reports);
-        if (devErrors == 0)
+        if (dev_errors == 0)
         {
             string opMessage = "No problem detected on the /dev directory. Analyzed " + std::to_string(devTotal) + " files";
-            agent_utils::write_log(opMessage, SUCCESS);
+            agent_utils::write_log("dev_check: check: " + opMessage, SUCCESS);
         }
         return SUCCESS;
     }

@@ -64,7 +64,7 @@ class root_check
 
         int start(Json::Value & root_check)
         {
-            agent_utils::write_log("Starting trojan root check.", DEBUG);        
+            agent_utils::write_log("root_check: start: starting trojan root check.", DEBUG);        
             vector<string> reports;
             Json::StreamWriterBuilder writer_builder;
             if (t_check.check(trojan_source_file, reports))
@@ -79,14 +79,14 @@ class root_check
                     root_check["Trojan_check"].append(json);
                 }
                 reports.clear();
-                agent_utils::write_log("Trojan root check completed successfully.", SUCCESS);
+                agent_utils::write_log("root_check: start: trojan root check completed successfully.", SUCCESS);
             }
             else
             {
-                agent_utils::write_log("Trojan root check failed", FAILED);
+                agent_utils::write_log("root_check: start: trojan root check failed", FAILED);
             }
-            agent_utils::write_log("Completed trojan root check.", DEBUG);
-            agent_utils::write_log("Starting sysfiles root check.");
+            agent_utils::write_log("root_check: start: completed trojan root check.", DEBUG);
+            agent_utils::write_log("root_check: start: starting sysfiles root check.");
             if (s_check.check(sys_source_file, reports))
             {
                 root_check["SysFileCheck"] = Json::Value(Json::arrayValue);
@@ -99,14 +99,14 @@ class root_check
                     root_check["SysFileCheck"].append(json);
                 }
                 reports.clear();
-                agent_utils::write_log("SysFiles root check completed successfully.", SUCCESS);
+                agent_utils::write_log("root_check: start: sysfiles root check completed successfully.", SUCCESS);
             }
             else
             {
-                agent_utils::write_log("Sysfiles root check failed", FAILED);
+                agent_utils::write_log("root_check: start: sysfiles root check failed", FAILED);
             }
-            agent_utils::write_log("Completed sysfiles root check.", DEBUG);
-            agent_utils::write_log("Starting network interface root check.", DEBUG);
+            agent_utils::write_log("root_check: start: completed sysfiles root check.", DEBUG);
+            agent_utils::write_log("root_check: start: starting network interface root check.", DEBUG);
             if (if_check.check(reports))
             {
                 root_check["PromiscuousCheck"] = Json::Value(Json::arrayValue);
@@ -117,14 +117,14 @@ class root_check
                     root_check["PromiscuousCheck"].append(json);
                 }
                 reports.clear();
-                agent_utils::write_log("network interface  root check completed successfully.", SUCCESS);
+                agent_utils::write_log("root_check: start: network interface  root check completed successfully.", SUCCESS);
             }
             else
             {
-                agent_utils::write_log("network interface root check failed", FAILED);
+                agent_utils::write_log("root_check: start: network interface root check failed", FAILED);
             }
-            agent_utils::write_log("Completed network interface root Check.", DEBUG);
-            agent_utils::write_log("Starting dev root check.", DEBUG);
+            agent_utils::write_log("root_check: start: completed network interface root Check.", DEBUG);
+            agent_utils::write_log("root_check: start: starting dev root check.", DEBUG);
             if (d_check.check(reports))
             {
                 root_check["HiddenFileCheck"] = Json::Value(Json::arrayValue);
@@ -135,30 +135,19 @@ class root_check
                     root_check["HiddenFileCheck"].append(json);
                 }
                 reports.clear();
-                agent_utils::write_log("dev root check completed successfully.", SUCCESS);
+                agent_utils::write_log("root_check: start: dev root check completed successfully.", SUCCESS);
             }
             else
             {
-                agent_utils::write_log("dev root check failed", FAILED);
+                agent_utils::write_log("root_check: start: dev root check failed", FAILED);
             }
-            agent_utils::write_log("Completed dev root check.", DEBUG);
+            agent_utils::write_log("root_check: start: completed dev root check.", DEBUG);
             execute_commands(root_check);
             std::fstream file("/home/champ/SecurityComponent/sys_checkreport.json", std::ios::out);
             std::unique_ptr<Json::StreamWriter> writer(writer_builder.newStreamWriter());
             writer->write(root_check, &file);
             file.close();
-            /*agent_utils::write_log("Starting process root check", DEBUG);
-            agent_utils::write_log("This process might take more time", DEBUG);
-            if (process_check.check())
-            {
-                agent_utils::write_log("Process root check completed successfully.", SUCCESS);
-            }
-            else
-            {
-                 agent_utils::write_log("Process root check failed", FAILED);
-            }
-            */
-            agent_utils::write_log("Completed process root check", INFO);
+            agent_utils::write_log("root_check: start: completed process root check", INFO);
             return SUCCESS;
         }
 

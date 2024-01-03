@@ -104,14 +104,14 @@ public:
 
             if (curl_code == CURLE_OK)
             {
-                agent_utils::write_log("Request successful", DEBUG);
-                agent_utils::write_log("HTTP Status Code: " + std::to_string(http_code), SUCCESS);
+                agent_utils::write_log("rest_service: post: request successful", DEBUG);
+                agent_utils::write_log("rest_service: post: HTTP Status Code: " + std::to_string(http_code), SUCCESS);
                 std::cout << "Response: " << response << "\n";
             }
             else
             {
                 string error = curl_easy_strerror(curl_code);
-                agent_utils::write_log("Request failed: " + error, FAILED);
+                agent_utils::write_log("rest_service: post: request failed: " + error, FAILED);
             }
 
             if (http_code == POST_SUCCESS)
@@ -120,7 +120,7 @@ public:
             }
             else
             {
-                agent_utils::write_log("Failed to send this file " + json_file, FAILED);
+                agent_utils::write_log("rest_service: post: failed to send this file " + json_file, FAILED);
             }
 
             std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -140,7 +140,7 @@ public:
         int result = os::get_regular_files(name + "json/", json_files);
         if (result == FAILED)
         {
-            agent_utils::write_log(FILE_ERROR + path, FAILED);
+            agent_utils::write_log("rest_service: start: " + FILE_ERROR + path, FAILED);
             return FAILED;
         }
 

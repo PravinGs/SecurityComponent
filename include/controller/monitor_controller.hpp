@@ -106,11 +106,11 @@ public:
                 {
                     thread_handler = false;
                 }
-                agent_utils::write_log("Thread execution done.", DEBUG);
+                agent_utils::write_log("monitor_controller: get_process_details: thread execution done.", DEBUG);
             }
             if (!thread_handler)
             {
-                agent_utils::write_log("execution stopped from being runnig", DEBUG);
+                agent_utils::write_log("monitor_controller: get_process_details: execution stopped from being runnig", DEBUG);
             }
         }
         catch(const std::exception& e)

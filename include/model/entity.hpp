@@ -97,7 +97,9 @@ struct conn_entity
 {
     int port;
     string conn_string;
-    string ca_cert_path;
-    string server_cert_path;
-    string server_private_key;
+    string ca_pem;
+    string cert_pem;
+    string key_pem;
+
+    conn_entity(): port(-1) {}
 };

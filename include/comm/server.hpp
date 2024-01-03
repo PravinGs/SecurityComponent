@@ -18,9 +18,19 @@ private:
     void *handle_client(void *arg)
     {
         SSL *client_ssl = (SSL *)arg;
-        home(client_ssl);
-        SSL_shutdown(client_ssl);
+
+        try
+        {
+            home(client_ssl);
+        }
+        catch (const std::exception &e)
+        {
+            agent_utils::write_log("tls_server: handle_client: Exception during handling client: " + std::string(e.what()), WARNING);
+        }
+
+        // Free the SSL object
         SSL_free(client_ssl);
+
         return nullptr;
     }
 
@@ -32,9 +42,9 @@ private:
 
     SSL *dequeue()
     {
-        std::lock_guard<std::mutex> lock(server_mutex);
         if (ssl_queue.empty())
         {
+            cout << "Queue is empty" << '\n';
             return nullptr;
         }
         SSL *ssl = ssl_queue.front();
@@ -109,7 +119,7 @@ private:
         }
 
         /* Set the CA file location for the server */
-        if (SSL_CTX_load_verify_locations(ctx, entity.ca_cert_path.c_str(), NULL) != 1)
+        if (SSL_CTX_load_verify_locations(ctx, entity.ca_pem.c_str(), NULL) != 1)
         {
             agent_utils::write_log("tls_server: get_ssl_context: Could not set the CA file location.", FAILED);
             SSL_CTX_free(ctx);
@@ -117,10 +127,10 @@ private:
         }
 
         /* Load the client's CA file location as well */
-        SSL_CTX_set_client_CA_list(ctx, SSL_load_client_CA_file(entity.ca_cert_path.c_str()));
+        SSL_CTX_set_client_CA_list(ctx, SSL_load_client_CA_file(entity.ca_pem.c_str()));
 
         /* Set the server's certificate signed by the CA */
-        if (SSL_CTX_use_certificate_file(ctx, entity.server_cert_path.c_str(), SSL_FILETYPE_PEM) != 1)
+        if (SSL_CTX_use_certificate_file(ctx, entity.cert_pem.c_str(), SSL_FILETYPE_PEM) != 1)
         {
             agent_utils::write_log("tls_server: get_ssl_context: Could not set the server's certificate.", FAILED);
             SSL_CTX_free(ctx);
@@ -128,7 +138,7 @@ private:
         }
 
         /* Set the server's key for the above certificate */
-        if (SSL_CTX_use_PrivateKey_file(ctx, entity.server_private_key.c_str(), SSL_FILETYPE_PEM) != 1)
+        if (SSL_CTX_use_PrivateKey_file(ctx, entity.key_pem.c_str(), SSL_FILETYPE_PEM) != 1)
         {
             agent_utils::write_log("tls_server: get_ssl_context: Could not set the server's key.", FAILED);
             SSL_CTX_free(ctx);
@@ -162,50 +172,60 @@ private:
         while (true)
         {
             SSL *ssl = nullptr;
-            std::unique_lock<std::mutex> lock(server_mutex);
-
-            condition_var.wait(lock, [&]()
-                               { return !ssl_queue.empty(); });
-
-            ssl = dequeue();
-            lock.unlock();
-
+            {
+                std::unique_lock<std::mutex> lock(server_mutex);
+                condition_var.wait(lock, [&]()
+                                   { return !ssl_queue.empty(); });
+                ssl = dequeue();
+            }
             if (ssl != nullptr)
             {
                 handle_client(ssl);
             }
+            else
+            {
+                agent_utils::write_log("tls_server: thread_functin: ssl is null", FAILED);
+            }
         }
     }
 
-    string receive_string(SSL* ssl)
+    string receive_string(SSL *ssl, bool &handler)
     {
         const int buffer_size = 4096;
         char buffer[buffer_size];
 
         int bytes_received = SSL_read(ssl, buffer, buffer_size);
-        if (bytes_received <= 0)
+        if (bytes_received == 0)
+        {
+            std::cerr << "closed it is connection" << '\n';
+            handler = false;
+        }
+        else if (bytes_received <= 0)
         {
             std::cerr << "Error receiving data: " << ERR_error_string(ERR_get_error(), nullptr) << std::endl;
+            handler = false;
             return "";
         }
 
         return string(buffer, bytes_received);
     }
 
-    void home(SSL* ssl)
+    void home(SSL *ssl)
     {
-        while (true)
+        bool handler = true;
+        while (handler)
         {
-            string data = receive_string(ssl);
+            string data = receive_string(ssl, handler);
             if (data == "stop")
             {
                 break;
             }
+            cout << data << '\n';
         }
     }
 
 public:
-    tls_server()
+    tls_server() : thread_pool(THREAD_POOL_SIZE)
     {
         SSL_library_init();
         SSL_load_error_strings();
@@ -240,10 +260,8 @@ public:
 
         for (int i = 0; i < THREAD_POOL_SIZE; i++)
         {
-            thread_pool[i] = std::thread([&]()
-                                         { thread_function(); });
-            // thread_pool.emplace_back(std::thread([&]()
-            //                                      {thread_function();}););
+            thread_pool.emplace_back([this]()
+                                     { thread_function(); });
         }
 
         while (true)
@@ -255,9 +273,12 @@ public:
                 agent_utils::write_log("tls_server: start: error accepting incoming connection.", WARNING);
                 continue;
             }
-            // string conn_address(inet_ntoa(client_addr.sin_addr));
-            // string conn_port(ntohs(client_addr.sin_port));
-            // agent_utils::write_log("tls_server: start: New Connection from " + conn_address + " : " + conn_port, WARNING);
+            char client_ip[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, &(client_addr.sin_addr), client_ip, INET_ADDRSTRLEN);
+            std::string conn_address(client_ip);
+
+            std::string conn_port = std::to_string(ntohs(client_addr.sin_port));
+            agent_utils::write_log("tls_server: start: New Connection from "+ conn_address + " : " + conn_port, DEBUG);
 
             if (!(ssl = SSL_new(ctx)))
             {
@@ -281,6 +302,13 @@ public:
             }
             enqueue(ssl);
             condition_var.notify_one();
+        }
+        for (int i = 0; i < THREAD_POOL_SIZE; i++)
+        {
+            if (thread_pool[i].joinable())
+            {
+                thread_pool[i].join();
+            }
         }
     }
 };

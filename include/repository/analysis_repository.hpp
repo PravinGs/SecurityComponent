@@ -46,7 +46,7 @@ public:
         agent_utils::get_hostname(host);
         if (alerts.size() == 0)
         {
-            agent_utils::write_log("No decoder matched", INFO);
+            agent_utils::write_log("analysis_repository: save: no decoder matched", INFO);
             return SUCCESS;
         }
         string filePath = os::get_json_write_path("log-analysis-report");
@@ -63,7 +63,7 @@ public:
             aconfig config = get_rule(log.group, log.rule_id);
             if (config.id <= 0)
             {
-                agent_utils::write_log("Unrecognized rule, Rule_id=" + std::to_string(log.rule_id) + " RuleGroup=" + log.group, WARNING);
+                agent_utils::write_log("analysis_repository: save: unrecognized rule, rule_id=" + std::to_string(log.rule_id) + " RuleGroup=" + log.group, WARNING);
             }
             else
             {
@@ -93,7 +93,7 @@ public:
         std::unique_ptr<Json::StreamWriter> writer(writer_builder.newStreamWriter());
         writer->write(json, &ofile);
         ofile.close();
-        agent_utils::write_log("Log written to " + filePath, SUCCESS);
+        agent_utils::write_log("analysis_repository: save: log written to " + filePath, SUCCESS);
         return SUCCESS;
     }
 

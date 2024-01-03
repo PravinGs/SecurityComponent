@@ -39,12 +39,12 @@ public:
     
     int check(vector<string> & reports)
     {
-        agent_utils::write_log("Checking Network Interfaces starting", INFO);
+        agent_utils::write_log("interface_check: check: checking network interfaces starting", INFO);
         fd = socket(AF_INET, SOCK_DGRAM, 0);
 
         if (fd < 0)
         {
-            agent_utils::write_log("Error checking interfaces (socket)", FAILED);
+            agent_utils::write_log("interface_check: check: error checking interfaces (socket)", FAILED);
             return FAILED;
         }
 
@@ -55,7 +55,7 @@ public:
         if (ioctl(fd, SIOCGIFCONF, &_if) < 0)
         {
             close(fd);
-            agent_utils::write_log("Error checking interfaces (ioctl)", FAILED);
+            agent_utils::write_log("interface_check: check: error checking interfaces (ioctl)", FAILED);
             return FAILED;
         }
 
@@ -88,14 +88,14 @@ public:
                          "(probably trojaned).", _ifr.ifr_name);
                 }
                 reports.push_back(_ifr.ifr_name);
-                agent_utils::write_log(op_msg, FAILED);
+                agent_utils::write_log(interface_check: check: op_msg, FAILED);
                 errors++;
             }
         }
         close(fd);
 
         if (errors == 0) {
-            agent_utils::write_log("No problem detected on ifconfig/ifs. Analyzed " + std::to_string(total) + " interfaces", INFO);
+            agent_utils::write_log("interface_check: check: no problem detected on ifconfig/ifs. analyzed " + std::to_string(total) + " interfaces", INFO);
         }
 
         return SUCCESS;

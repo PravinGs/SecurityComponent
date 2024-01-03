@@ -84,7 +84,7 @@ public:
         if (!result)
         {
             string error = result.description();
-            agent_utils::write_log(FILE_ERROR + file_name, FAILED);
+            agent_utils::write_log("config: read_decoder: " + FILE_ERROR + file_name, FAILED);
             return FAILED;
         }
         pugi::xml_node root = doc.child("root");
@@ -150,7 +150,7 @@ public:
             // cout << "Index [" << sec << "] : " << index << "  size : " << table.size() << "\n";
             
         }
-        agent_utils::write_log("XML parsing success for " + file_name, DEBUG);
+        agent_utils::write_log("config: read_decoder: XML parsing success for " + file_name, DEBUG);
         return SUCCESS;
     }
 
@@ -346,7 +346,7 @@ public:
         if (!result)
         {
             string error = result.description();
-            agent_utils::write_log(FILE_ERROR + file_name, FAILED);
+            agent_utils::write_log("config: read_aconfig: " + FILE_ERROR + file_name, FAILED);
             return FAILED;
         }
 
@@ -364,7 +364,7 @@ public:
             extract_rule_attributes(root, table);
         }
         
-        agent_utils::write_log("XML parsing success for " + file_name, DEBUG);
+        agent_utils::write_log("config: read_aconfig: XML parsing success for " + file_name, DEBUG);
         return SUCCESS;
     }
 
@@ -384,7 +384,7 @@ public:
         std::ofstream file(filePath, std::ios::trunc);
         if (file.is_open())
         {
-            agent_utils::write_log(CLEAN_FILE + " <" + filePath + ">", SUCCESS);
+            agent_utils::write_log("config: clean_file: " + CLEAN_FILE + " <" + filePath + ">", SUCCESS);
             file.close();
             return SUCCESS;
         }
@@ -474,10 +474,10 @@ public:
      */
     int read_decoder_config(const string& path, std::unordered_map<string, decoder>& table)
     {
-        agent_utils::write_log("Reading " + path, DEBUG);
+        agent_utils::write_log("config: read_decoder_config: reading " + path, DEBUG);
         if (!std::filesystem::is_regular_file(path))
         {
-           agent_utils::write_log("Expected a file " + path, FATAL);
+           agent_utils::write_log("config: read_decoder_config: expected a file " + path, FATAL);
         }
         return read_decoder(path, table);
     }
@@ -499,7 +499,7 @@ public:
      */
     int read_xml_rule_config(const string path, std::unordered_map<string, std::unordered_map<int, aconfig>> &table)
     {
-        agent_utils::write_log("Reading " + path, DEBUG);
+        agent_utils::write_log("config: read_xml_rule_config: reading " + path, DEBUG);
         int result = SUCCESS;
         int isFile = 0;
         if (os::is_dir_exist(path) && std::filesystem::is_regular_file(path))
@@ -526,7 +526,7 @@ public:
 
             if (files.size() == 0)
             {
-                agent_utils::write_log(INVALID_PATH + path, FAILED);
+                agent_utils::write_log("config: read_xml_rule_config: " + INVALID_PATH + path, FAILED);
                 return FAILED;
             }
             for (string file : files)
@@ -562,7 +562,7 @@ public:
 
         if (!file)
         {
-            agent_utils::write_log(INVALID_FILE + path, FAILED);
+            agent_utils::write_log("config: read_ini_config_file: " + INVALID_FILE + path, FAILED);
             return FAILED;
         }
 
@@ -580,8 +580,8 @@ public:
             }
             else if (line[0] == '[' && line[line.size() - 1] != ']')
             {
-                agent_utils::write_log(INVALID_FILE + path, FAILED);
-                agent_utils::write_log("Invalid Config file : line number " + std::to_string(index), FAILED);
+                agent_utils::write_log("config: read_ini_config_file: " + INVALID_FILE + path, FAILED);
+                agent_utils::write_log("config: read_ini_config_file: invalid Config file : line number " + std::to_string(index), FAILED);
                 result = FAILED;
                 break;
             }
@@ -593,7 +593,7 @@ public:
                     string key = trim(line.substr(0, delimiter));
                     if (!validate_ini_file_text(key))
                     {
-                        agent_utils::write_log("Invalid Config file : line number " + std::to_string(index), FAILED);
+                        agent_utils::write_log("config: read_ini_config_file: invalid Config file : line number " + std::to_string(index), FAILED);
                         result = FAILED;
                         break;
                     }

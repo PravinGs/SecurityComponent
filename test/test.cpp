@@ -42,6 +42,28 @@ void test_process_controller()
     controller.start();
 
 }
+void tls_server_check()
+{
+    tls_server server;
+    entity_parser parser;
+    Config config;
+    map<string, map<string, string>> config_table;
+    config.read_ini_config_file("/home/champ/SecurityComponent/config/agent.config", config_table);
+    conn_entity entity = parser.get_conn_entity(config_table, "server");
+    server.start(entity);
+}
+
+void tls_client_check()
+{
+    tls_client client;
+    entity_parser parser;
+    Config config;
+    map<string, map<string, string>> config_table;
+    config.read_ini_config_file("/home/champ/SecurityComponent/config/schedule.config", config_table);
+    conn_entity entity = parser.get_conn_entity(config_table, "client");
+    client.start(entity);
+}
+
 int main()
 {
     openlog("agent.service", LOG_INFO | LOG_CONS, LOG_USER);
@@ -52,7 +74,7 @@ int main()
         agent_utils::logfp.open(LOG_PATH, std::ios::app);
     }
     init();
-    test_process_controller();
+    tls_server_check();
     if (agent_utils::logfp.is_open())
     {
         agent_utils::logfp.close();

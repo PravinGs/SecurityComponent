@@ -110,11 +110,11 @@ public:
                 {
                     thread_handler = false;
                 }
-                agent_utils::write_log("Thread execution done.", DEBUG);
+                agent_utils::write_log("log_controller: syslog_manager: thread execution done.", DEBUG);
             }
             if (!thread_handler)
             {
-                agent_utils::write_log("execution stopped from being runnig", DEBUG);
+                agent_utils::write_log("log_controller: syslog_manager: execution stopped from being runnig", DEBUG);
             }
         }
         catch (std::exception &ex)
@@ -179,7 +179,7 @@ public:
             return FAILED;
         }
 
-        agent_utils::write_log("Reading " + entity.name + " starting...", INFO);
+        agent_utils::write_log("log_controller: get_syslog: reading " + entity.name + " starting...", INFO);
         result = service->get_syslog(entity);
         if (result == SUCCESS)
         {

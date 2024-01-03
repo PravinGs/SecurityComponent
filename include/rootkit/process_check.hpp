@@ -102,7 +102,7 @@ class process_check
             if (dir_name.empty() || dir_name.length() > PATH_MAX) 
             {
                 string error = dir_name;
-                agent_utils::write_log(INVALID_PATH + error, FAILED);
+                agent_utils::write_log("process_check: read_proc_dir: " + INVALID_PATH + error, FAILED);
                 return -1;
             }
             for (const auto& entry : std::filesystem::directory_iterator(dir_name)) 
@@ -226,7 +226,7 @@ class process_check
                 /* Check the number of errors */
                 if (error > 15) {
                     string error_msg = "Excessive number of hidden processes. It maybe a false-positive or something really bad is going on.";
-                    agent_utils::write_log(error_msg, CRITICAL);
+                    agent_utils::write_log("process_check: loopAllPids: " + error_msg, CRITICAL);
                     return FAILED;
                 }
 
@@ -280,7 +280,7 @@ class process_check
                         snprintf(op_msg, OS_SIZE_1024, "Process '%d' hidden from "
                                 "kill (%d) or getsid (%d). Possible kernel-level"
                                 " rootkit.", (int)i, _kill0, _gsid0);
-                        agent_utils::write_log(op_msg, CRITICAL);
+                        agent_utils::write_log("process_check: loopAllPids: " + op_msg, CRITICAL);
                         error++;
                     }
                 } else if (_kill1 != _gsid1 ||
@@ -293,7 +293,7 @@ class process_check
                         snprintf(op_msg, OS_SIZE_1024, "Process '%d' hidden from "
                                 "kill (%d), getsid (%d) or getpgid. Possible "
                                 "kernel-level rootkit.", (int)i, _kill1, _gsid1);
-                        agent_utils::write_log(op_msg, CRITICAL);
+                        agent_utils::write_log("process_check: loopAllPids: " + op_msg, CRITICAL);
                         error++;
                     }
                 } else if (_proc_read != _proc_stat  ||
@@ -305,7 +305,7 @@ class process_check
 
                         snprintf(op_msg, OS_SIZE_1024, "Process '%d' hidden from "
                                 "/proc. Possible kernel level rootkit.", (int)i);
-                        agent_utils::write_log(op_msg, CRITICAL);
+                        agent_utils::write_log("process_check: loopAllPids: " + op_msg, CRITICAL);
                         error++;
                     }
                 } else if (_gsid1 && _kill1 && !_ps0) {
@@ -316,7 +316,7 @@ class process_check
                         snprintf(op_msg, OS_SIZE_1024, "Process '%d' hidden from "
                                 "ps. Possible trojaned version installed.",
                                 (int)i);
-                        agent_utils::write_log(op_msg, CRITICAL);
+                        agent_utils::write_log("process_check: loopAllPids: " + op_msg, CRITICAL);
                         error++;
                     }
                 }
@@ -345,12 +345,12 @@ class process_check
 
             if ((result = loopAllPids(location)))
             {
-                agent_utils::write_log("Successfully process check completed.", INFO);
+                agent_utils::write_log("process_check: check: successfully process check completed.", INFO);
             }
             if (error == 0) 
             {
                 string op_msg = "No hidden process by Kernel-level rootkits." + location + " is not trojaned. Analyzed " + std::to_string(total) + " processes.";
-                agent_utils::write_log(op_msg, SUCCESS);
+                agent_utils::write_log("process_check: check: " + op_msg, SUCCESS);
             }
             return result;
         }

@@ -40,7 +40,7 @@ private:
         }
 
         /* Set the CA file location for the server */
-        if (SSL_CTX_load_verify_locations(ctx, entity.ca_cert_path.c_str(), NULL) != 1)
+        if (SSL_CTX_load_verify_locations(ctx, entity.ca_pem.c_str(), NULL) != 1)
         {
             agent_utils::write_log("tls_client: get_ssl_context: Could not set the CA file location.", FAILED);
             SSL_CTX_free(ctx);
@@ -48,10 +48,10 @@ private:
         }
 
         /* Load the client's CA file location as well */
-        SSL_CTX_set_client_CA_list(ctx, SSL_load_client_CA_file(entity.ca_cert_path.c_str()));
+        SSL_CTX_set_client_CA_list(ctx, SSL_load_client_CA_file(entity.cert_pem.c_str()));
 
         /* Set the server's certificate signed by the CA */
-        if (SSL_CTX_use_certificate_file(ctx, entity.server_cert_path.c_str(), SSL_FILETYPE_PEM) != 1)
+        if (SSL_CTX_use_certificate_file(ctx, entity.cert_pem.c_str(), SSL_FILETYPE_PEM) != 1)
         {
             agent_utils::write_log("tls_client: get_ssl_context: Could not set the server's certificate.", FAILED);
             SSL_CTX_free(ctx);
@@ -59,7 +59,7 @@ private:
         }
 
         /* Set the server's key for the above certificate */
-        if (SSL_CTX_use_PrivateKey_file(ctx, entity.server_private_key.c_str(), SSL_FILETYPE_PEM) != 1)
+        if (SSL_CTX_use_PrivateKey_file(ctx, entity.key_pem.c_str(), SSL_FILETYPE_PEM) != 1)
         {
             agent_utils::write_log("tls_client: get_ssl_context: Could not set the server's key.", FAILED);
             SSL_CTX_free(ctx);
@@ -135,6 +135,7 @@ public:
 
         home();
     }
+    
     int send_string(const std::string &data)
     {
         int bytes_sent = SSL_write(ssl, data.c_str(), data.length());

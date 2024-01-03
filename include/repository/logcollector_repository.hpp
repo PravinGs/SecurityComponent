@@ -33,7 +33,7 @@ private:
         std::ofstream file(file_path);
         if (!file)
         {
-            agent_utils::write_log(FILE_ERROR + file_path, FAILED);
+            agent_utils::write_log("logcollector_repository: get_json_write_path: " + FILE_ERROR + file_path, FAILED);
             return FAILED;
         }
         file.close();
@@ -53,7 +53,7 @@ private:
         Json::StreamWriterBuilder writer_builder;
         if (!file)
         {
-            agent_utils::write_log(FWRITE_FAILED + json_write_path, FAILED);
+            agent_utils::write_log("logcollector_repository: save_syslog: " + FWRITE_FAILED + json_write_path, FAILED);
             return FAILED;
         }
 
@@ -76,7 +76,7 @@ private:
         std::unique_ptr<Json::StreamWriter> writer(writer_builder.newStreamWriter());
         writer->write(json, &file);
         file.close();
-        agent_utils::write_log(FWRITE_SUCCESS + json_write_path, SUCCESS);
+        agent_utils::write_log("logcollector_repository: save_syslog: " + FWRITE_SUCCESS + json_write_path, SUCCESS);
         return SUCCESS;
     }
 
@@ -124,7 +124,7 @@ private:
 
         file.close();
 
-        agent_utils::write_log(FWRITE_SUCCESS + file_path, DEBUG);
+        agent_utils::write_log("logcollector_repository: save_as_archive: " + FWRITE_SUCCESS + file_path, DEBUG);
 
         return SUCCESS;
     }
@@ -132,7 +132,7 @@ private:
 public:
     int save(log_entity &entity, const vector<string> &logs)
     {
-        agent_utils::write_log("Storing " + entity.name + " logs started", DEBUG);
+        agent_utils::write_log("logcollector_repository: save: storing " + entity.name + " logs started", DEBUG);
         if (entity.storage_type == "json")
         {
             return save_as_json(entity, logs);

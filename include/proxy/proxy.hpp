@@ -114,7 +114,7 @@ public:
     {
         if (entity.application.empty())
         {
-            agent_utils::write_log("Application Name not configured for patch update.", FAILED);
+            agent_utils::write_log("proxy: validate_patch_entity: application name not configured for patch update.", FAILED);
             return false;
         }
 

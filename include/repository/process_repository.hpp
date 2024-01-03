@@ -25,7 +25,7 @@ class process_repository
             Json::StreamWriterBuilder writerBuilder;
             if (!file)
             {
-                agent_utils::write_log(FWRITE_FAILED + path, FAILED);
+                agent_utils::write_log("process_repository: save:" + FWRITE_FAILED + path, FAILED);
                 return FAILED;
             }
             
@@ -50,7 +50,7 @@ class process_repository
             writer->write(jsonData, &file);
 
             file.close();
-            agent_utils::write_log(FWRITE_SUCCESS + path, SUCCESS);
+            agent_utils::write_log("process_repository: save: " + FWRITE_SUCCESS + path, SUCCESS);
             return SUCCESS;
         }
 

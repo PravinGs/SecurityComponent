@@ -19,7 +19,7 @@ private:
 
         if (!fp.is_open())
         {
-            agent_utils::write_log(FILE_ERROR + file, FAILED);
+            agent_utils::write_log("trojan_check: patternMatching: " + FILE_ERROR + file, FAILED);
             return false;
         }
         char buffer[OS_SIZE_1024];
@@ -30,7 +30,7 @@ private:
         }
         if (fp.bad())
         {
-            agent_utils::write_log(FREAD_FAILED + file, FAILED);
+            agent_utils::write_log("trojen_check: patternMatching: " + FREAD_FAILED + file, FAILED);
             return false;
         }
         std::regex regex(pattern);
@@ -45,7 +45,7 @@ public:
         string line;
         if (!fp)
         {
-            agent_utils::write_log(FILE_ERROR + filePath, FAILED);
+            agent_utils::write_log("trojen_check: check: " + FILE_ERROR + filePath, FAILED);
             return FAILED;
         }
         detected = 0;
@@ -71,7 +71,7 @@ public:
                     detected = 1;
                     reports.push_back(path+","+pattern);
                     string errorMessage = "Trojaned version of file " + path + " detected. Signature used: " + pattern;
-                    agent_utils::write_log(errorMessage, CRITICAL);
+                    agent_utils::write_log("trojen_check: check: " + errorMessage, CRITICAL);
                 }
             }
         }
@@ -79,7 +79,7 @@ public:
         if (detected == 0)
         {
             string errorMessage = "No binaries with any trojan detected. Analyzed " + std::to_string(total) + " files.";
-            agent_utils::write_log(errorMessage);
+            agent_utils::write_log("trojen_check: check: " + errorMessage);
         }
         return SUCCESS;
     }
