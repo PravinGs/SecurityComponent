@@ -16,14 +16,14 @@ private:
     {
         string file_path = BASE_LOG_DIR;
 
-        if (os::is_dir_exist(file_path) == FAILED)
+        if (!os::is_dir_exist(file_path))
         {
             os::create_dir(file_path);
         }
 
         file_path += "json";
 
-        if (os::is_dir_exist(file_path) == FAILED)
+        if (!os::is_dir_exist(file_path))
         {
             os::create_dir(file_path);
         }

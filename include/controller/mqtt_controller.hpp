@@ -29,7 +29,7 @@ public:
     {
          if (!is_valid_config)
         {
-            return FAILED;
+            return;
         }
         mqtt_entity entity = parser.get_mqtt_entity(config_table);
         if (!proxy.validate_mqtt_entity(entity)) { return; }

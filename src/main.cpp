@@ -1,4 +1,3 @@
-#include "controller/main_controller.hpp"
 #include "common.hpp"
 
 void handle_message(const string &json_string)

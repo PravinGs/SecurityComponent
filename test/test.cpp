@@ -5,6 +5,8 @@
 #include "controller/monitor_controller.hpp"
 #include "controller/mqtt_controller.hpp"
 #include "controller/patch_controller.hpp"
+#include "comm/server.hpp"
+#include "comm/client.hpp"
 
 void test_mqtt_controller()
 {

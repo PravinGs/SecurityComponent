@@ -48,12 +48,12 @@ public:
 
             if (entity.last_read_time == std::numeric_limits<time_t>::min())
             {
-                throw std::invalid_argument("No Specific time mentioned to collect log");
+                throw std::invalid_argument("proxy: validate_log_entity: no Specific time mentioned to collect log");
             }
 
             if (entity.format == "applog" && entity.columns.size() == 0)
             {
-                throw std::invalid_argument("Log attributes not configured for " + entity.name);
+                throw std::invalid_argument("proxy: validate_log_entity: log attributes not configured for " + entity.name);
             }
 
             return true;
@@ -225,10 +225,10 @@ public:
         {
             agent_utils::write_log("Log reading directory not exists, creating new directory");
             string tmp_config_dir = BASE_CONFIG_DIR;
-            if (os::is_dir_exist(tmp_config_dir) == FAILED)
+            if (!os::is_dir_exist(tmp_config_dir))
                 os::create_dir(tmp_config_dir);
             tmp_config_dir += BASE_CONFIG_TMP;
-            if (os::is_dir_exist(tmp_config_dir) == FAILED)
+            if (!os::is_dir_exist(tmp_config_dir))
                 os::create_dir(tmp_config_dir);
         }
         std::ofstream temp_config_file(temp_config_path);

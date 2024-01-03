@@ -50,7 +50,7 @@ class process_check
 
             string filePath = "/proc/" + std::to_string(pid);
 
-            return os::is_dir_exist(filePath);
+            return (os::is_dir_exist(filePath)) ? SUCCESS : FAILED;
         }
 
         int proc_chdir(int pid)

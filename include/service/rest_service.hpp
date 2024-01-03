@@ -35,6 +35,27 @@ public:
         return 0;
     }
 
+    static string get_post_url_by_name(const rest_entity& entity, const string& type)
+    {
+        if (type == "log") 
+        {
+            return entity.logs_post_url;
+        } else if (type == "ids")
+        {
+            return entity.ids_post_url;
+        } else if (type == "patch")
+        {
+            return entity.patch_get_url;
+        } else if (type == "resource")
+        {
+            return entity.resources_post_url;
+        }
+        else
+        {
+            return "";
+        }
+
+    }
 public:
     static long post(const string &post_url, const string &attribute_name, const string &json_file)
     {
@@ -110,21 +131,34 @@ public:
         return http_code;
     }
 
-    static long post(const rest_entity& entity, const string& name)
+    static int start(const rest_entity& entity, const string& name)
     {
         long http_code = 0L;
         vector<string> json_files;
+        string post_url = get_post_url_by_name(entity, name);
         string path = BASE_LOG_DIR;
-        int result = os::get_regular_files(path + "json/", json_files);
+        int result = os::get_regular_files(name + "json/", json_files);
         if (result == FAILED)
         {
-            agent_utils::write_log(FILE_ERROR + log_name, http_code);
-            return http_code;
+            agent_utils::write_log(FILE_ERROR + path, FAILED);
+            return FAILED;
+        }
+
+        if (post_url.empty()) 
+        {
+            agent_utils::write_log("rest_service: start: invalid name given", FAILED);
+            return FAILED;
+        }
+
+        if (entity.attribute_name.empty())
+        {
+             agent_utils::write_log("rest_service: start: invalid attribute name given", FAILED);
+            return FAILED;
         }
 
         for (const string &json_file : json_files)
         {
-            http_code = post(post_url, attribute_name, json_file);
+            http_code = post(post_url, entity.attribute_name, json_file);
         }
 
         return http_code;

@@ -7,6 +7,7 @@ typedef struct process_entity process_entity;
 typedef struct patch_entity patch_entity;
 typedef struct mqtt_entity mqtt_entity;
 typedef struct rest_entity rest_entity;
+typedef struct conn_entity conn_entity;
 
 struct log_entity
 {
@@ -87,6 +88,16 @@ struct rest_entity
     string ids_post_url;
     string patch_get_url;
     string resources_post_url;
+    string attribute_name;
     string ca_cert_path;
     string client_cert_path;
+};
+
+struct conn_entity
+{
+    int port;
+    string conn_string;
+    string ca_cert_path;
+    string server_cert_path;
+    string server_private_key;
 };

@@ -173,7 +173,7 @@ public:
      *         - SUCCESS if the directory exists.
      *         - FAILED if the directory does not exist.
      */
-    static int is_dir_exist(const string &dirName);
+    static bool is_dir_exist(const string &dirName);
 
     /**
      * @brief Create a directory.

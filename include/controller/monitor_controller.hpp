@@ -32,7 +32,7 @@ public:
     {
          if (!is_valid_config)
         {
-            return FAILED;
+            return ;
         }
         std::vector<string> processes{"tcp", "monitor"};
 

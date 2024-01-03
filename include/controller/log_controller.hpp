@@ -5,7 +5,7 @@
 #include "service/logcollector_service.hpp"
 #include "service/config_service.hpp"
 #include "proxy/proxy.hpp"
-#include "service/curl_service.hpp"
+#include "service/rest_service.hpp"
 #include "model/entity_parser.hpp"
 
 class log_controller

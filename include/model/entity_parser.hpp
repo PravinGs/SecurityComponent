@@ -132,7 +132,6 @@ public:
     rest_entity get_rest_entity(map<string, map<string, string>> &config_table)
     {
         rest_entity entity;
-        mqtt_entity entity;
         entity.logs_post_url = config_table["cloud"]["logs_post_url"];
         entity.ids_post_url = config_table["cloud"]["ids_post_url"];
         entity.resources_post_url = config_table["cloud"]["resources_post_url"];
