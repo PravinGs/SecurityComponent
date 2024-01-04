@@ -38,7 +38,7 @@ void test_log_controller()
 
 void test_process_controller()
 {
-    monitor_controller controller("/home/pravin/micro-service/config/schedule.config");
+    monitor_controller controller("/home/champ/SecurityComponent/config/schedule.config");
     controller.start();
 
 }

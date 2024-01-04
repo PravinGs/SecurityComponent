@@ -32,7 +32,7 @@ void mqtt_client::start(const mqtt_entity &entity)
     {
         client->start_consuming();
 
-        agent_utils::write_log(entity.client_id + " : connecting to the mqtt server", DEBUG);
+        agent_utils::write_log("mqtt_client: start: " + entity.client_id + " : connecting to the mqtt server", DEBUG);
         auto tok = client->connect(conn_opts);
 
         // Getting the connect response will block waiting for the
@@ -47,7 +47,7 @@ void mqtt_client::start(const mqtt_entity &entity)
             for (const string &topic : entity.topics)
             {
                 client->subscribe(topic, entity.qos)->wait();
-                agent_utils::write_log(entity.client_id + ": subscribe to " + topic, DEBUG);
+                agent_utils::write_log("mqtt_client: start: " + entity.client_id + ": subscribe to " + topic, DEBUG);
             }
         }
 
@@ -65,7 +65,7 @@ void mqtt_client::start(const mqtt_entity &entity)
         // But we check, just to make sure.
         if (client->is_connected())
         {
-            agent_utils::write_log(entity.client_id + " : Shutting down and disconnecting from the MQTT server...", DEBUG);
+            agent_utils::write_log("mqtt_client: start: " + entity.client_id + " : Shutting down and disconnecting from the MQTT server...", DEBUG);
             for (const auto &topic : entity.topics)
             {
                 client->unsubscribe(topic)->wait();
@@ -75,13 +75,13 @@ void mqtt_client::start(const mqtt_entity &entity)
         }
         else
         {
-            agent_utils::write_log(entity.client_id + " disconnected", DEBUG);
+            agent_utils::write_log("mqtt_client: start: " + entity.client_id + " disconnected", DEBUG);
         }
     }
     catch (const mqtt::exception &e)
     {
         string error = e.what();
-        agent_utils::write_log("mqtt_service excepiton: " + error, ERROR);
+        agent_utils::write_log("mqtt_client: start: mqtt_service excepiton: " + error, ERROR);
         std::cerr << e.what() << '\n';
     }
 }

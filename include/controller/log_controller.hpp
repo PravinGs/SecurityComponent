@@ -7,31 +7,34 @@
 #include "proxy/proxy.hpp"
 #include "service/rest_service.hpp"
 #include "model/entity_parser.hpp"
+#include "comm/client.hpp"
 
 class log_controller
 {
 private:
     map<string, map<string, string>> config_table;
+    tls_client client;
     ILog *service = nullptr;
     Config config;
     entity_parser parser;
     bool is_valid_config;
     bool thread_handler;
+    int client_connection;
     vector<std::future<int>> async_syslog_tasks;
     vector<std::future<int>> async_applog_tasks;
     Proxy proxy;
 
 public:
-    log_controller(const map<string, map<string, string>> &config_table) : config_table(config_table), service(new log_service()), is_valid_config(true), thread_handler(true) {}
+    log_controller(const map<string, map<string, string>> &config_table) : config_table(config_table), service(new log_service()), is_valid_config(true), thread_handler(true), client_connection(0) {}
 
-    log_controller(const string &config_file) : service(new log_service()), thread_handler(true)
+    log_controller(const string &config_file) : service(new log_service()), thread_handler(true), client_connection(0)
     {
         is_valid_config = (config.read_ini_config_file(config_file, config_table) != SUCCESS) ? false : true;
     }
 
     void start()
     {
-        std::vector<string> processes{"tcp", "syslog", "applog"};
+        std::vector<string> processes{"syslog", "applog"};
 
         std::vector<std::thread> threads(processes.size());
 
@@ -62,17 +65,13 @@ public:
 
     void assign_task_to_thread(const string &process)
     {
-        if (process == "tcp")
+        if (process == "applog")
         {
-            std::cout << "This functionality not yet developed" << '\n';
-        }
-        else if (process == "applog")
-        {
-           applog_manager();
+            applog_manager();
         }
         else if (process == "syslog")
         {
-           syslog_manager();
+            syslog_manager();
         }
     }
 
@@ -86,6 +85,13 @@ public:
         }
 
         log_entity entity = parser.get_log_entity(config_table, "syslog");
+
+        client_connection = client.start(entity.connection);
+
+        if (client_connection == FAILED)
+        {
+            agent_utils::write_log("log_controller: syslog_manager: tls connection to server failed", WARNING);
+        }
 
         if (entity.time_pattern.empty())
         {
@@ -181,11 +187,12 @@ public:
 
         agent_utils::write_log("log_controller: get_syslog: reading " + entity.name + " starting...", INFO);
         result = service->get_syslog(entity);
-        if (result == SUCCESS)
+        if (result == SUCCESS && client_connection == SUCCESS)
         {
+            client_data data = connection::build_client_data("logcollector", "publish");
+            client.send_client_data(data);
             agent_utils::update_log_written_time(entity.name, entity.current_read_time);
         }
-
         return result;
     }
 

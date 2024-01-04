@@ -83,13 +83,11 @@ private:
     int save_as_json(log_entity &entity, const vector<string> logs)
     {
         Json::Value json;
-        string host;
-        agent_utils::get_hostname(host);
         if (entity.format == "syslog")
         {
             json["OrgId"] = 234225;
             json["AppName"] = entity.name;
-            json["Source"] = host;
+            json["Source"] = os::host_name;
             return save_syslog(entity, logs, json);
         }
         else

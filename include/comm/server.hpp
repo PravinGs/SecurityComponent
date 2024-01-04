@@ -12,13 +12,13 @@ class tls_server
 private:
     const int THREAD_POOL_SIZE = 5;
     std::queue<SSL *> ssl_queue;
+    std::queue<client_data> rest_queue;
     std::vector<std::thread> thread_pool;
 
 private:
     void *handle_client(void *arg)
     {
         SSL *client_ssl = (SSL *)arg;
-
         try
         {
             home(client_ssl);
@@ -27,10 +27,7 @@ private:
         {
             agent_utils::write_log("tls_server: handle_client: Exception during handling client: " + std::string(e.what()), WARNING);
         }
-
-        // Free the SSL object
         SSL_free(client_ssl);
-
         return nullptr;
     }
 
@@ -189,39 +186,41 @@ private:
         }
     }
 
-    string receive_string(SSL *ssl, bool &handler)
-    {
-        const int buffer_size = 4096;
-        char buffer[buffer_size];
-
-        int bytes_received = SSL_read(ssl, buffer, buffer_size);
-        if (bytes_received == 0)
-        {
-            std::cerr << "closed it is connection" << '\n';
-            handler = false;
-        }
-        else if (bytes_received <= 0)
-        {
-            std::cerr << "Error receiving data: " << ERR_error_string(ERR_get_error(), nullptr) << std::endl;
-            handler = false;
-            return "";
-        }
-
-        return string(buffer, bytes_received);
-    }
-
     void home(SSL *ssl)
     {
-        bool handler = true;
-        while (handler)
+        server_data s_data;
+        s_data.status = 1;
+        std::strncpy(s_data.data, "ok", 2);
+        s_data.data[sizeof(s_data.data) - 1] = '\0';
+        string server_data_buffer(reinterpret_cast<const char *>(&s_data), sizeof(s_data));
+        char received_buffer[sizeof(client_data)];
+
+        int bytes_received = SSL_read(ssl, received_buffer, sizeof(received_buffer));
+
+        if (bytes_received < 0)
         {
-            string data = receive_string(ssl, handler);
-            if (data == "stop")
-            {
-                break;
-            }
-            cout << data << '\n';
+            std::cerr << "Error receiving data: " << ERR_error_string(ERR_get_error(), nullptr) << std::endl;
+            return;
         }
+        else
+        {
+            client_data c_data = *reinterpret_cast<client_data *>(received_buffer);
+            // once the processing queue received signal from one of the application
+            // if data is valid.
+            // it should send the data the rest_service from here.
+        }
+        
+        //This write should not be a block thread, because the rest service might take some time to complete,
+        // It should not block the plugin applicaiton execution.
+        int bytes_sent = SSL_write(ssl, server_data_buffer.c_str(), server_data_buffer.size());
+
+        if (bytes_sent < 0)
+        {
+            std::cerr << "Error sending data: " << ERR_error_string(ERR_get_error(), nullptr) << std::endl;
+            return;
+        }
+
+        return;
     }
 
 public:
@@ -278,7 +277,7 @@ public:
             std::string conn_address(client_ip);
 
             std::string conn_port = std::to_string(ntohs(client_addr.sin_port));
-            agent_utils::write_log("tls_server: start: New Connection from "+ conn_address + " : " + conn_port, DEBUG);
+            agent_utils::write_log("tls_server: start: New Connection from " + conn_address + " : " + conn_port, DEBUG);
 
             if (!(ssl = SSL_new(ctx)))
             {

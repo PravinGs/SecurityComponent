@@ -19,6 +19,7 @@ public:
         entity.write_path = config_table[name]["write_path"];
         entity.time_pattern = config_table[name]["time_pattern"];
         entity.storage_type = config_table[name]["storage_type"];
+        entity.connection  = get_conn_entity(config_table, "client");
         string format = config_table[name]["format"];
         if (format.empty())
         {
@@ -69,6 +70,7 @@ public:
         entity.write_path = config_table["analysis"]["write_path"];
         entity.time_pattern = config_table["analysis"]["time_pattern"];
         entity.storage_type = config_table["analysis"]["storage_type"];
+        entity.connection  = get_conn_entity(config_table, "client");
         return entity;
     }
 
@@ -78,6 +80,7 @@ public:
         entity.write_path = config_table["process"]["write_path"];
         entity.time_pattern = config_table["process"]["time_pattern"];
         entity.storage_type = config_table["process"]["storage_type"];
+        entity.connection  = get_conn_entity(config_table, "client");
         return entity;
     }
 
@@ -90,6 +93,7 @@ public:
         entity.password = config_table["firmware"]["password"];
         entity.url      = config_table["firmware"]["url"];
         entity.ca_cert_path = config_table["firmware"]["ca_cert_path"];
+        entity.connection  = get_conn_entity(config_table, "client");
         entity.client_cert_path = config_table["firmware"]["client_cert_path"];
         try
         {
@@ -137,6 +141,7 @@ public:
         entity.resources_post_url = config_table["cloud"]["resources_post_url"];
         entity.ca_cert_path = config_table["cloud"]["ca_cert_path"];
         entity.client_cert_path = config_table["cloud"]["client_cert_path"];
+        entity.connection  = get_conn_entity(config_table, "client");
         return entity;
     }
 

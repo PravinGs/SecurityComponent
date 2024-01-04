@@ -6,89 +6,97 @@
 #include "proxy/proxy.hpp"
 #include "model/entity.hpp"
 #include "model/entity_parser.hpp"
-
+#include "comm/client.hpp"
 
 class analysis_controller
 {
-    private:
-        I_analysis * analysis = nullptr; /**< A private pointer to the log_analysis service. */
-        Config config;
-        Proxy proxy;
-        entity_parser parser;
-        map<string, map<string,string>> config_table;
-        bool is_valid_config;
-        
-    public: 
+private:
+    I_analysis *analysis = nullptr; /**< A private pointer to the log_analysis service. */
+    tls_client client;
+    Config config;
+    Proxy proxy;
+    entity_parser parser;
+    map<string, map<string, string>> config_table;
+    bool is_valid_config;
+    bool thread_handler;
+    int client_connection;
 
-        analysis_controller(const map<string, map<string,string>>& config_table) : analysis(new log_analysis()), config_table(config_table), is_valid_config(true) {} 
+public:
+    analysis_controller(const map<string, map<string, string>> &config_table) : analysis(new log_analysis()), config_table(config_table), is_valid_config(true), thread_handler(true), client_connection(0) {}
 
-        analysis_controller(const string& config_file) : analysis(new log_analysis())
+    analysis_controller(const string &config_file) : analysis(new log_analysis()), thread_handler(true), client_connection(0)
+    {
+        is_valid_config = (config.read_ini_config_file(config_file, config_table) != SUCCESS) ? false : true;
+    }
+
+    int start()
+    {
+        int result = SUCCESS;
+
+        if (!is_valid_config)
         {
-            is_valid_config = (config.read_ini_config_file(config_file, config_table) != SUCCESS) ? false: true;
+            return FAILED;
         }
 
-        void start()
+        analysis_entity entity = parser.get_analysis_entity(config_table);
+
+        client_connection = client.start(entity.connection);
+
+        if (client_connection == FAILED)
         {
-            std::vector<string> processes{"tcp", "analysis"};
+            agent_utils::write_log("analysis_controller: start: tls connection to the host application failed", WARNING);
+        }
 
-            std::vector<std::thread> threads(processes.size());
+        if (!proxy.validate_analysis_entity(entity))
+        {
+            return FAILED;
+        }
 
-            for (int i = 0; i < (int)processes.size(); i++)
+        if (entity.time_pattern.empty())
+        {
+            return analysis->start(entity);
+        }
+
+        try
+        {
+            auto cron = cron::make_cron(entity.time_pattern);
+            while (thread_handler)
             {
-                string process_name = processes[i];
-                try
+                std::chrono::system_clock::time_point current_time = std::chrono::system_clock::now();
+                std::time_t time = std::chrono::system_clock::to_time_t(current_time);
+                std::time_t next = cron::cron_next(cron, time);
+                std::chrono::system_clock::time_point target_point = std::chrono::system_clock::from_time_t(next);
+                std::tm *next_time_info = std::localtime(&next);
+                agent_utils::print_next_execution_time(next_time_info);
+                std::chrono::duration<double> duration = target_point - current_time;
+                agent_utils::print_duration(duration);
+                std::this_thread::sleep_for(duration);
+                result = analysis->start(entity);
+                if (result == FAILED)
                 {
-                    threads[i] = std::thread([&, process_name]()
-                                            { assign_task_to_thread(process_name); });
+                    thread_handler = false;
                 }
-                catch (const std::exception &e)
+                else
                 {
-                    std::cerr << e.what() << '\n';
+                    client_data data = connection::build_client_data("analysis", "publish");
+                    client.send_client_data(data); // handle have to updated for data not being send to host applicaiton.
                 }
+                agent_utils::write_log("analysis_controller: start: thread execution done.", DEBUG);
             }
-
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-
-            for (auto &th : threads)
+            if (!thread_handler)
             {
-                if (th.joinable())
-                {
-                    th.join();
-                }
+                agent_utils::write_log("analysis_controller: start: execution stopped from being runnig", DEBUG);
             }
         }
-
-        void assign_task_to_thread(const string &process)
+        catch (const std::exception &e)
         {
-            if (process == "tcp")
-            {
-                std::cout << "This functionality not yet developed" << '\n';
-            }
-            else if (process == "analysis")
-            {
-                cout << "Log analysis result : " << '\n';
-            }
-
+            std::cerr << e.what() << '\n';
         }
 
-        int  analyse()
-        {
-            analysis_entity entity = parser.get_analysis_entity(config_table);
+        int result = analysis->start(entity);
 
-            if (!proxy.validate_analysis_entity(entity)) { return FAILED; }
+        return result;
+    }
 
-            if (entity.time_pattern.empty())
-            {
-                return analysis->start(entity);
-            }
-
-            // here scheduling code willbe applied 
-
-            int result = analysis->start(entity);
-
-            return result;
-        }
-
-        virtual ~analysis_controller() {delete analysis;}
-
+    virtual ~analysis_controller() { delete analysis; }
 };

@@ -42,8 +42,6 @@ public:
 
     int save(const vector<log_event> &alerts)
     {
-        string host;
-        agent_utils::get_hostname(host);
         if (alerts.size() == 0)
         {
             agent_utils::write_log("analysis_repository: save: no decoder matched", INFO);
@@ -52,7 +50,7 @@ public:
         string filePath = os::get_json_write_path("log-analysis-report");
         Json::Value json;
         json["OrgId"] = 5268;
-        json["Source"] = host;
+        json["Source"] = os::host_name;
         json["AppName"] = "system_events";
         json["Alerts"] = Json::Value(Json::arrayValue);
         Json::Value alert;

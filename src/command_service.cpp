@@ -28,7 +28,7 @@ int command::read_command(const string& command, vector<string> &logs)
 
     if (!process)
     {
-        agent_utils::write_log("Failed to open this process for " + command, FAILED);
+        agent_utils::write_log("command: read_commmand: failed to open this process for " + command, FAILED);
         return FAILED;
     }
 

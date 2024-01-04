@@ -9,13 +9,26 @@ typedef struct mqtt_entity mqtt_entity;
 typedef struct rest_entity rest_entity;
 typedef struct conn_entity conn_entity;
 
+struct conn_entity
+{
+    int port;
+    string conn_string;
+    string ca_pem;
+    string cert_pem;
+    string key_pem;
+
+    conn_entity() : port(-1) {}
+};
+
 struct log_entity
 {
     int count;
+    char remote;
+    bool is_empty;
+    char delimeter;
     string format;
     string name;
     string read_path;
-    char delimeter;
     string write_path;
     vector<string> json_attributes;
     string columns;
@@ -24,8 +37,7 @@ struct log_entity
     vector<string> log_levels;
     std::time_t last_read_time;
     string current_read_time;
-    char remote;
-    bool is_empty;
+    conn_entity connection;
 
     log_entity() : count(0), is_empty(true) {}
 };
@@ -38,6 +50,7 @@ struct analysis_entity
     string write_path;
     string time_pattern;
     string storage_type;
+    conn_entity connection;
 };
 
 struct process_entity
@@ -45,6 +58,7 @@ struct process_entity
     string write_path;
     string time_pattern;
     string storage_type;
+    conn_entity connection;
 };
 
 struct patch_entity
@@ -64,21 +78,22 @@ struct patch_entity
     string username;
     string password;
     string url;
+    conn_entity connection;
 
     patch_entity() : size(0L), max_download_speed(0), min_download_speed(0), retry_time_out(0), retry_count(0), is_sftp(true), is_secure(true) {}
 };
 
 struct mqtt_entity
 {
-    int port; // local dev testing only.
+    int port;
     int qos;
     bool is_secure;
     string client_id;
     string conn_string;
-    vector<string> topics; // this type could be key:value (or) vector (or) single char[]
+    vector<string> topics; 
     string ca_cert_path;
     string client_cert_path;
-
+    conn_entity connection;
     mqtt_entity() : port(8000), qos(1), is_secure(true) {}
 };
 
@@ -91,15 +106,5 @@ struct rest_entity
     string attribute_name;
     string ca_cert_path;
     string client_cert_path;
-};
-
-struct conn_entity
-{
-    int port;
-    string conn_string;
-    string ca_pem;
-    string cert_pem;
-    string key_pem;
-
-    conn_entity(): port(-1) {}
+    conn_entity connection;
 };

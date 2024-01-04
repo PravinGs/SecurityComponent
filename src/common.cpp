@@ -6,7 +6,7 @@ int os::current_year = 0;
 string os::host_name = "";
 bool agent_utils::syslog_enabled = true;
 fstream agent_utils::logfp;
-std::mutex logMutex;
+std::mutex logfile_mutex;
 bool agent_utils::debug = false;
 
 void agent_utils::setup_logger()
@@ -20,8 +20,8 @@ void agent_utils::setup_logger()
         syslog(LOG_INFO, "Syslog testing");
         std::this_thread::sleep_for(std::chrono::seconds(1));
         file.seekg(0, std::ios::end);
-        long updateSize = file.tellg();
-        if (updateSize == size || updateSize == 0L)
+        long updated_size = file.tellg();
+        if (updated_size == size || updated_size == 0L)
         {
             agent_utils::syslog_enabled = false;
         }
@@ -37,7 +37,7 @@ void agent_utils::print_next_execution_time(std::tm *next_time_info)
     char buffer[80];
     std::strftime(buffer, 80, "%Y-%m-%d %H:%M:%S", next_time_info);
     std::string next_time_str(buffer);
-    agent_utils::write_log("Next execution time: " + next_time_str, DEBUG);
+    agent_utils::write_log("agent_utils: print_next_execution_time: next execution time: " + next_time_str, DEBUG);
 }
 
 void agent_utils::print_duration(const std::chrono::duration<double> &duration)
@@ -47,43 +47,43 @@ void agent_utils::print_duration(const std::chrono::duration<double> &duration)
     int minutes = std::chrono::duration_cast<std::chrono::minutes>(remaining_duration).count();
     remaining_duration -= std::chrono::minutes(minutes);
     int seconds = std::chrono::duration_cast<std::chrono::seconds>(remaining_duration).count();
-    agent_utils::write_log("Duration until next execution: " + std::to_string(hours) + " hours, " + std::to_string(minutes) + " minutes, " + std::to_string(seconds) + " seconds.", DEBUG);
+    agent_utils::write_log("agent_utils: print_duration: duration until next execution: " + std::to_string(hours) + " hours, " + std::to_string(minutes) + " minutes, " + std::to_string(seconds) + " seconds.", DEBUG);
 }
 
 string agent_utils::trim(string line)
 {
-    const auto strBegin = line.find_first_not_of(" \t");
-    if (strBegin == string::npos)
+    const auto str_begin = line.find_first_not_of(" \t");
+    if (str_begin == string::npos)
         return "";
 
     const auto strEnd = line.find_last_not_of(" \t");
-    const auto strRange = strEnd - strBegin + 1;
+    const auto strRange = strEnd - str_begin + 1;
 
-    string str = line.substr(strBegin, strRange);
+    string str = line.substr(str_begin, strRange);
     return (str.length() >= 2 && str[0] == '"' && str[str.length() - 1] == '"') ? str.substr(1, str.length() - 2) : str;
 }
 
 void agent_utils::update_log_written_time(const string& app_name, const string& time)
 {
-    string filePath = BASE_CONFIG_DIR;
-    if (!os::is_dir_exist(filePath))
+    string file_path = BASE_CONFIG_DIR;
+    if (!os::is_dir_exist(file_path))
     {
-        os::create_dir(filePath);
+        os::create_dir(file_path);
     }
-    filePath += BASE_CONFIG_TMP;
-    if (!os::is_dir_exist(filePath))
+    file_path += BASE_CONFIG_TMP;
+    if (!os::is_dir_exist(file_path))
     {
-        os::create_dir(filePath);
+        os::create_dir(file_path);
     }
-    filePath += app_name;
-    fstream file(filePath, std::ios::out);
+    file_path += app_name;
+    fstream file(file_path, std::ios::out);
     if (!file.is_open())
     {
-        write_log(INVALID_FILE + filePath, FAILED);
+        write_log("agent_utils: update_log_written_time: " + INVALID_FILE + file_path, FAILED);
         return;
     }
     file << time;
-    write_log("Time " + time + " updated to " + filePath, SUCCESS);
+    write_log("agent_utils: update_log_written_time: time " + time + " updated to " + file_path, SUCCESS);
     file.close();
     return;
 }
@@ -109,7 +109,7 @@ int agent_utils::get_hostname(string &host)
     }
     else
     {
-        write_log("Failed to get the hostname.", FAILED);
+        write_log("agent_utils: get_hostname: failed to get the hostname.", FAILED);
         return FAILED;
     }
     return SUCCESS;
@@ -117,11 +117,14 @@ int agent_utils::get_hostname(string &host)
 
 string agent_utils::get_current_time()
 {
-    char currentTime[20];
+    char current_time[20];
     time_t now = time(NULL);
     struct tm *t = localtime(&now);
-    strftime(currentTime, sizeof(currentTime), "%Y-%m-%d %H:%M:%S", t);
-    return currentTime;
+    strftime(current_time, sizeof(current_time), "%Y-%m-%d %H:%M:%S", t);
+    string s_time(current_time);
+    auto mid = s_time.find_first_of(' ');
+    string time = s_time.substr(0, mid) + "_" + s_time.substr(mid+1);
+    return time;
 }
 
 bool agent_utils::is_valid_time_string(const std::string& timeString) {
@@ -160,11 +163,10 @@ int agent_utils::convert_time_format(const std::string &inputTime, std::string &
     }
     day += std::to_string(d);
     time = trim(inputTime.substr(6, 15));
-    // Get the current year
-    std::time_t currentTime = std::time(nullptr);
-    std::tm *currentTm = std::localtime(&currentTime);
-    tm.tm_year = currentTm->tm_year; // Update the year in tm
-    tm.tm_year += 1900;              // Add 1900 to get the correct year value
+    std::time_t current_time = std::time(nullptr);
+    std::tm *currentTm = std::localtime(&current_time);
+    tm.tm_year = currentTm->tm_year; 
+    tm.tm_year += 1900;              
 
     formatTime = std::to_string(tm.tm_year) + "-" + month + "-" + day + " " + time;
     return SUCCESS;
@@ -174,7 +176,7 @@ void agent_utils::write_log(const string& log)
 {
     string time = get_current_time();
     string line = time + " " + log + "\n";
-    std::lock_guard<std::mutex> lm(logMutex);
+    std::lock_guard<std::mutex> lm(logfile_mutex);
     if (agent_utils::logfp.is_open())
     {
         agent_utils::logfp.write(line.c_str(), line.size());
@@ -214,7 +216,7 @@ void agent_utils::write_log(const string& log, int logLevel)
         break;
     }
     line += "\n";
-    std::lock_guard<std::mutex> lm(logMutex);
+    std::lock_guard<std::mutex> lm(logfile_mutex);
     {
         if (syslog_enabled)
         {
@@ -263,13 +265,13 @@ int os::compress_file(const string& log_file)
     
     if (current_file.size() == 0)
     {
-        agent_utils::write_log("No global log file updated in the code for os", FAILED);
+        agent_utils::write_log("agent_utils: compress_file: no global log file updated in the code for os", FAILED);
         return FAILED;
     }
     fstream file(log_file, std::ios::in | std::ios::binary);
     if (!file.is_open())
     {
-        agent_utils::write_log("No file exist for backup ( " + log_file + " )", FAILED);
+        agent_utils::write_log("agent_utils: compress_file: no file exist for backup ( " + log_file + " )", FAILED);
         return FAILED;
     }
     gzFile zLog;
@@ -277,7 +279,7 @@ int os::compress_file(const string& log_file)
     zLog = gzopen(zipFile.c_str(), "w");
     if (!zLog)
     {
-        agent_utils::write_log(FCREATION_FAILED + zipFile, FAILED);
+        agent_utils::write_log("agent_utils: compress_file: " + FCREATION_FAILED + zipFile, FAILED);
         file.close();
         return FAILED;
     }
@@ -288,7 +290,7 @@ int os::compress_file(const string& log_file)
             continue;
         if (gzwrite(zLog, line.c_str(), static_cast<unsigned int>(line.size())) != (int)line.size())
         {
-            agent_utils::write_log(FWRITE_FAILED + zipFile, FAILED);
+            agent_utils::write_log("agent_utils: compress_file: " + FWRITE_FAILED + zipFile, FAILED);
             result = FAILED;
             break;
         }
@@ -301,7 +303,7 @@ int os::compress_file(const string& log_file)
     }
     else
     {
-        agent_utils::write_log(FDELETE_FAILED + current_file, FAILED);
+        agent_utils::write_log("agent_utils: compress_file: " + FDELETE_FAILED + current_file, FAILED);
     }
     return result;
 }
@@ -352,7 +354,7 @@ string os::get_file_by_current_day(const string& app_name)
     return current_log_file;
 }
 
-int os::handle_local_log_file(int day, int month, int year, string& filePath, const string& app_name)
+int os::handle_local_log_file(int day, int month, int year, string& file_path, const string& app_name)
 {
     int result;
     string current_dir = BASE_LOG_DIR;
@@ -364,64 +366,64 @@ int os::handle_local_log_file(int day, int month, int year, string& filePath, co
         {
             return FAILED;
         }
-        result = create_log_file(day, month, year, filePath, app_name);
+        result = create_log_file(day, month, year, file_path, app_name);
     }
     else
     {
-        result = create_log_file(day, month, year, filePath, app_name);
+        result = create_log_file(day, month, year, file_path, app_name);
     }
 
     return result;
 }
 
-int os::create_log_file(int cDay, int cMonth, int cYear, string& filePath, const string& app_name)
+int os::create_log_file(int curr_day, int curr_month, int curr_year, string& file_path, const string& app_name)
 {
     string current_dir = BASE_LOG_DIR;
     if (!is_dir_exist(current_dir))
     {
-        agent_utils::write_log(INVALID_PATH + current_dir, WARNING);
-        agent_utils::write_log(NEW_PATH + current_dir, INFO);
+        agent_utils::write_log("os: create_log_file: " + INVALID_PATH + current_dir, WARNING);
+        agent_utils::write_log("os: create_log_file: " + NEW_PATH + current_dir, INFO);
         create_dir(current_dir);
     }
     current_dir += BASE_LOG_ARCHIVE;
     if (!is_dir_exist(current_dir))
     {
-        agent_utils::write_log(INVALID_PATH + current_dir, WARNING);
-        agent_utils::write_log(NEW_PATH + current_dir, INFO);
+        agent_utils::write_log("os: create_log_file: " + INVALID_PATH + current_dir, WARNING);
+        agent_utils::write_log("os: create_log_file: " + NEW_PATH + current_dir, INFO);
         create_dir(current_dir);
     }
-    current_dir += "/" + std::to_string(cYear);
+    current_dir += "/" + std::to_string(curr_year);
     if (!is_dir_exist(current_dir))
     {
-        agent_utils::write_log(INVALID_PATH + current_dir, WARNING);
-        agent_utils::write_log(NEW_PATH + current_dir, INFO);
+        agent_utils::write_log("os: create_log_file: " + INVALID_PATH + current_dir, WARNING);
+        agent_utils::write_log("os: create_log_file: " + NEW_PATH + current_dir, INFO);
         create_dir(current_dir);
     }
-    current_dir += "/" + MONTHS[cMonth - 1];
+    current_dir += "/" + MONTHS[curr_month - 1];
     if (!is_dir_exist(current_dir))
     {
-        agent_utils::write_log(INVALID_PATH + current_dir, WARNING);
-        agent_utils::write_log(NEW_PATH + current_dir, INFO);
+        agent_utils::write_log("os: create_log_file: " + INVALID_PATH + current_dir, WARNING);
+        agent_utils::write_log("os: create_log_file: " + NEW_PATH + current_dir, INFO);
         create_dir(current_dir);
     }
-    current_dir += "/" + std::to_string(cDay) + "-" + app_name;
-    filePath = current_dir;
+    current_dir += "/" + std::to_string(curr_day) + "-" + app_name;
+    file_path = current_dir;
     if (std::filesystem::exists(current_dir))
     {
         return SUCCESS;
     }
-    fstream new_file(filePath, std::ios::out);
+    fstream new_file(file_path, std::ios::out);
     if (new_file)
     {
         new_file.close();
-        current_day = cDay;
-        current_month = cMonth;
-        current_year = cYear;
+        current_day = curr_day;
+        current_month = curr_month;
+        current_year = curr_year;
         return SUCCESS;
     }
     else
     {
-        agent_utils::write_log(FCREATION_FAILED + filePath, FAILED);
+        agent_utils::write_log("os: create_log_file: " + FCREATION_FAILED + file_path, FAILED);
     }
     return FAILED;
 }
@@ -440,7 +442,7 @@ int os::delete_file(const string& fileName)
         catch (const std::exception &e)
         {
             string error(e.what());
-            agent_utils::write_log(error, FAILED);
+            agent_utils::write_log("os: delete_file: " + error, FAILED);
         }
     }
     return FAILED;
@@ -460,7 +462,7 @@ int os::create_dir(const string dir_name)
         catch (const std::exception &e)
         {
             string error(e.what());
-            agent_utils::write_log(error, FAILED);
+            agent_utils::write_log("os: create_dir: " + error, FAILED);
         }
     }
     return FAILED;
@@ -491,7 +493,7 @@ int os::get_regular_files(const string& directory, vector<string> &files)
     {
         result = FAILED;
         string except = e.what();
-        agent_utils::write_log(except, FAILED);
+        agent_utils::write_log("os: get_regular_files: " + except, FAILED);
     }
     return result;
 }
@@ -508,29 +510,29 @@ std::time_t agent_utils::string_to_time_t(const string &datetime)
 string os::get_json_write_path(const string & type)
 {
     string time = agent_utils::get_current_time();
-    string filePath = BASE_LOG_DIR;
+    string file_path = BASE_LOG_DIR;
 
-    if (!os::is_dir_exist(filePath))
+    if (!os::is_dir_exist(file_path))
     {
-        os::create_dir(filePath);
+        os::create_dir(file_path);
     }
-    filePath += "json";
-    if (!os::is_dir_exist(filePath))
+    file_path += "json";
+    if (!os::is_dir_exist(file_path))
     {
-        os::create_dir(filePath);
+        os::create_dir(file_path);
     }
-    filePath += "/" + type;
-    if (!os::is_dir_exist(filePath))
+    file_path += "/" + type;
+    if (!os::is_dir_exist(file_path))
     {
-        os::create_dir(filePath);
+        os::create_dir(file_path);
     }
-    filePath += "/" + time + ".json";
-    std::ofstream file(filePath);
+    file_path += "/" + time + ".json";
+    std::ofstream file(file_path);
     if (!file)
     {
-        agent_utils::write_log(FILE_ERROR + filePath, FAILED);
+        agent_utils::write_log("os: get_json_write_path: " + FILE_ERROR + file_path, FAILED);
         return "";
     }
     file.close();
-    return filePath;
+    return file_path;
 }

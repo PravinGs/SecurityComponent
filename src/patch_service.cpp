@@ -19,7 +19,7 @@ int patch_service::download(patch_entity &entity)
     file = fopen(entity.download_path.c_str(), "ab");
     if (file == NULL)
     {
-        agent_utils::write_log("Failed to open " + entity.download_path + " check file path and it's permission", FAILED);
+        agent_utils::write_log("patch_service: download: failed to open " + entity.download_path + " check file path and it's permission", FAILED);
         return FAILED;
     }
 
@@ -27,7 +27,7 @@ int patch_service::download(patch_entity &entity)
 
     if (curl == NULL)
     {
-        agent_utils::write_log("Failed to initialize curl ", FAILED);
+        agent_utils::write_log("patch_service: download: failed to initialize curl ", FAILED);
         return FAILED;
     }
 
@@ -69,7 +69,7 @@ int patch_service::download(patch_entity &entity)
         if (res != CURLE_OK)
         {
             string error = curl_easy_strerror(res);
-            agent_utils::write_log(error, FAILED);
+            agent_utils::write_log("patch_service: download: " + error, FAILED);
             std::cerr << "Error: " << error << "\n";
             if (res == CURLE_COULDNT_RESOLVE_HOST)
             {
@@ -81,7 +81,7 @@ int patch_service::download(patch_entity &entity)
             {
                 std::cerr << "Retrying download in 10 seconds..."
                           << "\n";
-                agent_utils::write_log("Retrying download in 10 seconds...");
+                agent_utils::write_log("patch_service: download: retrying download in 10 seconds...");
                 std::this_thread::sleep_for(std::chrono::seconds(5));
             }
             else
@@ -113,7 +113,7 @@ int patch_service::start(patch_entity &entity)
 
         if (result == SUCCESS)
         {
-            agent_utils::write_log("Download completed..", SUCCESS);
+            agent_utils::write_log("patch_service: start: download completed..", SUCCESS);
             break;
         }
         else
@@ -129,7 +129,7 @@ int patch_service::start(patch_entity &entity)
     if (count <= 0)
     {
         result = SCHEDULAR_WAIT;
-        agent_utils::write_log("Reached time limit exiting from download", WARNING);
+        agent_utils::write_log("patch_service: start: reached time limit exiting from download", WARNING);
     }
 
     return result;

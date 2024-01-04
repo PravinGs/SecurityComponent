@@ -5,6 +5,7 @@
 #include "service/config_service.hpp"
 #include "model/entity_parser.hpp"
 #include "proxy/proxy.hpp"
+#include "comm/client.hpp"
 
 #define DOWNLOAD_WAITING_TIME 5
 
@@ -12,28 +13,36 @@ class patch_controller
 {
 private:
     Ipatch_service *service = nullptr;
+    tls_client client;
     Proxy proxy;
     Config config;
     entity_parser parser;
     map<string, map<string, string>> config_table;
     bool is_valid_config;
+    int client_connection;
 
 public:
-    patch_controller(const map<string, map<string, string>> &config_table) : service(new patch_service()), config_table(config_table), is_valid_config(true) {}
+    patch_controller(const map<string, map<string, string>> &config_table) : service(new patch_service()), config_table(config_table), is_valid_config(true), client_connection(0) {}
 
-    patch_controller(const string &config_file) : service(new patch_service())
+    patch_controller(const string &config_file) : service(new patch_service()), client_connection(0)
     {
         is_valid_config = (config.read_ini_config_file(config_file, config_table) != SUCCESS) ? false : true;
     }
 
     int start()
     {
-
         if (!is_valid_config)
         {
             return FAILED;
         }
         patch_entity entity = parser.get_patch_entity(config_table);
+
+        client_connection = client.start(entity.connection);
+
+        if (client_connection == FAILED)
+        {
+            agent_utils::write_log("patch_controller: start: tls connection to host application failed", WARNING);
+        }
 
         if (!proxy.validate_patch_entity(entity))
         {
@@ -44,13 +53,18 @@ public:
 
         while (result == SERVER_ERROR)
         {
-
             std::chrono::system_clock::time_point currentTime = std::chrono::system_clock::now();
             std::chrono::system_clock::time_point executionTime = currentTime + std::chrono::seconds(DOWNLOAD_WAITING_TIME);
             std::chrono::system_clock::duration duration = executionTime - currentTime;
             int waitingTime = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
             std::this_thread::sleep_for(std::chrono::seconds(waitingTime));
             result = service->start(entity);
+        }
+
+        if (result == SUCCESS && client_connection == SUCCESS)
+        {
+            client_data data = connection::build_client_data("patch", "publish");
+            client.send_client_data(data);
         }
 
         return result;

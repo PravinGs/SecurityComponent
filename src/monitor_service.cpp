@@ -45,7 +45,7 @@ vector<int> monitor_service::get_processes_id() // I don't see it could be optim
 
     if (dir == NULL)
     {
-        agent_utils::write_log(INVALID_PATH + PROC, FAILED);
+        agent_utils::write_log("monitor_service: get_processes_id: " + INVALID_PATH + PROC, FAILED);
         return process_ids;
     }
     while ((entry = readdir(dir)) != NULL)
@@ -92,7 +92,7 @@ double monitor_service::get_memory_usage(const unsigned int &process_id)
     std::ifstream file(path);
     if (!file)
     {
-        agent_utils::write_log(FILE_ERROR + path, FAILED);
+        agent_utils::write_log("monitor_service: get_memory_usage: " + FILE_ERROR + path, FAILED);
         return memory_percentage;
     }
     std::getline(file, line);
@@ -100,7 +100,7 @@ double monitor_service::get_memory_usage(const unsigned int &process_id)
 
     if (!(iss >> size >> resident >> shared >> text >> lib >> data >> dt))
     {
-        agent_utils::write_log("Failed to parse memory statistics.", FAILED);
+        agent_utils::write_log("monitor_service: get_memory_usage: failed to parse memory statistics.", FAILED);
         return memory_percentage;
     }
 
@@ -120,7 +120,7 @@ cpu_table monitor_service::read_processing_time_id(const unsigned int &process_i
     if (!(file.is_open()))
     {
         cpu_table emptyTable;
-        agent_utils::write_log(FILE_ERROR + path, FAILED);
+        agent_utils::write_log("monitor_service: read_processing_time_id: " + FILE_ERROR + path, FAILED);
         return emptyTable;
     }
     std::getline(file, line);
@@ -147,7 +147,7 @@ double monitor_service::get_disk_usage(const unsigned int &process_id)
 
     if (!file.is_open())
     {
-        agent_utils::write_log("Process does not exist with this id : " + std::to_string(process_id), FAILED);
+        agent_utils::write_log("monitor_service: get_disk_usage: process does not exist with this id : " + std::to_string(process_id), FAILED);
         return disk_usage;
     }
     disk_usage = 0.0;
@@ -178,7 +178,7 @@ double monitor_service::get_disk_usage(const unsigned int &process_id)
 
 sys_properties monitor_service::get_system_properties()
 {
-    agent_utils::write_log("Request for collecting system properties started...", INFO);
+    agent_utils::write_log("monitor_service: get_system_properties: request for collecting system properties started...", INFO);
     struct sys_properties properties;
     struct statvfs buffer;
     if (statvfs("/", &buffer) == 0)
@@ -226,7 +226,7 @@ sys_properties monitor_service::get_system_properties()
 
 sys_properties monitor_service::get_availed_system_properties()
 {
-    agent_utils::write_log("Request for collecting availed system properties started..", INFO);
+    agent_utils::write_log("monitor_service: get_availed_system_properties: request for collecting availed system properties started..", INFO);
     struct sys_properties properties;
     struct statvfs buffer;
     if (statvfs("/", &buffer) == 0)
@@ -292,7 +292,7 @@ process_data monitor_service::create_process_data(int process_id)
 
 int monitor_service::get_monitor_data(const process_entity &entity)
 {
-    agent_utils::write_log("Request for collecting process details", DEBUG);
+    agent_utils::write_log("monitor_service: get_monitor_data: request for collecting process details", DEBUG);
     vector<process_data> parent;
     vector<int> process_ids = get_processes_id();
     for (int i = 0; i < (int)process_ids.size(); i++)
@@ -311,8 +311,10 @@ int monitor_service::get_monitor_data(const process_entity &entity)
     {
         task.wait();
     }
-    agent_utils::write_log("Process information collected", DEBUG);
-    return db.save(parent, get_system_properties(), get_availed_system_properties());
+    agent_utils::write_log("monitor_service: get_monitor_data: process information collected", DEBUG);
+    sys_properties props = get_system_properties();
+    sys_properties a_props = get_availed_system_properties();
+    return db.save(parent, props, a_props);
 }
 
 monitor_service::~monitor_service() {}

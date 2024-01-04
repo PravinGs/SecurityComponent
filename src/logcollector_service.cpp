@@ -82,7 +82,7 @@ int log_service::read_syslog_file(log_entity &entity, vector<string> &logs)
     fstream file(entity.read_path, std::ios::in);
     if (!file)
     {
-        agent_utils::write_log(FILE_ERROR + entity.read_path, FAILED);
+        agent_utils::write_log("log_service: read_syslog_file: " + FILE_ERROR + entity.read_path, FAILED);
         return FAILED;
     }
 
@@ -159,7 +159,7 @@ int log_service::get_applog(log_entity &entity)
 {
     int result = SUCCESS;
     vector<string> logs;
-    agent_utils::write_log("Reading " + entity.name + " log starting...", DEBUG);
+    agent_utils::write_log("log_service: get_applog: reading " + entity.name + " log starting...", DEBUG);
   
     if (entity.format == "syslog")
     {
@@ -175,13 +175,13 @@ int log_service::get_applog(log_entity &entity)
     }
     else 
     {
-        agent_utils::write_log("Currently this format not supported " + entity.format, WARNING);
+        agent_utils::write_log("log_service: get_applog: currently this format not supported " + entity.format, WARNING);
         return WARNING;
     }
 
     if (entity.count > 0) { result = db.save(entity, logs); }
 
-    else  { agent_utils::write_log("Read 0 logs for " + entity.name, WARNING); }
+    else  { agent_utils::write_log("log_service: get_applog: read 0 logs for " + entity.name, WARNING); }
 
 
     return result;
@@ -240,14 +240,13 @@ int log_service::read_dpkg_logfile(log_entity &entity, vector<string> &logs)
     fstream file(entity.read_path, std::ios::in);
     if (!file)
     {
-        agent_utils::write_log(FILE_ERROR + entity.read_path, FAILED);
+        agent_utils::write_log("log_service: read_dpkg_logfile: " + FILE_ERROR + entity.read_path, FAILED);
         return FAILED;
     }
 
     while (std::getline(file, line))
     {
-        string log, temp, host;
-        agent_utils::get_hostname(host);
+        string log, temp;
         string current_time_string = line.substr(0, 19);
         std::time_t current_time = agent_utils::string_to_time_t(current_time_string); /* Convert string time to time_t format for comparision between time_t objects */
         if (current_time < entity.last_read_time)
@@ -256,7 +255,7 @@ int log_service::read_dpkg_logfile(log_entity &entity, vector<string> &logs)
         }
 
         log += current_time_string;
-        log += "|" + host;
+        log += "|" + os::host_name;
         log += "| dpkg";
         temp = line.substr(20);
         log += "|" + temp;
@@ -316,7 +315,7 @@ int log_service::get_syslog(log_entity &entity)
     }
     else
     {
-        agent_utils::write_log("Read 0 logs for " + entity.name, DEBUG);
+        agent_utils::write_log("log_service: get_syslog: read 0 logs for " + entity.name, DEBUG);
     }
 
     return result;

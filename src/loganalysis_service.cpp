@@ -155,10 +155,9 @@ string log_analysis::format_syslog(const string &log, const string &format)
     std::stringstream stream;
     if (format == "dpkg")
     {
-        string temp, host;
-        agent_utils::get_hostname(host);
+        string temp;
         format_log += log.substr(0, 19);
-        format_log += "|" + host;
+        format_log += "|" + os::host_name;
         format_log += "|" + format;
         temp = log.substr(20);
         format_log += "|" + temp;
@@ -291,7 +290,7 @@ void log_analysis::add_matched_rule(const id_rule &rule, const string &log)
     {
         matched_rules.push_back(rule);
     }
-    agent_utils::write_log("Rule Id: " + std::to_string(rule.id) + " -> " + log, DEBUG);
+    agent_utils::write_log("log_analysis: add_matched_rule: rule Id: " + std::to_string(rule.id) + " -> " + log, DEBUG);
     return;
 }
 
@@ -541,12 +540,12 @@ int log_analysis::analyse_file(const string &file)
     fstream fp(file, std::ios::in);
     if (!fp)
     {
-        agent_utils::write_log(FILE_ERROR + file, FAILED);
+        agent_utils::write_log("log_analysis: analyse_file: " + FILE_ERROR + file, FAILED);
         return FAILED;
     }
     if (!is_valid_config) // Validating rules are extracted or not.
     {
-        agent_utils::write_log("Failed to parse XML configuration file, check the file", FAILED);
+        agent_utils::write_log("log_analysis: analyse_file: failed to parse XML configuration file, check the file", FAILED);
         fp.close();
         return FAILED;
     }
@@ -562,7 +561,7 @@ int log_analysis::analyse_file(const string &file)
     {
         format = "syslog";
     }
-    agent_utils::write_log("Log analysis started for " + file, DEBUG);
+    agent_utils::write_log("log_analysis: analyse_file: log analysis started for " + file, DEBUG);
     while (std::getline(fp, line))
     {
         if (line.empty())
@@ -577,7 +576,7 @@ int log_analysis::analyse_file(const string &file)
         }
     }
     fp.close();
-    agent_utils::write_log("Total matched logs : " + std::to_string(alert_logs.size()), DEBUG);
+    agent_utils::write_log("log_analysis: analyse_file: total matched logs : " + std::to_string(alert_logs.size()), DEBUG);
 
     return db.save(alert_logs);
 }
@@ -613,7 +612,7 @@ int log_analysis::start(analysis_entity &entity)
 
         if (files.size() == 0)
         {
-            agent_utils::write_log(INVALID_PATH + entity.log_path, FAILED);
+            agent_utils::write_log("log_analysis: start: " + INVALID_PATH + entity.log_path, FAILED);
             return FAILED;
         }
         for (const string &file : files)

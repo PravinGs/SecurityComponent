@@ -61,7 +61,7 @@ public:
         catch (exception &e)
         {
             string error = e.what();
-            agent_utils::write_log(error, FAILED);
+            agent_utils::write_log("proxy: validate_log_entity: " + error, FAILED);
         }
         return false;
     }
@@ -70,13 +70,13 @@ public:
     {
         if (!entity.log_path.empty() && !os::is_file_exist(entity.log_path))
         {
-            agent_utils::write_log("Invalid log path configured log analysis: " + entity.log_path, FAILED);
+            agent_utils::write_log("proxy: validate_analysis_entity: invalid log path configured log analysis: " + entity.log_path, FAILED);
             return false;
         }
 
         if (!entity.decoder_path.empty() && !os::is_file_exist(entity.decoder_path))
         {
-            agent_utils::write_log("Invalid decoder path configured: " + entity.decoder_path, FAILED);
+            agent_utils::write_log("proxy: validate_analysis_entity: invalid decoder path configured: " + entity.decoder_path, FAILED);
             return false;
         }
         else
@@ -86,12 +86,12 @@ public:
 
         if (!entity.write_path.empty() && !os::is_dir_exist(entity.write_path))
         {
-            agent_utils::write_log("Configured analyis write path not exist default path set", WARNING);
+            agent_utils::write_log("proxy: validate_analysis_entity: configured analyis write path not exist default path set", WARNING);
         }
 
         if (!entity.rules_path.empty() && !os::is_dir_exist(entity.rules_path))
         {
-            agent_utils::write_log("Invalid xml-rules path configured: " + entity.rules_path, FAILED);
+            agent_utils::write_log("proxy: validate_analysis_entity: invalid xml-rules path configured: " + entity.rules_path, FAILED);
             return false;
         }
         else
@@ -120,13 +120,13 @@ public:
 
         if (entity.application_root_path.empty())
         {
-            agent_utils::write_log("Application binary path not configured", FAILED);
+            agent_utils::write_log("proxy: validate_patch_entity: application binary path not configured", FAILED);
             return false;
         }
 
         if (entity.url.empty())
         {
-            agent_utils::write_log("Url not configured for patch download", FAILED);
+            agent_utils::write_log("proxy: validate_patch_entity: url not configured for patch download", FAILED);
             return FAILED;
         }
 
@@ -187,7 +187,7 @@ public:
     {
         if (!entity.write_path.empty() && os::is_dir_exist(entity.write_path))
         {
-            agent_utils::write_log("Configured write directory path not exist", FAILED);
+            agent_utils::write_log("proxy: validate_process_entity: configured write directory path not exist", FAILED);
             return false;
         }
 
@@ -204,7 +204,7 @@ public:
         string file_path = os::get_path_or_backup_file_path(entity.read_path);
         if (file_path.size() == 0)
         {
-            agent_utils::write_log("Invalid file " + entity.read_path, FAILED);
+            agent_utils::write_log("proxy: get_previous_log_read_time: invalid file " + entity.read_path, FAILED);
             return false;
         }
         string temp_config_path = BASE_CONFIG_DIR;
@@ -223,7 +223,7 @@ public:
         }
         else
         {
-            agent_utils::write_log("Log reading directory not exists, creating new directory");
+            agent_utils::write_log("proxy: get_previous_log_read_time: log reading directory not exists, creating new directory");
             string tmp_config_dir = BASE_CONFIG_DIR;
             if (!os::is_dir_exist(tmp_config_dir))
                 os::create_dir(tmp_config_dir);
@@ -234,13 +234,13 @@ public:
         std::ofstream temp_config_file(temp_config_path);
         if (!temp_config_file)
         {
-            agent_utils::write_log("Failed to create file check it's permission " + temp_config_path, FAILED);
+            agent_utils::write_log("proxy: get_previous_log_read_time: failed to create file check it's permission " + temp_config_path, FAILED);
             return false;
         }
         fstream fp(file_path, std::ios::in | std::ios::binary);
         if (!fp)
         {
-            agent_utils::write_log("Invalid Log file " + file_path, FAILED);
+            agent_utils::write_log("proxy: get_previous_log_read_time: invalid Log file " + file_path, FAILED);
             temp_config_file.close();
             return false;
         }
@@ -266,19 +266,19 @@ public:
     {
         if (entity.conn_string.empty())
         {
-            agent_utils::write_log("configuration: mqtt_entity: connection string is empty", FAILED);
+            agent_utils::write_log("proxy: validate_mqtt_entity: connection string is empty", FAILED);
             return false;
         }
 
         if (entity.topics.empty())
         {
-            agent_utils::write_log("configuration: mqtt_entity: topics not configured", FAILED);
+            agent_utils::write_log("proxy: validate_mqtt_entity: topics not configured", FAILED);
             return false;
         }
 
         if (!entity.ca_cert_path.empty() && !os::is_file_exist(entity.ca_cert_path))
         {
-            agent_utils::write_log("configuration: mqtt_entity: file not exist " + entity.ca_cert_path, FAILED);
+            agent_utils::write_log("proxy: validate_mqtt_entity: file not exist " + entity.ca_cert_path, FAILED);
             return false;
         }
         else
@@ -289,7 +289,7 @@ public:
         // it is an optional but may be required if server wanted to verify the client
         if (!entity.client_cert_path.empty() && !os::is_file_exist(entity.client_cert_path))
         {
-            agent_utils::write_log("configuration: mqtt_entity: file not exist " + entity.client_cert_path, WARNING);
+            agent_utils::write_log("proxy: validate_mqtt_entity: file not exist " + entity.client_cert_path, WARNING);
         }
 
         if (entity.client_id.empty())

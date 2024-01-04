@@ -7,6 +7,7 @@
 #include <string>
 #include <exception>
 #include <vector>
+#include <queue>
 #include <fstream>
 #include <sstream>
 #include <map>
@@ -86,17 +87,17 @@ using std::vector;
 #define AGENT_CONFIG_DIR "/etc/scl/config/agent/agent.config"
 #define AGENT_TEMP_DIR "/etc/scl/tmp/"
 
-const string FILE_ERROR = "File not found or permission denied: ";
-const string CLEAN_FILE = "File truncated: ";
-const string INVALID_FILE = "Invalid files: ";
-const string FCREATION_FAILED = "File creation failed: Unable to create file ";
-const string FREAD_FAILED = "Failed to read from file: Unable to read data from ";
-const string FWRITE_FAILED = "Failed to write to file: Unable to write data to ";
-const string FWRITE_SUCCESS = "Successfully wrote to file: Wrote data to ";
-const string FDELETE_FAILED = "Failed to delete a file: Unable to delete  ";
-const string FDELETE_SUCCESS = "Successfully deleted file: Deleted ";
-const string INVALID_PATH = "Path not found: ";
-const string NEW_PATH = "Successfully created: ";
+const string FILE_ERROR = "file not found or permission denied: ";
+const string CLEAN_FILE = "file truncated: ";
+const string INVALID_FILE = "invalid files: ";
+const string FCREATION_FAILED = "file creation failed: unable to create file ";
+const string FREAD_FAILED = "failed to read from file: unable to read data from ";
+const string FWRITE_FAILED = "failed to write to file: unable to write data to ";
+const string FWRITE_SUCCESS = "successfully wrote to file: wrote data to ";
+const string FDELETE_FAILED = "failed to delete a file: unable to delete  ";
+const string FDELETE_SUCCESS = "successfully deleted file: deleted ";
+const string INVALID_PATH = "path not found: ";
+const string NEW_PATH = "successfully created: ";
 const string APP = "agent";
 const string LOG_PATH = "/etc/scl/log/agent.log";
 const vector<string> MONTHS = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};

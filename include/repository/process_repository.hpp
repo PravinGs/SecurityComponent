@@ -9,9 +9,7 @@ class process_repository
     public:
         int save(const vector<process_data>& logs, const sys_properties& properties, const sys_properties& availed_properties)
         {
-            string hostame;
             string path = os::get_json_write_path("process");
-            agent_utils::get_hostname(hostame);
             Json::Value props;
             props["CpuMemory"] = properties.cpu;
             props["RamMeomry"] = properties.ram;
@@ -32,7 +30,7 @@ class process_repository
             jsonData["DeviceTotalSpace"] = props;
             jsonData["DeviceUsedSpace"] = availed_props;
             jsonData["TimeGenerated"] = agent_utils::get_current_time();
-            jsonData["Source"] = hostame;
+            jsonData["Source"] = os::host_name;
             jsonData["OrgId"] = 12345;
             jsonData["ProcessObjects"] = Json::Value(Json::arrayValue);
             for (process_data data : logs)

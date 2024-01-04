@@ -1,7 +1,7 @@
 #ifndef TLS_CLIENT_HPP
 #define TLS_CLIENT_HPP
 
-#include "model/entity.hpp"
+#include "model/conn_model.hpp"
 
 class tls_client
 {
@@ -96,18 +96,18 @@ public:
         OpenSSL_add_ssl_algorithms();
     }
 
-    void start(const conn_entity &entity)
+    int start(const conn_entity &entity)
     {
         if (!(ctx = get_ssl_context(entity)))
         {
-            return ;
+            return FAILED;
         }
 
         if (!(sbio = BIO_new_ssl_connect(ctx)))
         {
             agent_utils::write_log("tls_client: start: Could not get a BIO object from context", FAILED);
             SSL_CTX_free(ctx);
-            return;
+            return FAILED;
         }
 
         BIO_get_ssl(sbio, &ssl);
@@ -116,44 +116,54 @@ public:
         {
             agent_utils::write_log("tls_client: start: Could not connection to the server", FAILED);
             BIO_free_all(sbio);
-            return;
+            return FAILED;
         }
 
         if ((r = SSL_do_handshake(ssl)) != 1)
         {
             agent_utils::write_log("tls_client: start: SSL Handshake failed", FAILED);
             BIO_free_all(sbio);
-            return;
+            return FAILED;
         }
 
         if (SSL_get_verify_result(ssl) != X509_V_OK)
         {
             agent_utils::write_log("tls_client: start: Verification of handshake failed", FAILED);
             BIO_free_all(sbio);
-            return;
+            return FAILED;
         }
 
-        home();
+        return SUCCESS;
     }
-    
-    int send_string(const std::string &data)
+
+    int send_client_data(const client_data &data)
     {
-        int bytes_sent = SSL_write(ssl, data.c_str(), data.length());
-        if (bytes_sent <= 0)
+        string client_data_buffer(reinterpret_cast<const char *>(&data), sizeof(data));
+        char received_buffer[sizeof(server_data)];
+
+        int bytes_sent = SSL_write(ssl, client_data_buffer.c_str(), client_data_buffer.size());
+
+        if (bytes_sent < 0)
         {
             std::cerr << "Error sending data: " << ERR_error_string(ERR_get_error(), nullptr) << std::endl;
+            return bytes_sent;
         }
-        return bytes_sent;
-    }
 
-    void home()
-    {
-        while (true)
+        int bytes_received = SSL_read(ssl, received_buffer, sizeof(received_buffer));
+
+        if (bytes_received < 0)
         {
-            int data = send_string("client message");
-            cout << "Send bytes : " << data << '\n';
-            std::this_thread::sleep_for(std::chrono::seconds(10));
+            std::cerr << "Error receiving data: " << ERR_error_string(ERR_get_error(), nullptr) << std::endl;
+            return bytes_received;
         }
+        else
+        {
+            server_data s_data = *reinterpret_cast<server_data *>(received_buffer);
+            cout << s_data.status << '\n';
+            cout << s_data.data << '\n';
+        }
+
+        return bytes_received;
     }
 };
 #endif

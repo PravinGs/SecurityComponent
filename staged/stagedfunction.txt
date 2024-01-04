@@ -944,3 +944,38 @@ int patch_service::create_download_property(map<string, map<string, string>> &ta
     }
     return result;
 }
+
+    void home(SSL *ssl)
+    {
+        server_data s_data;
+        s_data.status = 1;
+        std::strncpy(s_data.data, "ok", 2);
+        s_data.data[sizeof(s_data.data) - 1] = '\0';
+        string server_data_buffer(reinterpret_cast<const char *>(&s_data), sizeof(s_data));
+        char received_buffer[sizeof(client_data)];
+
+        int bytes_received = SSL_read(ssl, received_buffer, sizeof(received_buffer));
+
+        if (bytes_received < 0)
+        {
+            std::cerr << "Error receiving data: " << ERR_error_string(ERR_get_error(), nullptr) << std::endl;
+            return;
+        }
+        else
+        {
+            client_data c_data = *reinterpret_cast<client_data *>(received_buffer);
+            cout << c_data.client_id << '\n';
+            cout << c_data.data << '\n';
+            cout << c_data.is_alive << '\n';
+        }
+
+        int bytes_sent = SSL_write(ssl, server_data_buffer.c_str(), server_data_buffer.size());
+
+        if (bytes_sent < 0)
+        {
+            std::cerr << "Error sending data: " << ERR_error_string(ERR_get_error(), nullptr) << std::endl;
+            return;
+        }
+
+        return;
+    }
