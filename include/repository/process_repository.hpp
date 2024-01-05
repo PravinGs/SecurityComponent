@@ -2,11 +2,15 @@
 #define PROCESS_REPOSITORY_HPP
 
 #include "model/process_model.hpp"
+#include "signature_repository.hpp"
 
 class process_repository
 {
-
+    private:
+        file_security security;
+        const string key = "pappadam";
     public:
+
         int save(const vector<process_data>& logs, const sys_properties& properties, const sys_properties& availed_properties)
         {
             string path = os::get_json_write_path("process");
@@ -46,13 +50,16 @@ class process_repository
 
             std::unique_ptr<Json::StreamWriter> writer(writerBuilder.newStreamWriter());
             writer->write(jsonData, &file);
-
             file.close();
+            security.sign_and_store_signature(path, key);
+            std::this_thread::sleep_for(std::chrono::seconds(3));
+            if (!security.verify_signature(path, key))
+            {
+                agent_utils::write_log("process_repository: save: verify_signature: failed", WARNING);
+            }
             agent_utils::write_log("process_repository: save: " + FWRITE_SUCCESS + path, SUCCESS);
             return SUCCESS;
         }
-
-
 
 };
 

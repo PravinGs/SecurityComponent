@@ -26,13 +26,12 @@ void init()
     int day = tm_info->tm_mday;
     os::current_day = day; /* Current day at the application starting date. */
     os::current_month = tm_info->tm_mon;
-    os::current_year = tm_info->tm_year+1900;
-    
+    os::current_year = tm_info->tm_year + 1900;
 }
 
 void test_log_controller()
 {
-    log_controller controller("/home/pravin/micro-service/config/schedule.config");
+    log_controller controller("/home/champ/SecurityComponent/config/schedule.config");
     controller.start();
 }
 
@@ -40,8 +39,36 @@ void test_process_controller()
 {
     monitor_controller controller("/home/champ/SecurityComponent/config/schedule.config");
     controller.start();
-
 }
+
+void test_hmac_signature()
+{
+    string file = "/home/champ/SecurityComponent/config/agent.config";
+    string key = "hash";
+    string signed_data = os::sign(file, key);
+    cout << "signed_data :  " << signed_data << '\n';
+    // std::this_thread::sleep_for(std::chrono::seconds(10));
+    if (os::verify_signature(file, key, signed_data))
+    {
+        cout << "Signatue verified successfully" << '\n';
+    }
+    else
+    {
+        cout << "signature verification failed";
+    }
+}
+
+void test_mqtt_client()
+{
+    Imqtt_client* client = new mqtt_client();
+    Config config;
+    entity_parser parser;
+    map<string, map<string, string>> table;
+    config.read_ini_config_file("/home/champ/SecurityComponent/config/schedule.config", table);
+    mqtt_entity entity = parser.get_mqtt_entity(table);
+    client->start(entity);
+}
+
 void tls_server_check()
 {
     tls_server server;
@@ -74,7 +101,7 @@ int main()
         agent_utils::logfp.open(LOG_PATH, std::ios::app);
     }
     init();
-    tls_server_check();
+    test_process_controller();
     if (agent_utils::logfp.is_open())
     {
         agent_utils::logfp.close();

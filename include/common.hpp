@@ -123,25 +123,6 @@ struct Timer
     }
 };
 
-/**
- * @brief A structure representing a log event with various attributes.
- *
- * The log_event structure encapsulates information related to a log event,
- * including its size, original log entry, log format, timestamp, program,
- * user, source and destination IP addresses, protocol, match status, group,
- * and associated rule ID.
- */
-
-/**
- * @brief A utility class for managing file and directory operations and maintaining a global timestamp.
- *
- * The os class provides a set of methods and functionality for performing various file and
- * directory operations, such as creation, reading, updating, and deletion (CRUD), as well as
- * maintaining a global timestamp for the agent application.
- *
- * This class serves as a utility for handling operating system-related tasks in the context of
- * the agent application.
- */
 class os
 {
 public:
@@ -150,122 +131,22 @@ public:
     static int current_year;
     static string host_name;
 
-    /**
-     * @brief Retrieve a list of regular files from a directory.
-     *
-     * This static method scans a specified directory and collects the paths of all regular files
-     * (excluding directories and special files) it contains. The list of file paths is stored in
-     * the provided vector.
-     *
-     * @param files A vector to store the paths of regular files found in the directory.
-     *
-     * @return The number of regular files found and added to the vector.
-     */
-    // static int read_regular_files(vector<string> &files);
-
-    /**
-     * @brief Check if a directory exists.
-     *
-     * This static method checks if a directory with the specified name exists.
-     *
-     * @param dirName The name of the directory to check.
-     *
-     * @return An integer indicating the result:
-     *         - SUCCESS if the directory exists.
-     *         - FAILED if the directory does not exist.
-     */
     static bool is_dir_exist(const string &dirName);
 
-    /**
-     * @brief Create a directory.
-     *
-     * This static method attempts to create a directory with the specified name.
-     *
-     * @param dirName The name of the directory to create.
-     *
-     * @return An integer indicating the result:
-     *         - SUCCESS if the directory was successfully created.
-     *         - FAILED if an error occurred during the creation.
-     */
-    static int create_dir(const string dirName);
+    static int create_dir(const string& dirName);
 
-    /**
-     * @brief Delete a file.
-     *
-     * This static method attempts to delete a file with the specified name.
-     *
-     * @param fileName The name of the file to delete.
-     *
-     * @return An integer indicating the result:
-     *         - SUCCESS if the file was successfully deleted.
-     *         - FAILED if an error occurred during the deletion.
-     */
+    static int create_file(const string& file_path);
+
     static int delete_file(const string &fileName);
 
-    /**
-     * @brief Create a log file for storing processed logs under a specified date and application name.
-     *
-     * This static method creates a log file for storing processed logs under a directory structure
-     * organized by year, month, and day. The log file's name is composed of the provided year, month,
-     * day, and application name.
-     *
-     * @param cDay The current day of the month.
-     * @param cMonth The current month.
-     * @param cYear The current year.
-     * @param filePath A reference to a string to store the path of the created log file.
-     * @param app_name The name of the application or context associated with the log file.
-     *
-     * @return An integer indicating the result:
-     *         - 0 if the log file was successfully created.
-     *         - (-1) if an error occurred during file creation.
-     */
     static int create_log_file(int cDay, int cMonth, int cYear, string &filePath, const string &app_name);
 
-    /**
-     * @brief Manage log files and backup previous day's files based on the date.
-     *
-     * This method manages log files, including creating a new log file for the current day
-     * and backing up log files from the previous day when a new day arrives. Log files are
-     * organized by year, month, and day, and named based on the provided date and application
-     * name.
-     *
-     * @param day The current day of the month.
-     * @param month The current month.
-     * @param year The current year.
-     * @param filePath A reference to a string to store the path of the created log file.
-     * @param app_name The name of the application or context associated with the log files.
-     *
-     * @return An integer indicating the result:
-     *         - 0 if log files were managed successfully.
-     *         - (-1) if an error occurred during log file management.
-     */
     static int handle_local_log_file(int day, int month, int year, string &filePath, const string &app_name);
 
     static string get_path_or_backup_file_path(string filename);
 
-    /**
-     * @brief Compress a file using a compression algorithm.
-     *
-     * This static method compresses a specified file using a compression algorithm.
-     *
-     * @param logFile The path to the file to be compressed.
-     *
-     * @return An integer indicating the result:
-     *         - 0 if the file was successfully compressed.
-     *         - (-1) if an error occurred during the compression process.
-     */
     static int compress_file(const string &logFile);
 
-    /**
-     * @brief Generate a file path for the application name based on the current date.
-     *
-     * This static method generates a file path for the specified application name based on
-     * the current date, organizing files by year, month, and day.
-     *
-     * @param app_name The name of the application for which the file path is generated.
-     *
-     * @return A string containing the file path based on the current date and application name.
-     */
     static string get_file_by_current_day(const string &app_name);
 
     static int get_regular_files(const string &directory, vector<string> &files);
@@ -273,15 +154,13 @@ public:
     static string get_json_write_path(const string &type);
 
     static bool is_file_exist(const string &file);
+
+    static string sign(const string& file, const string&sign_key);
+
+    static bool verify_signature(const string& file, const string& sign_key, const string&signed_data);
 };
 
-/**
- * @brief Utility class for implementing functions and log mechanisms in the agent application.
- *
- * The agent_utils class provides a set of utility methods and log mechanisms to support various
- * functionalities within the agent application. It encapsulates common tasks related to agent
- * operation and logging.
- */
+
 class agent_utils
 {
 private:
@@ -300,44 +179,12 @@ public:
 
     static string to_lower_case(string &str);
 
-    /**
-     * @brief Validate a syslog time string.
-     *
-     * This static method checks whether a given string represents a valid syslog time string.
-     *
-     * @param time_string The string to be validated as a syslog time string.
-     *
-     * @return A boolean value indicating the validation result:
-     *         - true if the string is a valid syslog time string.
-     *         - false if the string is not a valid syslog time string.
-     */
     static bool is_valid_time_string(const std::string &time_string);
 
-    /**
-     * @brief Update the last written time for a specific application's log.
-     *
-     * This static method updates the last written time for a specified application's log.
-     *
-     * @param app_name The name of the application whose log time is being updated.
-     * @param time The time to be set as the last written time for the application's log.
-     */
     static void update_log_written_time(const string &app_name, const string &time);
 
     static int get_hostname(string &host);
 
-    /**
-     * @brief Convert a syslog time format into a standard time format.
-     *
-     * This static method takes a syslog time format string as input and converts it into
-     * a standard time format string, storing the result in the 'format_time' parameter.
-     *
-     * @param input_time The syslog time format string to be converted.
-     * @param format_time A reference to a string to store the converted standard time format.
-     *
-     * @return An integer indicating the result:
-     *         - 0 if the conversion was successful.
-     *         - (-1) if an error occurred during the conversion.
-     */
     static int convert_time_format(const std::string &input_time, std::string &format_time);
 
     static string get_current_time();

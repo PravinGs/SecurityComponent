@@ -8,6 +8,7 @@ typedef struct patch_entity patch_entity;
 typedef struct mqtt_entity mqtt_entity;
 typedef struct rest_entity rest_entity;
 typedef struct conn_entity conn_entity;
+typedef struct signature_entity signature_entity;
 
 struct conn_entity
 {
@@ -107,4 +108,12 @@ struct rest_entity
     string ca_cert_path;
     string client_cert_path;
     conn_entity connection;
+};
+
+struct signature_entity
+{   
+    string file_name;
+    string signature;
+
+    signature_entity(const string& file_name, const string& signature) : file_name(file_name), signature(signature) {}
 };

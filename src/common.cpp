@@ -25,7 +25,7 @@ void agent_utils::setup_logger()
         {
             agent_utils::syslog_enabled = false;
         }
-    } 
+    }
     else
     {
         agent_utils::syslog_enabled = false;
@@ -63,7 +63,7 @@ string agent_utils::trim(string line)
     return (str.length() >= 2 && str[0] == '"' && str[str.length() - 1] == '"') ? str.substr(1, str.length() - 2) : str;
 }
 
-void agent_utils::update_log_written_time(const string& app_name, const string& time)
+void agent_utils::update_log_written_time(const string &app_name, const string &time)
 {
     string file_path = BASE_CONFIG_DIR;
     if (!os::is_dir_exist(file_path))
@@ -123,20 +123,24 @@ string agent_utils::get_current_time()
     strftime(current_time, sizeof(current_time), "%Y-%m-%d %H:%M:%S", t);
     string s_time(current_time);
     auto mid = s_time.find_first_of(' ');
-    string time = s_time.substr(0, mid) + "_" + s_time.substr(mid+1);
+    string time = s_time.substr(0, mid) + "_" + s_time.substr(mid + 1);
     return time;
 }
 
-bool agent_utils::is_valid_time_string(const std::string& timeString) {
+bool agent_utils::is_valid_time_string(const std::string &timeString)
+{
     std::tm tm_struct = {};
     return (strptime(timeString.c_str(), "%b %e %H:%M:%S", &tm_struct) != nullptr) ? true : false;
 }
 
 int agent_utils::convert_time_format(const std::string &inputTime, std::string &formatTime)
 {
-    if (!is_valid_time_string(inputTime)) { return FAILED; }
+    if (!is_valid_time_string(inputTime))
+    {
+        return FAILED;
+    }
     std::stringstream ss(inputTime);
-    string year, month, day, time; 
+    string year, month, day, time;
     std::tm tm = {};
     int m = 0, d;
     month = trim(inputTime.substr(0, 4));
@@ -165,14 +169,14 @@ int agent_utils::convert_time_format(const std::string &inputTime, std::string &
     time = trim(inputTime.substr(6, 15));
     std::time_t current_time = std::time(nullptr);
     std::tm *currentTm = std::localtime(&current_time);
-    tm.tm_year = currentTm->tm_year; 
-    tm.tm_year += 1900;              
+    tm.tm_year = currentTm->tm_year;
+    tm.tm_year += 1900;
 
     formatTime = std::to_string(tm.tm_year) + "-" + month + "-" + day + " " + time;
     return SUCCESS;
 }
 
-void agent_utils::write_log(const string& log)
+void agent_utils::write_log(const string &log)
 {
     string time = get_current_time();
     string line = time + " " + log + "\n";
@@ -185,33 +189,33 @@ void agent_utils::write_log(const string& log)
     return;
 }
 
-void agent_utils::write_log(const string& log, int logLevel)
+void agent_utils::write_log(const string &log, int logLevel)
 {
-    #if NO_DEBUG && logLevel == DEBUG
-        return;
-    #endif
+#if NO_DEBUG && logLevel == DEBUG
+    return;
+#endif
 
     string time = get_current_time();
     string line;
     switch (logLevel)
     {
     case SUCCESS:
-        line =  time + " : [SUCCESS] " + log;
+        line = time + " : [SUCCESS] " + log;
         break;
     case INFO:
-        line =  time + " : [INFO] " + log;
+        line = time + " : [INFO] " + log;
         break;
     case FAILED:
-        line =  time + " : [ERROR] " + log;
+        line = time + " : [ERROR] " + log;
         break;
     case WARNING:
-        line =  time + " : [WARNING] " + log;
+        line = time + " : [WARNING] " + log;
         break;
     case CRITICAL:
-        line =  time + " : [CRITICAL] " + log;
+        line = time + " : [CRITICAL] " + log;
         break;
     case DEBUG:
-        line =  time + " : [DEBUG] " + log;
+        line = time + " : [DEBUG] " + log;
     default:
         break;
     }
@@ -226,7 +230,7 @@ void agent_utils::write_log(const string& log, int logLevel)
         {
             if (!agent_utils::logfp.is_open())
             {
-                agent_utils::logfp.open(LOG_PATH, std::ios::app);   
+                agent_utils::logfp.open(LOG_PATH, std::ios::app);
             }
             agent_utils::logfp.write(line.c_str(), line.size());
             agent_utils::logfp.flush();
@@ -239,7 +243,8 @@ void agent_utils::write_log(const string& log, int logLevel)
 void agent_utils::backup_log_file()
 {
     std::streampos size;
-    if (agent_utils::logfp.is_open()){
+    if (agent_utils::logfp.is_open())
+    {
         agent_utils::logfp.seekg(0, std::ios::end);
         size = agent_utils::logfp.tellg();
     }
@@ -252,17 +257,18 @@ void agent_utils::backup_log_file()
     }
 }
 
-int os::compress_file(const string& log_file)
+int os::compress_file(const string &log_file)
 {
     int result = SUCCESS;
     string line;
     string current_file = log_file;
-    if (log_file == LOG_PATH){
+    if (log_file == LOG_PATH)
+    {
         vector<string> files;
         os::get_regular_files(BASE_LOG_DIR, files);
         current_file += std::to_string(files.size());
     }
-    
+
     if (current_file.size() == 0)
     {
         agent_utils::write_log("agent_utils: compress_file: no global log file updated in the code for os", FAILED);
@@ -283,7 +289,7 @@ int os::compress_file(const string& log_file)
         file.close();
         return FAILED;
     }
-    
+
     while (std::getline(file, line))
     {
         if (line.size() == 0)
@@ -306,6 +312,36 @@ int os::compress_file(const string& log_file)
         agent_utils::write_log("agent_utils: compress_file: " + FDELETE_FAILED + current_file, FAILED);
     }
     return result;
+}
+
+string os::sign(const string &file, const string &sign_key)
+{
+    if (!os::is_file_exist(file))
+    {
+        agent_utils::write_log("os: sign: file not exist: " + file, FAILED);
+        return "";
+    }
+
+    std::ifstream file_data(file);
+    string data((std::istreambuf_iterator<char>(file_data)), std::istreambuf_iterator<char>());
+
+    unsigned char hash[EVP_MAX_MD_SIZE];
+    unsigned int hash_length;
+
+    HMAC_CTX *hmac_ctx = HMAC_CTX_new();
+    HMAC_Init_ex(hmac_ctx, sign_key.c_str(), sign_key.length(), EVP_sha256(), nullptr);
+    HMAC_Update(hmac_ctx, reinterpret_cast<const unsigned char *>(data.c_str()), data.length());
+    HMAC_Final(hmac_ctx, hash, &hash_length);
+    HMAC_CTX_free(hmac_ctx);
+
+    return string(reinterpret_cast<char *>(hash), hash_length);
+}
+
+bool os::verify_signature(const string &file, const string &sign_key, const string &signed_data)
+{
+    string hash = sign(file, sign_key);
+
+    return (hash == signed_data) ? true : false;
 }
 
 bool os::is_file_exist(const string &file)
@@ -341,27 +377,27 @@ string os::get_path_or_backup_file_path(string filename)
     }
     else
     {
-       non_empty_path = "";
+        non_empty_path = "";
     }
     return non_empty_path;
 }
 
-string os::get_file_by_current_day(const string& app_name)
+string os::get_file_by_current_day(const string &app_name)
 {
     string current_log_file = BASE_LOG_DIR;
-    current_log_file       += BASE_LOG_ARCHIVE;
-    current_log_file += std::to_string(current_year) + "/" + MONTHS[current_month-1] + "/" + std::to_string(current_day) + "-" + app_name;
+    current_log_file += BASE_LOG_ARCHIVE;
+    current_log_file += std::to_string(current_year) + "/" + MONTHS[current_month - 1] + "/" + std::to_string(current_day) + "-" + app_name;
     return current_log_file;
 }
 
-int os::handle_local_log_file(int day, int month, int year, string& file_path, const string& app_name)
+int os::handle_local_log_file(int day, int month, int year, string &file_path, const string &app_name)
 {
     int result;
     string current_dir = BASE_LOG_DIR;
     if (day != current_day)
     {
         string current_log_file = get_file_by_current_day(app_name);
-        
+
         if ((result = compress_file(current_log_file)) == FAILED)
         {
             return FAILED;
@@ -376,7 +412,7 @@ int os::handle_local_log_file(int day, int month, int year, string& file_path, c
     return result;
 }
 
-int os::create_log_file(int curr_day, int curr_month, int curr_year, string& file_path, const string& app_name)
+int os::create_log_file(int curr_day, int curr_month, int curr_year, string &file_path, const string &app_name)
 {
     string current_dir = BASE_LOG_DIR;
     if (!is_dir_exist(current_dir))
@@ -428,7 +464,7 @@ int os::create_log_file(int curr_day, int curr_month, int curr_year, string& fil
     return FAILED;
 }
 
-int os::delete_file(const string& fileName)
+int os::delete_file(const string &fileName)
 {
     if (std::filesystem::exists(fileName))
     {
@@ -448,10 +484,12 @@ int os::delete_file(const string& fileName)
     return FAILED;
 }
 
-int os::create_dir(const string dir_name)
+int os::create_dir(const string& dir_name)
 {
     if (std::filesystem::exists(dir_name))
+    {
         return SUCCESS;
+    }
     else
     {
         try
@@ -468,13 +506,36 @@ int os::create_dir(const string dir_name)
     return FAILED;
 }
 
-bool os::is_dir_exist(const string& dir_name)
+int os::create_file(const string &file_path)
 {
-    return std::filesystem::exists(dir_name);
-
+    try
+    {
+        if (is_file_exist(file_path))
+        {
+            return SUCCESS;
+        }
+        std::ofstream file(file_path);
+        if (file.is_open())
+        {
+            agent_utils::write_log("os: create_file: new file creation: " + file_path, DEBUG);
+            file.close();
+            return SUCCESS;
+        }
+    }
+    catch (const std::exception &e)
+    {
+        string error(e.what());
+        agent_utils::write_log("os: create_file: " + error, FAILED);
+    }
+    return FAILED;
 }
 
-int os::get_regular_files(const string& directory, vector<string> &files)
+bool os::is_dir_exist(const string &dir_name)
+{
+    return std::filesystem::exists(dir_name);
+}
+
+int os::get_regular_files(const string &directory, vector<string> &files)
 {
     int result = SUCCESS;
     try
@@ -483,7 +544,7 @@ int os::get_regular_files(const string& directory, vector<string> &files)
         for (const auto &entry : std::filesystem::directory_iterator(directory))
         {
             if (std::filesystem::is_regular_file(entry.path()))
-            {   
+            {
                 string child = entry.path();
                 files.push_back(child);
             }
@@ -507,7 +568,7 @@ std::time_t agent_utils::string_to_time_t(const string &datetime)
     return std::mktime(&tm);
 }
 
-string os::get_json_write_path(const string & type)
+string os::get_json_write_path(const string &type)
 {
     string time = agent_utils::get_current_time();
     string file_path = BASE_LOG_DIR;

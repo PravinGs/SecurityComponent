@@ -18,8 +18,6 @@ void mqtt_client::publish_response(const std::string &response, const std::strin
 void mqtt_client::handle_message(const mqtt::const_message_ptr &msg)
 {
     std::cout << "Received message on topic: " << msg->get_topic() << " - Payload: " << msg->get_payload_str() << std::endl;
-    // Parse and assign tasks to the received input command.
-    // publish_response("Response: Message received", msg->get_topic());
 }
 
 void mqtt_client::start(const mqtt_entity &entity)

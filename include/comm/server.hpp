@@ -205,6 +205,7 @@ private:
         else
         {
             client_data c_data = *reinterpret_cast<client_data *>(received_buffer);
+            cout << c_data.client_id << '\n';
             // once the processing queue received signal from one of the application
             // if data is valid.
             // it should send the data the rest_service from here.
