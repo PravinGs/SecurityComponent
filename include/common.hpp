@@ -31,6 +31,10 @@
 #include <amqpcpp/libev.h>
 #include <ev.h>
 #endif
+
+#include <tss2/tss2_esys.h>
+#include <tss2/tss2_tctildr.h>
+
 #include <fcntl.h>
 #include <net/if.h>
 #include <sys/ioctl.h>
@@ -42,7 +46,6 @@
 #include <csignal>
 #include <filesystem>
 #include <curl/curl.h>
-// #include <boost/asio.hpp>
 #include <zlib.h>
 #include <regex>
 #include <pugixml.hpp>
@@ -158,6 +161,8 @@ public:
     static string sign(const string& file, const string&sign_key);
 
     static bool verify_signature(const string& file, const string& sign_key, const string&signed_data);
+
+    static string get_json_file_path();
 };
 
 

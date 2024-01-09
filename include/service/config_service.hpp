@@ -5,48 +5,16 @@
 #include "common.hpp"
 #include "model/analysis_model.hpp"
 
-
-/**
- * @brief Configuration Management Class
- *
- * The `Config` class is a versatile configuration management class that handles a wide range of configuration file
- * formats. It provides functionality for reading and managing configuration settings from various types of configuration
- * files, allowing the application to adapt to different configuration file formats and customize its behavior.
- *
- * This class serves as a central hub for configuration-related activities, making it flexible and adaptable to different
- * configuration needs.
- */
 class Config
 {
 private:
-    /**
-     * @brief XML Document
-     *
-     * The `doc` member variable is an instance of the `pugi::xml_document` class used to represent an XML document.
-     * It is a private member of the class and serves as the container for parsing and manipulating XML data.
-     */
+
     pugi::xml_document doc;
 
 public:
-    /**
-     * @brief Default Constructor for Config
-     *
-     * The default constructor for the `Config` class creates an instance of the class with default settings. It initializes
-     * the object to its default state.
-     */
+
     Config() = default;
 
-    /**
-     * @brief Convert String to Integer with Error Handling
-     *
-     * The `is_digit` function is used to convert a string representing a number into an integer, while also providing error
-     * handling for cases where the conversion fails due to invalid input.
-     *
-     * @param[in] number The input string to be converted to an integer.
-     * @return An integer result code:
-     *         - The converted integer value if the conversion was successful.
-     *         - -1 if the input string is not a valid integer or conversion fails.
-     */
     int is_digit(const string&  number)
     {
         if (number.empty()) return -1;
@@ -325,20 +293,6 @@ public:
         }
     }
 
-    /**
-     * @brief Parse XML Nodes into aconfig Table
-     *
-     * The `read_aconfig` function is used to parse XML nodes from a specified XML file and populate a structured table of
-     * `aconfig` objects. Each XML node represents configuration data, and the parsed data is organized within the table.
-     *
-     * @param[in] file_name The file name of the XML file containing configuration nodes.
-     * @param[out] table A reference to a map for storing the parsed configuration data. The map is structured as follows:
-     *                  - The keys represent unique identifiers for each configuration.
-     *                  - The values are maps containing configuration settings organized by integer keys.
-     * @return An integer result code:
-     *         - SUCCESS: The XML nodes were successfully parsed and populated into the aconfig table.
-     *         - FAILED: The operation encountered errors and failed to parse or populate the configuration data.
-     */
     int read_aconfig(string file_name, std::unordered_map<string, std::unordered_map<int, aconfig>> &table)
     {
         pugi::xml_parse_result result = doc.load_file(file_name.c_str());

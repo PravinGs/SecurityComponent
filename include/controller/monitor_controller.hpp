@@ -37,7 +37,7 @@ public:
 
         process_entity entity = parser.get_process_entity(config_table);
 
-        client_connection = client.start(entity.connection);
+        client_connection = client.connect(entity.connection);
 
         if (client_connection == FAILED)
         {

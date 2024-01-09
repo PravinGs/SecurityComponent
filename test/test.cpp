@@ -5,8 +5,10 @@
 #include "controller/monitor_controller.hpp"
 #include "controller/mqtt_controller.hpp"
 #include "controller/patch_controller.hpp"
+#include "controller/tpm_controller.hpp"
 #include "comm/server.hpp"
 #include "comm/client.hpp"
+#include "repository/signature_repository.hpp"
 
 void test_mqtt_controller()
 {
@@ -37,30 +39,31 @@ void test_log_controller()
 
 void test_process_controller()
 {
-    monitor_controller controller("/home/champ/SecurityComponent/config/schedule.config");
+    monitor_controller controller("/home/pravin/micro-service/config/agent.config");
     controller.start();
 }
 
 void test_hmac_signature()
 {
-    string file = "/home/champ/SecurityComponent/config/agent.config";
-    string key = "hash";
-    string signed_data = os::sign(file, key);
-    cout << "signed_data :  " << signed_data << '\n';
-    // std::this_thread::sleep_for(std::chrono::seconds(10));
-    if (os::verify_signature(file, key, signed_data))
+    string file = "/home/pravin/micro-service/config/schedule.config";
+    string key = "pappadam";
+    file_security security;
+    security.sign_and_store_signature(file, key);
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    if (!security.verify_signature(file, key))
     {
-        cout << "Signatue verified successfully" << '\n';
+        agent_utils::write_log("test: test_hmac_signature: verify_signature: failed", WARNING);
     }
-    else
+    else 
     {
-        cout << "signature verification failed";
+        cerr << "verification successfull" << '\n';
     }
+
 }
 
 void test_mqtt_client()
 {
-    Imqtt_client* client = new mqtt_client();
+    Imqtt_client *client = new mqtt_client();
     Config config;
     entity_parser parser;
     map<string, map<string, string>> table;
@@ -91,6 +94,15 @@ void tls_client_check()
     client.start(entity);
 }
 
+void test_tpm_controller()
+{
+    tpm_model model;
+    model.host_address = "libtss2-tcti-mssim.so.0:host=127.0.0.1,port=2321";
+    tpm_controller controller(model);
+    controller.clear_tpm();
+
+}
+
 int main()
 {
     openlog("agent.service", LOG_INFO | LOG_CONS, LOG_USER);
@@ -101,7 +113,7 @@ int main()
         agent_utils::logfp.open(LOG_PATH, std::ios::app);
     }
     init();
-    test_process_controller();
+    test_hmac_signature();
     if (agent_utils::logfp.is_open())
     {
         agent_utils::logfp.close();

@@ -1,0 +1,46 @@
+#define VALID_INPUT_SIZE 20
+struct USER
+{
+    char userName[VALID_INPUT_SIZE];
+    char userEmail[VALID_INPUT_SIZE];
+    char userPassword[VALID_INPUT_SIZE];
+    char userRole[USER_ROLE_SIZE];
+};
+
+struct LOGIN_DATA
+{
+    char userEmail[VALID_INPUT_SIZE];
+    char userPassword[VALID_INPUT_SIZE];
+};
+
+struct SEAL_CONTEXT{
+    char ownerAuth[VALID_INPUT_SIZE];
+    char srkAuth[VALID_INPUT_SIZE];
+    char dekAuth[VALID_INPUT_SIZE];
+    char data[PATH_SIZE];
+    char objectName[VALID_INPUT_SIZE];
+};
+
+struct PERSISTED_CONTEXT
+{
+    char indexName[VALID_INPUT_SIZE];
+    char ownerPassword[VALID_INPUT_SIZE];
+    char data[PATH_SIZE];
+    int indexValue;
+    char indexPassword[VALID_INPUT_SIZE];
+    int dataSize;
+};
+
+struct AUTH_CONTEXT
+{
+    char old_auth[VALID_INPUT_SIZE];
+    char new_auth[VALID_INPUT_SIZE];
+};
+
+
+clear_tpm()
+{
+    // lockout password 
+    // password size should not exceed VALID_INPUT_SIZE
+
+}

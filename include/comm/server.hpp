@@ -115,7 +115,6 @@ private:
             return nullptr;
         }
 
-        /* Set the CA file location for the server */
         if (SSL_CTX_load_verify_locations(ctx, entity.ca_pem.c_str(), NULL) != 1)
         {
             agent_utils::write_log("tls_server: get_ssl_context: Could not set the CA file location.", FAILED);
@@ -123,10 +122,8 @@ private:
             return nullptr;
         }
 
-        /* Load the client's CA file location as well */
         SSL_CTX_set_client_CA_list(ctx, SSL_load_client_CA_file(entity.ca_pem.c_str()));
 
-        /* Set the server's certificate signed by the CA */
         if (SSL_CTX_use_certificate_file(ctx, entity.cert_pem.c_str(), SSL_FILETYPE_PEM) != 1)
         {
             agent_utils::write_log("tls_server: get_ssl_context: Could not set the server's certificate.", FAILED);
@@ -134,7 +131,6 @@ private:
             return nullptr;
         }
 
-        /* Set the server's key for the above certificate */
         if (SSL_CTX_use_PrivateKey_file(ctx, entity.key_pem.c_str(), SSL_FILETYPE_PEM) != 1)
         {
             agent_utils::write_log("tls_server: get_ssl_context: Could not set the server's key.", FAILED);
@@ -142,7 +138,6 @@ private:
             return nullptr;
         }
 
-        /* We've loaded both certificate and the key, check if they match */
         if (SSL_CTX_check_private_key(ctx) != 1)
         {
             agent_utils::write_log("tls_server: get_ssl_context: Server's certificate and the key don't match.", FAILED);
@@ -150,15 +145,12 @@ private:
             return nullptr;
         }
 
-        /* We won't handle incomplete read/writes due to renegotiation */
         SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
 
-        /* Specify that we need to verify the client as well */
         SSL_CTX_set_verify(ctx,
                            SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
                            NULL);
 
-        /* We accept only certificates signed only by the CA himself */
         SSL_CTX_set_verify_depth(ctx, 1);
 
         return ctx;

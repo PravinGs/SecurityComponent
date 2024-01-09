@@ -121,10 +121,10 @@ string agent_utils::get_current_time()
     time_t now = time(NULL);
     struct tm *t = localtime(&now);
     strftime(current_time, sizeof(current_time), "%Y-%m-%d %H:%M:%S", t);
-    string s_time(current_time);
-    auto mid = s_time.find_first_of(' ');
-    string time = s_time.substr(0, mid) + "_" + s_time.substr(mid + 1);
-    return time;
+    // string s_time(current_time);
+    // auto mid = s_time.find_first_of(' ');
+    // string time = s_time.substr(0, mid) + "_" + s_time.substr(mid + 1);
+    return current_time;
 }
 
 bool agent_utils::is_valid_time_string(const std::string &timeString)
@@ -322,7 +322,12 @@ string os::sign(const string &file, const string &sign_key)
         return "";
     }
 
-    std::ifstream file_data(file);
+    std::ifstream file_data(file, std::ios::binary);
+    if (!file_data.is_open())
+    {
+        agent_utils::write_log("os: sign: unable to open file: " + file, FAILED);
+        return "";
+    }
     string data((std::istreambuf_iterator<char>(file_data)), std::istreambuf_iterator<char>());
 
     unsigned char hash[EVP_MAX_MD_SIZE];
@@ -333,7 +338,7 @@ string os::sign(const string &file, const string &sign_key)
     HMAC_Update(hmac_ctx, reinterpret_cast<const unsigned char *>(data.c_str()), data.length());
     HMAC_Final(hmac_ctx, hash, &hash_length);
     HMAC_CTX_free(hmac_ctx);
-
+    
     return string(reinterpret_cast<char *>(hash), hash_length);
 }
 
@@ -568,9 +573,16 @@ std::time_t agent_utils::string_to_time_t(const string &datetime)
     return std::mktime(&tm);
 }
 
-string os::get_json_write_path(const string &type)
+string os::get_json_file_path()
 {
     string time = agent_utils::get_current_time();
+    auto mid = time.find_first_of(' ');
+    return time.substr(0, mid) + "_" + time.substr(mid+1);
+}
+
+string os::get_json_write_path(const string &type)
+{
+    string json_file_path = os::get_json_file_path();
     string file_path = BASE_LOG_DIR;
 
     if (!os::is_dir_exist(file_path))
@@ -587,7 +599,7 @@ string os::get_json_write_path(const string &type)
     {
         os::create_dir(file_path);
     }
-    file_path += "/" + time + ".json";
+    file_path += "/" + json_file_path + ".json";
     std::ofstream file(file_path);
     if (!file)
     {

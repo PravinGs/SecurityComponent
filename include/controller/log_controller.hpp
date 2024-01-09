@@ -86,7 +86,7 @@ public:
 
         log_entity entity = parser.get_log_entity(config_table, "syslog");
 
-        client_connection = client.start(entity.connection);
+        client_connection = client.connect(entity.connection);
 
         if (client_connection == FAILED)
         {

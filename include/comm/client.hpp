@@ -96,7 +96,7 @@ public:
         OpenSSL_add_ssl_algorithms();
     }
 
-    int start(const conn_entity &entity)
+    int connect(const conn_entity &entity)
     {
         if (!(ctx = get_ssl_context(entity)))
         {
